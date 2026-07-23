@@ -22,6 +22,7 @@ type FrontendProduct = {
   priceMin: number | null;
   productForm: string;
   scentAccords: string[];
+  scentConcepts: string[];
   scentProfiles: string[];
   skuCount: number;
   skus: FrontendSku[];
@@ -144,6 +145,7 @@ function productTerms(product: FrontendProduct) {
     ...product.notes,
     ...product.scentProfiles,
     ...product.scentAccords,
+    ...product.scentConcepts,
     ...product.noteFamilies,
     ...subtitleNotes(product),
   ]);
@@ -222,8 +224,8 @@ function normalizedScentTerms(product: FrontendProduct) {
     ...product.notes,
     ...product.scentProfiles,
     ...product.scentAccords,
+    ...product.scentConcepts,
     ...product.noteFamilies,
-    ...subtitleNotes(product),
   ]).map(normalizeScentTerm);
 }
 
@@ -232,9 +234,7 @@ function scentCatalogProducts(term: string) {
   const seenNames = new Set<string>();
   return products
     .filter((product) =>
-      normalizedScentTerms(product).some(
-        (productTerm) => productTerm.includes(normalizedTerm) || normalizedTerm.includes(productTerm)
-      )
+      normalizedScentTerms(product).includes(normalizedTerm)
     )
     .sort(
       (a, b) =>
@@ -289,6 +289,7 @@ function productSummary(product: FrontendProduct) {
     `Note ingredients: ${product.notes.join(" / ") || "none"}`,
     `Scent profiles: ${product.scentProfiles.join(" / ") || "none"}`,
     `Scent accords: ${product.scentAccords.join(" / ") || "none"}`,
+    `Scent concepts: ${product.scentConcepts.join(" / ") || "none"}`,
     `Note families: ${product.noteFamilies.join(" / ") || "none"}`,
     `Subtitle notes: ${subtitleNotes(product).join(" / ") || "none"}`,
     `Sizes: ${product.sizes.join(" / ") || "none"}`,

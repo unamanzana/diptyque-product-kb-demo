@@ -7,13 +7,13 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DESKTOP_ROOT = REPO_ROOT.parent
+DATA_PIPELINE_ROOT = REPO_ROOT / "data-pipeline"
 
-CLEANED_CSV = DESKTOP_ROOT / "diptyque_products_cleaned.csv"
-RAW_CSV = DESKTOP_ROOT / "diptyque_products.csv"
-GRAPH_NODES_CSV = DESKTOP_ROOT / "diptyque_graph_nodes.csv"
-GRAPH_EDGES_CSV = DESKTOP_ROOT / "diptyque_graph_edges.csv"
-RECOMMENDATION_RULES_CSV = DESKTOP_ROOT / "diptyque_recommendation_rules.csv"
+CLEANED_CSV = DATA_PIPELINE_ROOT / "diptyque_products_cleaned.csv"
+RAW_CSV = DATA_PIPELINE_ROOT / "diptyque_products.csv"
+GRAPH_NODES_CSV = DATA_PIPELINE_ROOT / "diptyque_graph_nodes.csv"
+GRAPH_EDGES_CSV = DATA_PIPELINE_ROOT / "diptyque_graph_edges.csv"
+RECOMMENDATION_RULES_CSV = DATA_PIPELINE_ROOT / "diptyque_recommendation_rules.csv"
 OUTPUT_JSON = REPO_ROOT / "src" / "data" / "diptyque-frontend-data.json"
 
 
@@ -71,6 +71,7 @@ def main() -> None:
         notes: list[str] = []
         scent_profiles: list[str] = []
         scent_accords: list[str] = []
+        scent_concepts: list[str] = []
         note_families: list[str] = []
         materials: list[str] = []
         marketing_tags: list[str] = []
@@ -104,6 +105,7 @@ def main() -> None:
             notes.extend(split_multi(row.get("note_tokens") or ""))
             scent_profiles.extend(split_multi(row.get("scent_profiles") or ""))
             scent_accords.extend(split_multi(row.get("scent_accords") or ""))
+            scent_concepts.extend(split_multi(row.get("scent_concepts") or ""))
             note_families.extend(split_multi(row.get("note_families") or ""))
             materials.extend(split_multi(row.get("material_or_craft") or ""))
             marketing_tags.extend(split_multi(row.get("marketing_tags") or ""))
@@ -148,6 +150,7 @@ def main() -> None:
                 "notes": uniq_keep_order(notes),
                 "scentProfiles": uniq_keep_order(scent_profiles),
                 "scentAccords": uniq_keep_order(scent_accords),
+                "scentConcepts": uniq_keep_order(scent_concepts),
                 "noteFamilies": uniq_keep_order(note_families),
                 "materials": uniq_keep_order(materials),
                 "marketingTags": uniq_keep_order(marketing_tags),

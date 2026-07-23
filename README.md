@@ -193,3 +193,18 @@ Start Command: npm start
 ```
 
 Add `DEEPSEEK_API_KEY`, `DEEPSEEK_MODEL`, and `DEEPSEEK_BASE_URL` in the Render Environment settings. The API key must remain a server-side secret.
+
+## Diptyque Data Pipeline
+
+The raw product export, ontology scripts, reviewed relationship inputs, and
+rebuild orchestration are versioned in `data-pipeline/`.
+
+Run the full deterministic rebuild from the repository root:
+
+```powershell
+npm run data:rebuild
+```
+
+This regenerates the cleaned product table, graph CSVs, scent-concept audit,
+and `src/data/diptyque-frontend-data.json`. The command fails when the scent
+audit finds a missing or extra concept-to-product edge.

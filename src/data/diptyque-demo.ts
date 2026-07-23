@@ -123,6 +123,7 @@ type FrontendProduct = {
   notes: string[];
   scentProfiles: string[];
   scentAccords: string[];
+  scentConcepts: string[];
   noteFamilies: string[];
   otherTokens: string[];
   priceMax: number | null;
@@ -254,6 +255,7 @@ const filterableNodeTypes = new Set([
   "NoteIngredient",
   "ScentProfile",
   "ScentAccord",
+  "ScentConcept",
   "MarketingTag",
   "MaterialOrCraft",
   "VariantTag",
@@ -272,6 +274,8 @@ const edgeLabelMap: Record<string, string> = {
   HAS_NOTE: "香材",
   HAS_SCENT_PROFILE: "气味类型",
   HAS_SCENT_ACCORD: "复合香调",
+  HAS_SCENT_CONCEPT: "具体香味",
+  HAS_SCENT_EXPRESSION: "香味依据",
   HAS_NOTE_FAMILY: "香调家族",
   IN_COLLECTION: "系列维度",
   REFILL_FOR: "\u8865\u5145\u9002\u7528\u4e8e",
@@ -297,6 +301,7 @@ const nodeColorMap: Record<string, string> = {
   NoteIngredient: "#4a7896",
   ScentProfile: "#6d8294",
   ScentAccord: "#7b6f93",
+  ScentConcept: "#356f67",
   NoteFamily: "#2f7d78",
   OntologyDomain: "#2f6672",
   MaterialOrCraft: "#8e7b3e",
@@ -402,6 +407,7 @@ function badgeList(product: FrontendProduct) {
     ...product.notes,
     ...product.scentProfiles,
     ...product.scentAccords,
+    ...product.scentConcepts,
     ...product.marketingTags,
     ...product.variantTags,
   ]).filter(Boolean).slice(0, 5);
@@ -423,6 +429,7 @@ function productKeywords(product: FrontendProduct) {
     ...product.notes,
     ...product.scentProfiles,
     ...product.scentAccords,
+    ...product.scentConcepts,
     ...product.marketingTags,
     ...product.variantTags,
     ...product.sizes,
@@ -509,10 +516,11 @@ function matchHierarchyNodeIdByQuery(query: string) {
     .sort((a, b) => (b.score - a.score) || a.id.localeCompare(b.id, "zh-CN"))[0]?.id;
 }
 
-const semanticCollisionTypes = new Set(["CollectionOrScent", "NoteIngredient", "ScentProfile", "ScentAccord"]);
+const semanticCollisionTypes = new Set(["CollectionOrScent", "NoteIngredient", "ScentProfile", "ScentAccord", "ScentConcept"]);
 
 function preferredFilterNodeTypes(query: string) {
   if (/含有|香材|成分/.test(query)) return new Set(["NoteIngredient"]);
+  if (/(?:味|香调).*(?:产品|商品|香水)/.test(query)) return new Set(["ScentConcept"]);
   if (/气味类型|香调类型|调性/.test(query)) return new Set(["ScentProfile", "ScentAccord"]);
   if (/系列|香型/.test(query)) return new Set(["CollectionOrScent"]);
   if (/材质|工艺/.test(query)) return new Set(["MaterialOrCraft"]);
@@ -523,6 +531,8 @@ function semanticRoleLabel(nodeType: string) {
   switch (nodeType) {
     case "CollectionOrScent":
       return "系列/香型";
+    case "ScentConcept":
+      return "香味概念";
     case "NoteIngredient":
       return "具体香材";
     case "ScentProfile":
@@ -605,6 +615,8 @@ function connectedProductsForNode(node: FrontendGraphNode) {
       return sortProducts(products.filter((product) => product.productForm === node.name));
     case "CollectionOrScent":
       return sortProducts(products.filter((product) => product.collections.includes(node.name)));
+    case "ScentConcept":
+      return sortProducts(products.filter((product) => product.scentConcepts.includes(node.name)));
     case "NoteIngredient":
       return sortProducts(products.filter((product) => product.notes.includes(node.name)));
     case "ScentProfile":
@@ -936,6 +948,7 @@ export function resolveDiptyqueResponse(input: string): ResponseEntry {
     const roles = uniq(nodes.map((node) => semanticRoleLabel(node.nodeType)));
     const suggestions = [
       nodes.some((node) => node.nodeType === "CollectionOrScent") ? `${label}系列有哪些产品？` : "",
+      nodes.some((node) => node.nodeType === "ScentConcept") ? `${label}香味有哪些产品？` : "",
       nodes.some((node) => node.nodeType === "NoteIngredient") ? `哪些产品含有${label}？` : "",
       nodes.some((node) => node.nodeType === "ScentProfile" || node.nodeType === "ScentAccord") ? `${label}气味类型有哪些产品？` : "",
     ].filter(Boolean);
@@ -1003,6 +1016,7 @@ function buildNodeSuggestions(node: FrontendGraphNode, linkedProducts: FrontendP
     node.nodeType === "CollectionOrScent" ? `${node.name} 系列还有哪些品型？` : "",
     node.nodeType === "MarketingTag" ? `还有哪些 ${node.name} 商品？` : "",
     node.nodeType === "NoteFamily" ? `${node.name}包含哪些下级气味节点？` : "",
+    node.nodeType === "ScentConcept" ? `${node.name}香味有哪些产品？` : "",
     node.nodeType === "NoteIngredient" ? `哪些产品含有${node.name}？` : "",
     node.nodeType === "ScentProfile" || node.nodeType === "ScentAccord" ? `${node.name}有哪些产品？` : "",
     lead ? `${lead.name} 多少钱？` : "",
@@ -1028,6 +1042,8 @@ function buildNodeAnswer(node: FrontendGraphNode, linkedProducts: FrontendProduc
       return `${node.name} 当前关联 ${count} 个产品，主要分布在 ${topFamilies.join("、") || "待补充"} 下。代表产品有 ${sampleNames || "待补充"}。`;
     case "CollectionOrScent":
       return `${node.name} 当前在图谱中连到 ${count} 个产品，覆盖的品型主要有 ${topForms.join("、") || "待补充"}。如果你想继续看系列延展，可以从代表产品 ${sampleNames || node.name} 开始。`;
+    case "ScentConcept":
+      return `${node.name} 是归一后的香味概念，汇总结构化系列、香材与复合香调证据，当前完整关联 ${count} 个产品。覆盖品型主要有 ${topForms.join("、") || "待补充"}，代表产品有 ${sampleNames || "待补充"}。`;
     case "NoteIngredient":
       return `${node.name} 当前作为具体香材关联 ${count} 个产品，依据来自原始商品的香气描述。覆盖品型主要有 ${topForms.join("、") || "待补充"}，代表产品有 ${sampleNames || "待补充"}。`;
     case "ScentProfile":
@@ -1281,6 +1297,7 @@ function nodeRadius(nodeType: string) {
     case "ProductForm":
       return 10;
     case "CollectionOrScent":
+    case "ScentConcept":
       return 9;
     case "NoteFamily":
       return 10;
@@ -1313,7 +1330,7 @@ function makeNode(id: string, positions: Map<string, { x: number; y: number }>, 
     id: source.id,
     label: source.displayLabel || source.name,
     nodeType: source.nodeType,
-    persistent: ["Product", "CoreFamily", "ProductForm", "CollectionOrScent", "OntologyDomain", "NoteFamily"].includes(source.nodeType),
+    persistent: ["Product", "CoreFamily", "ProductForm", "CollectionOrScent", "ScentConcept", "OntologyDomain", "NoteFamily"].includes(source.nodeType),
     r: id === focusId ? nodeRadius(source.nodeType) + 1.8 : nodeRadius(source.nodeType),
     x: position.x,
     y: position.y,
@@ -1420,7 +1437,7 @@ function buildProductFocusGraph(focusId: string, filterNodeIds: string[] = []): 
   });
   const topIds = neighborIds.filter((id) => {
     const node = nodeById.get(id);
-    return !filterPathSet.has(id) && ["CollectionOrScent", "MaterialOrCraft", "NoteIngredient", "ScentProfile", "ScentAccord"].includes(node?.nodeType ?? "");
+    return !filterPathSet.has(id) && ["CollectionOrScent", "ScentConcept", "MaterialOrCraft", "NoteIngredient", "ScentProfile", "ScentAccord"].includes(node?.nodeType ?? "");
   });
   const rightIds = neighborIds.filter((id) => {
     const node = nodeById.get(id);
@@ -1461,7 +1478,7 @@ function buildProductFocusGraph(focusId: string, filterNodeIds: string[] = []): 
   };
 }
 
-const hierarchyAncestorTypes = new Set(["CoreFamily", "OntologyDomain", "NoteFamily", "ProductForm"]);
+const hierarchyAncestorTypes = new Set(["CoreFamily", "OntologyDomain", "NoteFamily", "ScentConcept", "ProductForm"]);
 
 function hierarchyAncestorIdsFor(nodeIds: string[]) {
   const result: string[] = [];
@@ -1533,11 +1550,13 @@ function buildNeighborhoodGraph(focusId: string): GraphDataset {
 
   const directIds = directNeighborIds(focusId);
   if (focusNode.nodeType === "OntologyDomain") {
-    const childIds = (edgesBySource.get(focusId) ?? []).map((edge) => edge.target);
+    const allChildIds = (edgesBySource.get(focusId) ?? []).map((edge) => edge.target);
+    const conceptChildIds = allChildIds.filter((id) => nodeById.get(id)?.nodeType === "ScentConcept");
+    const childIds = conceptChildIds.length ? conceptChildIds : allChildIds;
     const leafIds = uniq(
       childIds.flatMap((childId) =>
         (edgesBySource.get(childId) ?? [])
-          .filter((edge) => ["NoteIngredient", "ScentProfile", "ScentAccord"].includes(edge.targetType))
+          .filter((edge) => ["ScentConcept"].includes(edge.targetType))
           .slice(0, 2)
           .map((edge) => edge.target)
       )
@@ -1568,7 +1587,9 @@ function buildNeighborhoodGraph(focusId: string): GraphDataset {
     const parentIds = (edgesByTarget.get(focusId) ?? [])
       .filter((edge) => edge.sourceType === "OntologyDomain")
       .map((edge) => edge.source);
-    const childIds = (edgesBySource.get(focusId) ?? []).map((edge) => edge.target);
+    const allChildIds = (edgesBySource.get(focusId) ?? []).map((edge) => edge.target);
+    const conceptChildIds = allChildIds.filter((id) => nodeById.get(id)?.nodeType === "ScentConcept");
+    const childIds = conceptChildIds.length ? conceptChildIds : allChildIds;
     const productLeafIds = uniq(
       childIds.flatMap((childId) =>
         (edgesBySource.get(childId) ?? [])
@@ -1623,7 +1644,7 @@ function buildNeighborhoodGraph(focusId: string): GraphDataset {
   });
   const topIds = semanticIds.filter((id) => {
     const nodeType = nodeById.get(id)?.nodeType;
-    return ["CollectionOrScent", "MaterialOrCraft", "NoteIngredient", "ScentProfile", "ScentAccord", "NoteFamily"].includes(nodeType ?? "");
+    return ["CollectionOrScent", "ScentConcept", "MaterialOrCraft", "NoteIngredient", "ScentProfile", "ScentAccord", "NoteFamily"].includes(nodeType ?? "");
   });
   const rightIds = semanticIds.filter((id) => {
     const nodeType = nodeById.get(id)?.nodeType;
@@ -1735,6 +1756,7 @@ export const legendItems = [
   { color: nodeColorMap.CoreFamily, label: "商品大类" },
   { color: nodeColorMap.OntologyDomain, label: "香调入口" },
   { color: nodeColorMap.NoteFamily, label: "香调家族" },
+  { color: nodeColorMap.ScentConcept, label: "具体香味" },
   { color: nodeColorMap.ProductForm, label: "具体品型" },
   { color: nodeColorMap.CollectionOrScent, label: "系列/香型" },
   { color: nodeColorMap.MaterialOrCraft, label: "材质/工艺" },

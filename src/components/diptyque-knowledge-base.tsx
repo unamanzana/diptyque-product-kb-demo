@@ -289,7 +289,7 @@ export function DiptyqueKnowledgeBase() {
 
     const explicitCoreTypes = ["CoreFamily", "OntologyDomain", "ProductForm", "NoteFamily"];
     if (graphDataset.modeLabel.endsWith("本体")) {
-      explicitCoreTypes.push("NoteIngredient", "ScentProfile", "ScentAccord");
+      explicitCoreTypes.push("ScentConcept", "NoteIngredient", "ScentProfile", "ScentAccord");
     }
     renderNodes
       .filter((node) => explicitCoreTypes.includes(node.nodeType))
@@ -685,7 +685,7 @@ export function DiptyqueKnowledgeBase() {
             )
           );
           applyGraphMode({
-            filterNodeIds: [],
+            filterNodeIds: response.filterNodeIds ?? [],
             focusEdgeIds: response.focusEdgeIds ?? [],
             focusLabel: response.focusNodeLabel ?? null,
           });
@@ -720,7 +720,7 @@ export function DiptyqueKnowledgeBase() {
                 answer: data.answer.trim(),
                 card: undefined,
                 focusEdgeIds: [],
-                focusNodeLabel: "domain:香调",
+                focusNodeLabel: localResponse.focusNodeLabel ?? "domain:香调",
               }
             : { ...localResponse, answer: data.answer.trim() };
           responseNote = data.answerSource === "ontology_full_list"
