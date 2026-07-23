@@ -16,7 +16,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "missing_message" }, { status: 400 });
     }
 
-    const { matchedProducts, contextText } = buildDiptyqueContext(message);
+    const { answerMode, deterministicAnswer, matchedProducts, contextText } = buildDiptyqueContext(message);
+    if (deterministicAnswer) {
+      return NextResponse.json({
+        answer: deterministicAnswer,
+        answerMode,
+        answerSource: "ontology_full_list",
+        fallback: false,
+        matchedProductNames: matchedProducts.map((product) => product.name),
+        model: "ontology",
+        reasoningUsed: false,
+      });
+    }
     const result = await generateDiptyqueAnswer({
       contextText,
       message,
@@ -24,9 +35,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       answer: result.answer,
+      answerMode,
+      answerSource: result.fallback ? "local_fallback" : "deepseek",
       fallback: result.fallback,
       matchedProductNames: matchedProducts.map((product) => product.name),
       model: result.model,
+      reasoningUsed: result.reasoningUsed,
       reason: "reason" in result ? result.reason : undefined,
     });
   } catch (error) {

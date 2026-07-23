@@ -1,4 +1,4 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
@@ -154,7 +154,7 @@
 .chat-msg.bot .chat-bubble { background: transparent; border-color: transparent; padding: 0; border-radius: 0; }
 .chat-msg.user .chat-bubble { background: var(--muji-dark); color: #ffffff; border-color: transparent; padding: 12px 16px; }
 .thinking-bubble { color: var(--muji-gray); }
-.answer-text { font-size: 14px; line-height: 1.65; }
+.answer-text { font-size: 14px; line-height: 1.65; white-space: pre-line; }
 .message-note { margin-top: 2px; color: #aaaaaa; font-size: 12px; }
 .product-card { width: min(100%, 487px); border: 1px solid var(--muji-light-gray); border-radius: 16px; background: rgba(245, 240, 232, 0.5); padding: 14px; }
 .product-card-header { display: flex; gap: 12px; align-items: flex-start; }

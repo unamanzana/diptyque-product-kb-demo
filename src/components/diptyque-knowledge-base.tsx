@@ -642,13 +642,14 @@ export function DiptyqueKnowledgeBase() {
     const localResponse = resolveDiptyqueResponse(question);
     const messageId = makeId("bot");
 
-    function streamResponse(response: ResponseEntry) {
+    function streamResponse(response: ResponseEntry, note?: string) {
       setMessages((current) => [
         ...current,
         {
           card: response.card,
           confidence: response.confidence,
           id: messageId,
+          note,
           role: "bot",
           text: "",
         },
@@ -676,6 +677,7 @@ export function DiptyqueKnowledgeBase() {
                     ...message,
                     card: response.card,
                     confidence: response.confidence,
+                    note,
                     suggestions: response.suggestions ?? defaultSuggestions,
                     text: response.answer,
                   }
@@ -694,6 +696,7 @@ export function DiptyqueKnowledgeBase() {
 
     async function answerQuestion() {
       let response = localResponse;
+      let responseNote: string | undefined;
       try {
         const apiResponse = await fetch("/api/chat", {
           method: "POST",
@@ -704,15 +707,32 @@ export function DiptyqueKnowledgeBase() {
         if (!apiResponse.ok) throw new Error(`chat_http_${apiResponse.status}`);
         const data = (await apiResponse.json()) as {
           answer?: string;
+          answerSource?: string;
+          matchedProductNames?: string[];
+          model?: string;
+          reasoningUsed?: boolean;
           fallback?: boolean;
         };
         if (!data.fallback && data.answer?.trim()) {
-          response = { ...localResponse, answer: data.answer.trim() };
+          response = data.answerSource === "ontology_full_list"
+            ? {
+                ...localResponse,
+                answer: data.answer.trim(),
+                card: undefined,
+                focusEdgeIds: [],
+                focusNodeLabel: "domain:香调",
+              }
+            : { ...localResponse, answer: data.answer.trim() };
+          responseNote = data.answerSource === "ontology_full_list"
+            ? `本体全量检索 · ${data.matchedProductNames?.length ?? 0}款`
+            : data.reasoningUsed
+              ? `${data.model ?? "DeepSeek"} · 深度思考`
+              : data.model;
         }
       } catch (error) {
         if (error instanceof Error && error.name === "AbortError") return;
       }
-      if (!cancelled) streamResponse(response);
+      if (!cancelled) streamResponse(response, responseNote);
     }
 
     void answerQuestion();

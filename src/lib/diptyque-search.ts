@@ -15,10 +15,14 @@ type FrontendProduct = {
   identityName: string;
   marketingTags: string[];
   materials: string[];
+  noteFamilies: string[];
+  notes: string[];
   name: string;
   priceMax: number | null;
   priceMin: number | null;
   productForm: string;
+  scentAccords: string[];
+  scentProfiles: string[];
   skuCount: number;
   skus: FrontendSku[];
   sizes: string[];
@@ -137,6 +141,10 @@ function productTerms(product: FrontendProduct) {
     ...product.variantTags,
     ...product.sizes,
     ...product.materials,
+    ...product.notes,
+    ...product.scentProfiles,
+    ...product.scentAccords,
+    ...product.noteFamilies,
     ...subtitleNotes(product),
   ]);
 }
@@ -184,6 +192,83 @@ function sortProducts(query: string) {
     .slice(0, 12);
 }
 
+function extractScentListTerm(query: string) {
+  if (!/(?:产品|商品|香水).*(?:哪些|有什么|有哪|包括)|(?:哪些|有什么|有哪).*(?:产品|商品|香水)/.test(query)) {
+    return "";
+  }
+  const match = query.match(/([\u4e00-\u9fffA-Za-z0-9]{1,16}?)(味|香调)(?:的)?(?:产品|商品|香水)/);
+  if (!match) return "";
+  const term = match[1].replace(/^(?:请问|我想找|我喜欢|想找|想要|有哪些|哪些|有什么|有哪|有)/, "");
+  if (/^(?:什么|哪些|哪种|所有)$/.test(term)) return "";
+  return match[2] === "香调" && /^(?:花|果|辛)$/.test(term) ? `${term}香` : term;
+}
+
+const SCENT_FAMILY_CANONICAL: Record<string, string> = {
+  花香调: "花香",
+  木质香调: "木质",
+  果香调: "果香",
+  辛香调: "辛香",
+  草本香调: "草本",
+  海洋香调: "海洋",
+};
+
+function normalizeScentTerm(term: string) {
+  const trimmed = term.trim();
+  return normalizeText(SCENT_FAMILY_CANONICAL[trimmed] ?? trimmed.replace(/香调$/, ""));
+}
+function normalizedScentTerms(product: FrontendProduct) {
+  return uniq([
+    ...product.collections,
+    ...product.notes,
+    ...product.scentProfiles,
+    ...product.scentAccords,
+    ...product.noteFamilies,
+    ...subtitleNotes(product),
+  ]).map(normalizeScentTerm);
+}
+
+function scentCatalogProducts(term: string) {
+  const normalizedTerm = normalizeScentTerm(term);
+  const seenNames = new Set<string>();
+  return products
+    .filter((product) =>
+      normalizedScentTerms(product).some(
+        (productTerm) => productTerm.includes(normalizedTerm) || normalizedTerm.includes(productTerm)
+      )
+    )
+    .sort(
+      (a, b) =>
+        a.coreFamily.localeCompare(b.coreFamily, "zh-CN") ||
+        a.productForm.localeCompare(b.productForm, "zh-CN") ||
+        a.name.localeCompare(b.name, "zh-CN")
+    )
+    .filter((product) => {
+      if (seenNames.has(product.name)) return false;
+      seenNames.add(product.name);
+      return true;
+    });
+}
+
+function isGiftRecommendationQuery(query: string) {
+  return /送礼|礼物|礼品|男朋友|女朋友|男友|女友|伴侣|生日|纪念日/.test(query);
+}
+
+function giftRecommendationProducts() {
+  const preferredForms = new Set(["淡香水", "淡香精", "香膏", "淡香水礼盒", "礼盒"]);
+  return products
+    .filter(
+      (product) =>
+        product.coreFamily === "个人香氛" &&
+        !product.variantTags.includes("补充装") &&
+        preferredForms.has(product.productForm)
+    )
+    .sort(
+      (a, b) =>
+        Number(b.marketingTags.includes("臻选礼赠")) - Number(a.marketingTags.includes("臻选礼赠")) ||
+        a.productForm.localeCompare(b.productForm, "zh-CN") ||
+        a.name.localeCompare(b.name, "zh-CN")
+    );
+}
 function productPrice(product: FrontendProduct) {
   if (product.priceMin == null && product.priceMax == null) return "price unavailable";
   if (product.priceMin != null && product.priceMax != null && product.priceMin !== product.priceMax) {
@@ -201,6 +286,10 @@ function productSummary(product: FrontendProduct) {
     `Marketing tags: ${product.marketingTags.join(" / ") || "none"}`,
     `Variant tags: ${product.variantTags.join(" / ") || "none"}`,
     `Material or craft: ${product.materials.join(" / ") || "none"}`,
+    `Note ingredients: ${product.notes.join(" / ") || "none"}`,
+    `Scent profiles: ${product.scentProfiles.join(" / ") || "none"}`,
+    `Scent accords: ${product.scentAccords.join(" / ") || "none"}`,
+    `Note families: ${product.noteFamilies.join(" / ") || "none"}`,
     `Subtitle notes: ${subtitleNotes(product).join(" / ") || "none"}`,
     `Sizes: ${product.sizes.join(" / ") || "none"}`,
     `Price: ${productPrice(product)}`,
@@ -232,9 +321,39 @@ function relationSummary(edge: FrontendGraphEdge) {
   ].join("\n");
 }
 
+function formatCompleteCatalogAnswer(term: string, matchedProducts: FrontendProduct[]) {
+  const grouped = new Map<string, Map<string, FrontendProduct[]>>();
+  matchedProducts.forEach((product) => {
+    const family = grouped.get(product.coreFamily) ?? new Map<string, FrontendProduct[]>();
+    const form = family.get(product.productForm) ?? [];
+    form.push(product);
+    family.set(product.productForm, form);
+    grouped.set(product.coreFamily, family);
+  });
+  const lines = Array.from(grouped.entries()).flatMap(([familyName, forms]) => {
+    const familyCount = Array.from(forms.values()).reduce((sum, formProducts) => sum + formProducts.length, 0);
+    return [
+      `${familyName}（${familyCount}款）`,
+      ...Array.from(forms.entries()).map(
+        ([formName, formProducts]) =>
+          `- ${formName}（${formProducts.length}款）：${formProducts.map((product) => product.name).join("、")}`
+      ),
+    ];
+  });
+  return `${term}相关产品共${matchedProducts.length}款，按商品家族和品型完整列出：\n${lines.join("\n")}`;
+}
 export function buildDiptyqueContext(query: string) {
-  const ranked = sortProducts(query);
-  const matchedProducts = ranked.map((item) => item.product);
+  const scentListTerm = extractScentListTerm(query);
+  const answerMode = scentListTerm
+    ? "ontology_catalog_list"
+    : isGiftRecommendationQuery(query)
+      ? "gift_recommendation"
+      : "knowledge_search";
+  const matchedProducts = scentListTerm
+    ? scentCatalogProducts(scentListTerm)
+    : answerMode === "gift_recommendation"
+      ? giftRecommendationProducts()
+      : sortProducts(query).map((item) => item.product);
   const primaryProductIds = new Set(matchedProducts.slice(0, 3).map((product) => product.id));
   const matchedRelations = approvedProductRelations.filter(
     (edge) => primaryProductIds.has(edge.source) || primaryProductIds.has(edge.target)
@@ -246,6 +365,8 @@ export function buildDiptyqueContext(query: string) {
     ? matchedRelations.map((edge, index) => `Approved relation ${index + 1}\n${relationSummary(edge)}`).join("\n\n")
     : "No approved direct product relation was found for the primary matched products.";
   const contextText = [
+    `RETRIEVAL MODE: ${answerMode}`,
+    `RETRIEVED PRODUCT COUNT: ${matchedProducts.length}`,
     "PRODUCT FACTS AND RETRIEVAL CANDIDATES",
     productContext,
     "APPROVED DIRECT PRODUCT RELATIONS",
@@ -253,6 +374,11 @@ export function buildDiptyqueContext(query: string) {
   ].join("\n\n");
 
   return {
+    answerMode,
+    deterministicAnswer:
+      answerMode === "ontology_catalog_list"
+        ? formatCompleteCatalogAnswer(scentListTerm, matchedProducts)
+        : "",
     matchedProducts,
     contextText,
   };
