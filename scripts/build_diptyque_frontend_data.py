@@ -13,6 +13,7 @@ CLEANED_CSV = DESKTOP_ROOT / "diptyque_products_cleaned.csv"
 RAW_CSV = DESKTOP_ROOT / "diptyque_products.csv"
 GRAPH_NODES_CSV = DESKTOP_ROOT / "diptyque_graph_nodes.csv"
 GRAPH_EDGES_CSV = DESKTOP_ROOT / "diptyque_graph_edges.csv"
+RECOMMENDATION_RULES_CSV = DESKTOP_ROOT / "diptyque_recommendation_rules.csv"
 OUTPUT_JSON = REPO_ROOT / "src" / "data" / "diptyque-frontend-data.json"
 
 
@@ -50,21 +51,27 @@ def main() -> None:
     raw_rows = read_csv(RAW_CSV)
     graph_nodes = read_csv(GRAPH_NODES_CSV)
     graph_edges = read_csv(GRAPH_EDGES_CSV)
+    recommendation_rule_rows = read_csv(RECOMMENDATION_RULES_CSV) if RECOMMENDATION_RULES_CSV.exists() else []
 
     raw_by_sku = {(row.get("sku") or "").strip(): row for row in raw_rows if (row.get("sku") or "").strip()}
     product_groups: dict[str, list[dict[str, str]]] = defaultdict(list)
     for row in cleaned_rows:
-        product_groups[(row.get("spu") or "").strip()].append(row)
+        product_groups[(row.get("product_key") or "").strip()].append(row)
 
     products: list[dict[str, object]] = []
 
-    for spu, group in sorted(product_groups.items(), key=lambda item: item[0]):
-        first = group[0]
+    for product_key, group in sorted(product_groups.items(), key=lambda item: item[0]):
+        first = max(group, key=lambda row: (len((row.get("product_name") or "").strip()), (row.get("product_name") or "").strip()))
+        spu = (first.get("spu") or "").strip()
         sku_items: list[dict[str, object]] = []
         sizes: list[str] = []
         prices: list[int] = []
         stocks: list[int] = []
         collections: list[str] = []
+        notes: list[str] = []
+        scent_profiles: list[str] = []
+        scent_accords: list[str] = []
+        note_families: list[str] = []
         materials: list[str] = []
         marketing_tags: list[str] = []
         variant_tags: list[str] = []
@@ -94,6 +101,10 @@ def main() -> None:
                 stocks.append(stock)
 
             collections.extend(split_multi(row.get("collection_or_scent") or ""))
+            notes.extend(split_multi(row.get("note_tokens") or ""))
+            scent_profiles.extend(split_multi(row.get("scent_profiles") or ""))
+            scent_accords.extend(split_multi(row.get("scent_accords") or ""))
+            note_families.extend(split_multi(row.get("note_families") or ""))
             materials.extend(split_multi(row.get("material_or_craft") or ""))
             marketing_tags.extend(split_multi(row.get("marketing_tags") or ""))
             variant_tags.extend(split_multi(row.get("variant_tags") or ""))
@@ -125,15 +136,19 @@ def main() -> None:
 
         products.append(
             {
-                "id": f"product:{spu}",
+                "id": f"product:{product_key}",
                 "name": (first.get("product_name") or "").strip(),
-                "identityName": (first.get("identity_name") or "").strip(),
+                "identityName": next(((row.get("identity_name") or "").strip() for row in group if (row.get("identity_name") or "").strip()), ""),
                 "spu": spu,
                 "coreFamily": (first.get("core_family") or "").strip(),
                 "productForm": (first.get("product_form") or "").strip(),
-                "typeRaw": (first.get("type_raw") or "").strip(),
-                "typeDerived": (first.get("type_derived") or "").strip(),
+                "typeRaw": next(((row.get("type_raw") or "").strip() for row in group if (row.get("type_raw") or "").strip()), ""),
+                "typeDerived": next(((row.get("type_derived") or "").strip() for row in group if (row.get("type_derived") or "").strip()), ""),
                 "collections": uniq_keep_order(collections),
+                "notes": uniq_keep_order(notes),
+                "scentProfiles": uniq_keep_order(scent_profiles),
+                "scentAccords": uniq_keep_order(scent_accords),
+                "noteFamilies": uniq_keep_order(note_families),
                 "materials": uniq_keep_order(materials),
                 "marketingTags": uniq_keep_order(marketing_tags),
                 "variantTags": uniq_keep_order(variant_tags),
@@ -193,11 +208,41 @@ def main() -> None:
                 "sourceName": row["source_name"],
                 "targetName": row["target_name"],
                 "viaField": row["via_field"],
+                "relationLayer": row.get("relation_layer", ""),
+                "evidenceType": row.get("evidence_type", ""),
+                "evidenceText": row.get("evidence_text", ""),
+                "evidenceUrl": row.get("evidence_url", ""),
+                "confidence": row.get("confidence", ""),
+                "reviewStatus": row.get("review_status", ""),
+                "scenario": row.get("scenario", ""),
             }
         )
 
+    recommendation_rules = [
+        {
+            "ruleId": row["rule_id"],
+            "sourceProductId": f"product:{row['source_product_key']}",
+            "sourceProductName": row["source_product_name"],
+            "relationType": row["relation_type"],
+            "targetCollection": row["target_collection"],
+            "targetCoreFamily": row["target_core_family"],
+            "targetProductForms": split_multi(row["target_product_forms"]),
+            "evidenceType": row["evidence_type"],
+            "evidenceField": row["evidence_field"],
+            "evidenceText": row["evidence_text"],
+            "evidenceUrl": row["evidence_url"],
+            "confidence": row["confidence"],
+            "reviewStatus": row["review_status"],
+            "decisionReason": row["decision_reason"],
+            "notes": row["notes"],
+        }
+        for row in recommendation_rule_rows
+        if row.get("review_status") == "approved"
+    ]
+
     payload = {
         "products": products,
+        "recommendationRules": recommendation_rules,
         "graph": {
             "nodes": nodes,
             "edges": edges,
@@ -212,6 +257,7 @@ def main() -> None:
     print(f"Products: {len(products)}")
     print(f"Graph nodes: {len(nodes)}")
     print(f"Graph edges: {len(edges)}")
+    print(f"Recommendation rules: {len(recommendation_rules)}")
 
 
 if __name__ == "__main__":

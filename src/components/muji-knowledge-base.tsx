@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -58,6 +58,10 @@ function lineMidpoint(x1: number, y1: number, x2: number, y2: number, offset = 0
 
 function makeId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function currentTimeMs() {
+  return Date.now();
 }
 
 function ProductAnswerCard({
@@ -412,7 +416,7 @@ export function MujiKnowledgeBase() {
     if (!trimmed || pendingReply || streamingMessageId) return;
 
     setMessages((current) => [...current, { id: makeId("user"), role: "user", text: trimmed }]);
-    setPendingReply({ question: trimmed, startedAt: Date.now() });
+    setPendingReply({ question: trimmed, startedAt: currentTimeMs() });
     setInputValue("");
     setThinkingSeconds(0);
     setActiveTab("chat");

@@ -169,3 +169,27 @@ Each script regenerates the platform-specific copies automatically. Agents that 
 ## License
 
 MIT
+
+## DeepSeek Setup
+
+1. Copy `.env.example` to `.env.local`.
+2. Fill in the server-side environment variables:
+
+```env
+DEEPSEEK_API_KEY=your_key_here
+DEEPSEEK_MODEL=deepseek-v4-flash
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+```
+
+Do not commit `.env.local`. If the key is missing or the model request fails, the app falls back to the local graph-based answer logic.
+
+## Render Deployment
+
+Create a Render Web Service from this repository with:
+
+```text
+Build Command: npm ci && npm run build
+Start Command: npm start
+```
+
+Add `DEEPSEEK_API_KEY`, `DEEPSEEK_MODEL`, and `DEEPSEEK_BASE_URL` in the Render Environment settings. The API key must remain a server-side secret.

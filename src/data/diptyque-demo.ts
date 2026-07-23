@@ -2,8 +2,21 @@
 
 export type GraphLine = {
   dashed: boolean;
+  edgeId: string;
+  edgeType: string;
+  label: string;
+  sourceName: string;
   sourceId: string;
+  targetName: string;
   targetId: string;
+  relationLayer: string;
+  evidenceType: string;
+  evidenceText: string;
+  evidenceUrl: string;
+  confidence: string;
+  reviewStatus: string;
+  scenario: string;
+  viaField: string;
   x1: number;
   x2: number;
   y1: number;
@@ -63,6 +76,8 @@ export type ResponseEntry = {
   answer: string;
   card?: ProductCard;
   confidence?: string;
+  filterNodeIds?: string[];
+  focusEdgeIds?: string[];
   focusNodeLabel?: string;
   keywords: string[];
   suggestions?: string[];
@@ -105,6 +120,10 @@ type FrontendProduct = {
   marketingTags: string[];
   materials: string[];
   name: string;
+  notes: string[];
+  scentProfiles: string[];
+  scentAccords: string[];
+  noteFamilies: string[];
   otherTokens: string[];
   priceMax: number | null;
   priceMin: number | null;
@@ -148,6 +167,32 @@ type FrontendGraphEdge = {
   targetName: string;
   targetType: string;
   viaField: string;
+  relationLayer: string;
+  evidenceType: string;
+  evidenceText: string;
+  evidenceUrl: string;
+  confidence: string;
+  reviewStatus: string;
+  scenario: string;
+  displayLabel?: string;
+};
+
+type FrontendRecommendationRule = {
+  ruleId: string;
+  sourceProductId: string;
+  sourceProductName: string;
+  relationType: string;
+  targetCollection: string;
+  targetCoreFamily: string;
+  targetProductForms: string[];
+  evidenceType: string;
+  evidenceField: string;
+  evidenceText: string;
+  evidenceUrl: string;
+  confidence: string;
+  reviewStatus: string;
+  decisionReason: string;
+  notes: string;
 };
 
 type FrontendPayload = {
@@ -156,6 +201,7 @@ type FrontendPayload = {
     nodes: FrontendGraphNode[];
   };
   products: FrontendProduct[];
+  recommendationRules: FrontendRecommendationRule[];
 };
 
 type GraphInteractionResult = {
@@ -168,9 +214,17 @@ const payload = frontendData as FrontendPayload;
 const products = payload.products;
 const graphNodes = payload.graph.nodes;
 const graphEdges = payload.graph.edges;
-
+const recommendationRules = payload.recommendationRules ?? [];
+const approvedProductRelations = graphEdges.filter(
+  (edge) =>
+    edge.sourceType === "Product" &&
+    edge.targetType === "Product" &&
+    edge.reviewStatus === "approved"
+);
 const productById = new Map(products.map((product) => [product.id, product] as const));
-const productBySpu = new Map(products.map((product) => [product.spu, product] as const));
+const productBySku = new Map(
+  products.flatMap((product) => product.skus.map((sku) => [sku.sku, product] as const))
+);
 const nodeById = new Map(graphNodes.map((node) => [node.id, node] as const));
 const edgesBySource = new Map<string, FrontendGraphEdge[]>();
 const edgesByTarget = new Map<string, FrontendGraphEdge[]>();
@@ -185,44 +239,69 @@ for (const edge of graphEdges) {
   edgesByTarget.set(edge.target, targetBucket);
 }
 
+const derivedCompatibilityEdges = buildDerivedCompatibilityEdges();
+const derivedRecommendationEdges = buildDerivedRecommendationEdges();
+
 const VIEWBOX_WIDTH = 640;
 const VIEWBOX_HEIGHT = 596;
 const VIEWBOX_CENTER_X = VIEWBOX_WIDTH / 2;
 const VIEWBOX_CENTER_Y = VIEWBOX_HEIGHT / 2;
-const hiddenEdgeTypes = new Set(["HAS_RAW_TYPE"]);
+const hiddenEdgeTypes = new Set<string>();
 const filterableNodeTypes = new Set([
   "CoreFamily",
   "ProductForm",
   "CollectionOrScent",
+  "NoteIngredient",
+  "ScentProfile",
+  "ScentAccord",
   "MarketingTag",
   "MaterialOrCraft",
   "VariantTag",
-  "DerivedType",
 ]);
 
 const edgeLabelMap: Record<string, string> = {
   BELONGS_TO_FAMILY: "归类",
   FAMILY_MAPS_TO_TYPE: "映射",
   FORM_UNDER_FAMILY: "品型",
-  HAS_DERIVED_TYPE: "类型",
-  HAS_MARKETING_TAG: "标签",
-  HAS_MATERIAL: "材质",
+  HAS_FAMILY: "大类",
   HAS_PRODUCT_FORM: "品型",
-  HAS_RAW_TYPE: "原始",
+  HAS_PRODUCT: "商品",
   HAS_SKU: "SKU",
-  HAS_VARIANT_TAG: "版本",
-  IN_COLLECTION: "系列",
+  HAS_MARKETING_TAG: "标签维度",
+  HAS_MATERIAL: "材质维度",
+  HAS_NOTE: "香材",
+  HAS_SCENT_PROFILE: "气味类型",
+  HAS_SCENT_ACCORD: "复合香调",
+  HAS_NOTE_FAMILY: "香调家族",
+  IN_COLLECTION: "系列维度",
+  REFILL_FOR: "\u8865\u5145\u9002\u7528\u4e8e",
+  ACCESSORY_FOR: "\u9002\u914d",
+  HAS_COMPATIBILITY_SPEC: "\u5546\u54c1\u89c4\u683c",
+  ACCESSORY_FOR_SPEC: "\u9002\u914d\u89c4\u683c",
+  PART_OF_SET: "\u5c5e\u4e8e\u5957\u88c5",
+  SHARES_NOTE: "\u5171\u4eab\u9999\u6750",
+  SAME_COLLECTION: "\u540c\u7cfb\u5217",
+  PAIRS_WITH: "\u642d\u914d",
+  LAYER_WITH: "\u5c42\u53e0\u642d\u914d",
+  EXTENDS_TO_HOME: "\u5ef6\u4f38\u81f3\u5bb6\u5c45",
+  SCENT_RITUAL_WITH: "香气延续",
+  GIFT_WITH: "\u7ec4\u5408\u8d60\u793c",
+  ALTERNATIVE_TO: "\u53ef\u66ff\u4ee3",
 };
 
 const nodeColorMap: Record<string, string> = {
   CollectionOrScent: "#4f6d63",
+  CompatibilitySpec: "#6f846f",
   CoreFamily: "#6d4038",
-  DerivedType: "#6f7c97",
   MarketingTag: "#8660a9",
+  NoteIngredient: "#4a7896",
+  ScentProfile: "#6d8294",
+  ScentAccord: "#7b6f93",
+  NoteFamily: "#2f7d78",
+  OntologyDomain: "#2f6672",
   MaterialOrCraft: "#8e7b3e",
   Product: "#7f0019",
   ProductForm: "#c06346",
-  RawType: "#9a9a9a",
   SKU: "#d2bfa8",
   VariantTag: "#c26f8e",
 };
@@ -320,6 +399,9 @@ function badgeList(product: FrontendProduct) {
     product.coreFamily,
     product.productForm,
     ...product.collections,
+    ...product.notes,
+    ...product.scentProfiles,
+    ...product.scentAccords,
     ...product.marketingTags,
     ...product.variantTags,
   ]).filter(Boolean).slice(0, 5);
@@ -338,6 +420,9 @@ function productKeywords(product: FrontendProduct) {
     product.coreFamily,
     product.productForm,
     ...product.collections,
+    ...product.notes,
+    ...product.scentProfiles,
+    ...product.scentAccords,
     ...product.marketingTags,
     ...product.variantTags,
     ...product.sizes,
@@ -406,6 +491,104 @@ function trailText(nodeIds: string[]) {
   return getFilterTrail(nodeIds).map((item) => item.label).join(" > ");
 }
 
+function matchHierarchyNodeIdByQuery(query: string) {
+  const normalizedQuery = normalizeText(query);
+  const hierarchyTypes = new Set(["OntologyDomain", "NoteFamily"]);
+  return Array.from(nodeById.values())
+    .filter((node) => hierarchyTypes.has(node.nodeType))
+    .map((node) => {
+      const label = node.displayLabel || node.name;
+      const normalizedLabel = normalizeText(label);
+      let score = 0;
+      if (normalizedQuery === normalizedLabel) score = 20;
+      else if (normalizedQuery.includes(normalizedLabel)) score = Math.max(8, normalizedLabel.length);
+      else if (normalizedLabel.includes(normalizedQuery) && normalizedQuery.length >= 2) score = 4;
+      return score > 0 ? { id: node.id, score } : null;
+    })
+    .filter((item): item is { id: string; score: number } => item !== null)
+    .sort((a, b) => (b.score - a.score) || a.id.localeCompare(b.id, "zh-CN"))[0]?.id;
+}
+
+const semanticCollisionTypes = new Set(["CollectionOrScent", "NoteIngredient", "ScentProfile", "ScentAccord"]);
+
+function preferredFilterNodeTypes(query: string) {
+  if (/含有|香材|成分/.test(query)) return new Set(["NoteIngredient"]);
+  if (/气味类型|香调类型|调性/.test(query)) return new Set(["ScentProfile", "ScentAccord"]);
+  if (/系列|香型/.test(query)) return new Set(["CollectionOrScent"]);
+  if (/材质|工艺/.test(query)) return new Set(["MaterialOrCraft"]);
+  return null;
+}
+
+function semanticRoleLabel(nodeType: string) {
+  switch (nodeType) {
+    case "CollectionOrScent":
+      return "系列/香型";
+    case "NoteIngredient":
+      return "具体香材";
+    case "ScentProfile":
+      return "气味类型";
+    case "ScentAccord":
+      return "复合香调";
+    default:
+      return nodeType;
+  }
+}
+
+function findSemanticAmbiguity(query: string) {
+  if (preferredFilterNodeTypes(query)) return null;
+  const normalizedQuery = normalizeText(query);
+  const grouped = new Map<string, FrontendGraphNode[]>();
+  Array.from(nodeById.values())
+    .filter((node) => semanticCollisionTypes.has(node.nodeType))
+    .forEach((node) => {
+      const normalizedLabel = normalizeText(node.displayLabel || node.name);
+      if (normalizedLabel.length < 2 || !normalizedQuery.includes(normalizedLabel)) return;
+      const bucket = grouped.get(normalizedLabel) ?? [];
+      bucket.push(node);
+      grouped.set(normalizedLabel, bucket);
+    });
+
+  return Array.from(grouped.entries())
+    .filter(([, nodes]) => new Set(nodes.map((node) => node.nodeType)).size > 1)
+    .sort((a, b) => b[0].length - a[0].length)[0] ?? null;
+}
+
+function matchFilterNodeIdsByQuery(query: string) {
+  const normalizedQuery = normalizeText(query);
+  const preferredTypes = preferredFilterNodeTypes(query);
+  let candidates = Array.from(nodeById.values())
+    .filter((node) => isFilterableNodeType(node.nodeType))
+    .map((node) => {
+      const label = node.displayLabel || node.name;
+      const normalizedLabel = normalizeText(label);
+      let score = 0;
+      if (!normalizedLabel) return null;
+      if (normalizedQuery === normalizedLabel) score = 20;
+      else if (normalizedQuery.includes(normalizedLabel)) score = Math.max(6, normalizedLabel.length);
+      else if (normalizedLabel.includes(normalizedQuery) && normalizedQuery.length >= 2) score = 3;
+      return score > 0 ? { id: node.id, label: normalizedLabel, nodeType: node.nodeType, score } : null;
+    })
+    .filter((item): item is { id: string; label: string; nodeType: string; score: number } => item !== null);
+
+  if (preferredTypes) {
+    const preferred = candidates.filter((item) => preferredTypes.has(item.nodeType));
+    if (preferred.length) candidates = preferred;
+  }
+
+  candidates = candidates.filter((item) =>
+    !candidates.some((other) =>
+      other.id !== item.id
+      && other.label.length > item.label.length
+      && other.label.includes(item.label)
+      && normalizedQuery.includes(other.label)
+    )
+  );
+
+  return candidates
+    .sort((a, b) => (b.score - a.score) || a.id.localeCompare(b.id, "zh-CN"))
+    .slice(0, 4)
+    .map((item) => item.id);
+}
 function connectedProductsForNode(node: FrontendGraphNode) {
   switch (node.nodeType) {
     case "Product": {
@@ -413,7 +596,7 @@ function connectedProductsForNode(node: FrontendGraphNode) {
       return product ? [product] : [];
     }
     case "SKU": {
-      const product = productBySpu.get(node.spu);
+      const product = productBySku.get(node.sku);
       return product ? [product] : [];
     }
     case "CoreFamily":
@@ -422,16 +605,18 @@ function connectedProductsForNode(node: FrontendGraphNode) {
       return sortProducts(products.filter((product) => product.productForm === node.name));
     case "CollectionOrScent":
       return sortProducts(products.filter((product) => product.collections.includes(node.name)));
+    case "NoteIngredient":
+      return sortProducts(products.filter((product) => product.notes.includes(node.name)));
+    case "ScentProfile":
+      return sortProducts(products.filter((product) => product.scentProfiles.includes(node.name)));
+    case "ScentAccord":
+      return sortProducts(products.filter((product) => product.scentAccords.includes(node.name)));
     case "MarketingTag":
       return sortProducts(products.filter((product) => product.marketingTags.includes(node.name)));
     case "MaterialOrCraft":
       return sortProducts(products.filter((product) => product.materials.includes(node.name)));
     case "VariantTag":
       return sortProducts(products.filter((product) => product.variantTags.includes(node.name)));
-    case "DerivedType":
-      return sortProducts(products.filter((product) => product.typeDerived === node.name));
-    case "RawType":
-      return sortProducts(products.filter((product) => product.typeRaw === node.name));
     default:
       return [];
   }
@@ -470,6 +655,16 @@ function scoreProduct(product: FrontendProduct, query: string) {
     }
   }
 
+  const matchesCollection = product.collections.some((collection) =>
+    normalizedQuery.includes(normalizeText(collection))
+  );
+  const matchesProductForm = product.productForm
+    ? normalizedQuery.includes(normalizeText(product.productForm))
+    : false;
+  if (matchesCollection && matchesProductForm) {
+    score += 10;
+  }
+
   if ((query.includes("送礼") || query.includes("礼赠") || query.includes("礼物")) && product.marketingTags.includes("臻选礼赠")) {
     score += 7;
   }
@@ -496,19 +691,223 @@ function rankedProducts(query: string) {
     .sort((a, b) => (b.score - a.score) || a.product.name.localeCompare(b.product.name, "zh-CN"));
 }
 
+function buildDerivedCompatibilityEdges() {
+  const result: FrontendGraphEdge[] = [];
+  const seen = new Set<string>();
+  const accessorySpecEdges = graphEdges.filter(
+    (edge) => edge.edgeType === "ACCESSORY_FOR_SPEC" && edge.reviewStatus === "approved"
+  );
+
+  accessorySpecEdges.forEach((accessoryEdge) => {
+    const specNode = nodeById.get(accessoryEdge.target);
+    const productSpecEdges = (edgesByTarget.get(accessoryEdge.target) ?? []).filter(
+      (edge) => edge.edgeType === "HAS_COMPATIBILITY_SPEC" && edge.sourceType === "Product"
+    );
+    productSpecEdges.forEach((productSpecEdge) => {
+      if (productSpecEdge.source === accessoryEdge.source) return;
+      const key = accessoryEdge.source + "|" + productSpecEdge.source + "|" + accessoryEdge.target;
+      if (seen.has(key)) return;
+      seen.add(key);
+      result.push({
+        source: accessoryEdge.source,
+        target: productSpecEdge.source,
+        edgeType: "ACCESSORY_FOR",
+        sourceType: "Product",
+        targetType: "Product",
+        sourceName: accessoryEdge.sourceName,
+        targetName: productSpecEdge.sourceName,
+        viaField: accessoryEdge.viaField,
+        relationLayer: "derived_compatibility",
+        evidenceType: accessoryEdge.evidenceType,
+        evidenceText: accessoryEdge.evidenceText,
+        evidenceUrl: accessoryEdge.evidenceUrl,
+        confidence: accessoryEdge.confidence,
+        reviewStatus: "derived_from_approved_spec",
+        scenario: accessoryEdge.scenario,
+        displayLabel: "\u9002\u914d\uff08" + (specNode?.name ?? accessoryEdge.targetName) + "\uff09",
+      });
+    });
+  });
+  return result;
+}
+
+function buildDerivedRecommendationEdges() {
+  const result: FrontendGraphEdge[] = [];
+  const seen = new Set<string>();
+
+  recommendationRules
+    .filter((rule) => rule.reviewStatus === "approved")
+    .forEach((rule) => {
+      const source = productById.get(rule.sourceProductId);
+      if (!source) return;
+      products
+        .filter(
+          (target) =>
+            target.id !== source.id &&
+            !target.variantTags.includes("补充装") &&
+            target.coreFamily === rule.targetCoreFamily &&
+            target.collections.includes(rule.targetCollection) &&
+            rule.targetProductForms.includes(target.productForm)
+        )
+        .forEach((target) => {
+          const key = source.id + "|" + rule.relationType + "|" + target.id;
+          if (seen.has(key)) return;
+          seen.add(key);
+          result.push({
+            source: source.id,
+            target: target.id,
+            edgeType: rule.relationType,
+            sourceType: "Product",
+            targetType: "Product",
+            sourceName: source.name,
+            targetName: target.name,
+            viaField: rule.evidenceField,
+            relationLayer: "recommendation",
+            evidenceType: rule.evidenceType,
+            evidenceText: rule.evidenceText,
+            evidenceUrl: rule.evidenceUrl,
+            confidence: rule.confidence,
+            reviewStatus: "derived_from_approved_rule",
+            scenario: "同系列香气护理仪式",
+            displayLabel: "香气延续（策展规则）",
+          });
+        });
+    });
+  return result;
+}
+
+function relationTypesForQuery(query: string) {
+  if (/叠香|层叠搭配|层叠/.test(query)) return new Set(["LAYER_WITH"]);
+  if (/空间同香|家居同香/.test(query)) return new Set(["EXTENDS_TO_HOME"]);
+  if (/香气延续|护理仪式|用香仪式/.test(query)) return new Set(["SCENT_RITUAL_WITH"]);
+  if (query.includes("补充") || query.includes("适用于")) return new Set(["REFILL_FOR"]);
+  if (query.includes("适配") || query.includes("兼容")) return new Set(["ACCESSORY_FOR", "REFILL_FOR"]);
+  if (query.includes("搭配")) {
+    return new Set(["PAIRS_WITH", "SCENT_RITUAL_WITH", "EXTENDS_TO_HOME", "GIFT_WITH", "ACCESSORY_FOR"]);
+  }
+  return new Set<string>();
+}
+
+function requestedProductForms(text: string) {
+  if (text.includes("淡香水")) return new Set(["淡香水"]);
+  if (text.includes("淡香精")) return new Set(["淡香精"]);
+  if (text.includes("发香喷雾")) return new Set(["发香喷雾"]);
+  if (text.includes("固体香膏") || text.includes("香膏")) return new Set(["香膏"]);
+  if (text.includes("香水")) return new Set(["淡香水", "淡香精"]);
+  return new Set<string>();
+}
+
+function splitRelationQuery(query: string) {
+  const marker = query.match(/搭配什么|(?:可以)?(?:和|与)什么/);
+  if (!marker || marker.index == null) {
+    return { subject: query, target: "" };
+  }
+  return {
+    subject: query.slice(0, marker.index),
+    target: query.slice(marker.index + marker[0].length),
+  };
+}
+
+function cleanRelationSubject(value: string) {
+  return value
+    .replace(/搭配|叠香|层叠|空间同香|家居同香|香气延续|护理仪式|用香仪式|补充关系|对应补充|补充装|补充瓶|适用于|适配|兼容|什么|哪些|哪个|是否|可以|能够|请问|的$/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function resolvePublishedRelationQuery(query: string): ResponseEntry | null {
+  const relationTypes = relationTypesForQuery(query);
+  const availableEdges = [
+    ...approvedProductRelations,
+    ...derivedCompatibilityEdges,
+    ...derivedRecommendationEdges,
+  ].filter((edge) => relationTypes.has(edge.edgeType));
+  if (!availableEdges.length) return null;
+
+  const endpointIds = new Set(availableEdges.flatMap((edge) => [edge.source, edge.target]));
+  const queryParts = splitRelationQuery(query);
+  const subjectQuery = cleanRelationSubject(queryParts.subject);
+  const targetForms = requestedProductForms(queryParts.target);
+  const subjectForms = requestedProductForms(subjectQuery);
+  const isGenericFormSubject = /^(香水|淡香水|淡香精|发香喷雾|固体香膏|香膏)$/.test(subjectQuery);
+  const rankedEndpoints = subjectQuery
+    ? products
+        .filter(
+          (product) =>
+            endpointIds.has(product.id) &&
+            (!isGenericFormSubject || subjectForms.has(product.productForm))
+        )
+        .map((product) => ({
+          product,
+          score: isGenericFormSubject ? 10 : scoreProduct(product, subjectQuery),
+        }))
+        .filter((item) => item.score > 0)
+        .sort((a, b) => (b.score - a.score) || a.product.name.localeCompare(b.product.name, "zh-CN"))
+    : [];
+  const topScore = rankedEndpoints[0]?.score ?? 0;
+  const anchorIds = new Set(
+    rankedEndpoints.filter((item) => item.score >= topScore - 1).map((item) => item.product.id)
+  );
+  const matchingEdges = (anchorIds.size
+    ? availableEdges.filter((edge) => {
+        const sourceIsAnchor = anchorIds.has(edge.source);
+        const targetIsAnchor = anchorIds.has(edge.target);
+        if (!sourceIsAnchor && !targetIsAnchor) return false;
+        if (!targetForms.size) return true;
+        const counterpartId = sourceIsAnchor ? edge.target : edge.source;
+        const counterpart = productById.get(counterpartId);
+        return counterpart != null && targetForms.has(counterpart.productForm);
+      })
+    : availableEdges
+  ).slice(0, 8);
+  if (!matchingEdges.length) return null;
+
+  const relationLines = matchingEdges.map(
+    (edge) => edge.sourceName + " --" + (edgeLabelMap[edge.edgeType] ?? edge.edgeType) + "--> " + edge.targetName
+  );
+  const focusId = rankedEndpoints[0]?.product.id ?? matchingEdges[0].source;
+  const relationSuggestions = relationTypes.has("LAYER_WITH")
+    ? ["影中之水润肤乳可以和什么层叠搭配？", "影中之水洁肤露可以和什么层叠搭配？", "哪些关系有人工审核证据？"]
+    : relationTypes.has("SCENT_RITUAL_WITH")
+      ? ["奥费恩香氛护手霜搭配什么淡香精？", "玫瑰香调护手霜搭配什么淡香水？", "香水和什么搭配？"]
+      : ["杜桑香膏的补充装适用于什么？", "黑色蜡质花瓶 L 和什么搭配？", "有哪些补充装？"];
+  const confidenceValues = matchingEdges
+    .map((edge) => Number.parseFloat(edge.confidence))
+    .filter((value) => Number.isFinite(value));
+  const confidencePercent = confidenceValues.length
+    ? Math.round(Math.min(...confidenceValues) * 100)
+    : 74;
+  const confidenceBand = confidencePercent >= 86 ? "high" : confidencePercent >= 78 ? "medium" : "low";
+  return {
+    answer: "当前有 " + matchingEdges.length + " 条已审核或规则推导关系：\n" + relationLines.join("\n"),
+    confidence: confidencePercent + "% · " + confidenceBand,
+    keywords: uniq(
+      matchingEdges.flatMap((edge) => [
+        edge.sourceName,
+        edgeLabelMap[edge.edgeType] ?? edge.edgeType,
+        edge.targetName,
+      ])
+    ).slice(0, 8),
+    suggestions: relationSuggestions,
+    focusEdgeIds: matchingEdges.map((edge) => edge.source + "|" + edge.edgeType + "|" + edge.target),
+    focusNodeLabel: focusId,
+  };
+}
+
 function detectIntent(query: string) {
   if (query.includes("送礼") || query.includes("礼赠") || query.includes("礼物")) return "送礼推荐";
   if (query.includes("补充装") || query.includes("补充瓶") || query.includes("补充")) return "补充装筛选";
   if (query.includes("价格") || query.includes("多少钱")) return "价格查询";
   if (query.includes("精选") || query.includes("人气") || query.includes("热门")) return "标签筛选";
   if (query.includes("系列")) return "系列浏览";
+  if (query.includes("搭配") || query.includes("叠香") || query.includes("空间同香")) return "商品关系查询";
   if (query.includes("香调") || query.includes("材质")) return "属性查询";
   return "商品检索";
 }
 
 function genericFallback(): ResponseEntry {
   return {
-    answer: "这版 Diptyque 图谱已经接上了核心大类、品型、系列、材质、运营标签和 SKU。你可以直接问系列、送礼、人气精选、补充装，或者输入具体产品名。",
+    answer: "这版 Diptyque 图谱区分事实关系、兼容关系和推荐关系。商品分类、系列、香材与 SKU 来自原始数据；搭配和香气延续仅在存在官方文案或已审核策展规则时展示。",
     confidence: "74% · 🟡 medium",
     keywords: [],
     suggestions: defaultSuggestions,
@@ -519,12 +918,59 @@ export function resolveDiptyqueResponse(input: string): ResponseEntry {
   const query = input.trim();
   if (!query) return genericFallback();
 
+  if (/搭配|叠香|空间同香|家居同香|补充关系|对应补充|的补充装|适用于|适配|兼容/.test(query)) {
+    const publishedRelationResponse = resolvePublishedRelationQuery(query);
+    if (publishedRelationResponse) return publishedRelationResponse;
+    return {
+      answer: "当前已审核关系中没有与这个问题匹配的商品连线。系统不会把同系列、相似香调或装饰品名称自动推断为搭配；需要有官方说明或人工审核证据后才会发布。",
+      confidence: "95% · 🟢 high",
+      keywords: ["关系证据", "事实图谱"],
+      suggestions: ["晚香玉系列有哪些产品？", "哪些产品含有晚香玉？", "有哪些补充装？"],
+    };
+  }
+
+  const ambiguity = findSemanticAmbiguity(query);
+  if (ambiguity) {
+    const [, nodes] = ambiguity;
+    const label = nodes[0]?.name ?? "该名称";
+    const roles = uniq(nodes.map((node) => semanticRoleLabel(node.nodeType)));
+    const suggestions = [
+      nodes.some((node) => node.nodeType === "CollectionOrScent") ? `${label}系列有哪些产品？` : "",
+      nodes.some((node) => node.nodeType === "NoteIngredient") ? `哪些产品含有${label}？` : "",
+      nodes.some((node) => node.nodeType === "ScentProfile" || node.nodeType === "ScentAccord") ? `${label}气味类型有哪些产品？` : "",
+    ].filter(Boolean);
+    return {
+      answer: `“${label}”在当前数据中同时表示${roles.join("和")}。为避免把不同概念强行取交集，请明确查询口径。`,
+      confidence: "96% · 🟢 high",
+      keywords: [label, ...roles],
+      suggestions,
+    };
+  }
+
+  const asksHierarchy = query.includes("家族") || query.includes("包含哪些") || /香调(有哪些|分类)/.test(query);
+  const matchedHierarchyNodeId = asksHierarchy ? matchHierarchyNodeIdByQuery(query) : undefined;
+  if (matchedHierarchyNodeId) {
+    return {
+      ...resolveGraphNodeSelection(matchedHierarchyNodeId),
+      focusNodeLabel: matchedHierarchyNodeId,
+    };
+  }
+
+  const matchedFilterNodeIds = matchFilterNodeIdsByQuery(query);
+  if (matchedFilterNodeIds.length > 0 && (query.includes("哪些") || query.includes("什么") || query.includes("系列") || query.includes("香调") || query.includes("标签"))) {
+    return {
+      ...resolveCombinedFilterSelection(matchedFilterNodeIds),
+      filterNodeIds: matchedFilterNodeIds,
+      focusNodeLabel: matchedFilterNodeIds.at(-1),
+    };
+  }
+
   const ranked = rankedProducts(query);
   if (!ranked.length) return genericFallback();
 
   const top = ranked[0];
   const topProduct = top.product;
-  const peers = ranked.slice(0, 3).map((item) => item.product.name);
+  const peers = ranked.slice(0, 5).map((item) => item.product.name);
   const intentLabel = detectIntent(query);
   const confidence = makeConfidence(top.score);
   let answer = "";
@@ -533,8 +979,8 @@ export function resolveDiptyqueResponse(input: string): ResponseEntry {
     answer = `${topProduct.name} 当前图谱里有 ${topProduct.skuCount} 个 SKU，${formatSpecs(topProduct)}，价格区间为 ${formatPrice(topProduct)}。`;
   } else if (intentLabel === "送礼推荐" || intentLabel === "标签筛选" || intentLabel === "补充装筛选") {
     answer = `按当前图谱筛选，和“${query}”最贴近的代表商品有 ${peers.join("、")}。其中可以先从 ${topProduct.name} 开始看，它归在 ${[topProduct.coreFamily, topProduct.productForm].filter(Boolean).join(" / ")}。`;
-  } else if (intentLabel === "系列浏览" && topProduct.collections.length) {
-    answer = `${topProduct.collections[0]} 这条系列在线上图谱里已经连到了 ${peers.join("、")} 等商品。当前先聚焦 ${topProduct.name}，你可以继续沿系列追问同品型或同标签商品。`;
+  } else if ((intentLabel === "系列浏览" || intentLabel === "属性查询") && peers.length > 1) {
+    answer = `按当前图谱检索，和“${query}”关联度最高的商品包括 ${peers.join("、")}。当前先用 ${topProduct.name} 作为代表商品，你也可以继续追问这些候选之间的差异。`;
   } else {
     answer = `${topProduct.name} 在线上图谱里的主路径是 ${[topProduct.coreFamily, topProduct.productForm].filter(Boolean).join(" / ")}。${makeQuote(topProduct)}${topProduct.collections.length ? ` 当前还挂到了 ${topProduct.collections.join(" / ")}。` : ""}`;
   }
@@ -556,6 +1002,9 @@ function buildNodeSuggestions(node: FrontendGraphNode, linkedProducts: FrontendP
     node.nodeType === "ProductForm" ? `${node.name} 里有哪些补充装？` : "",
     node.nodeType === "CollectionOrScent" ? `${node.name} 系列还有哪些品型？` : "",
     node.nodeType === "MarketingTag" ? `还有哪些 ${node.name} 商品？` : "",
+    node.nodeType === "NoteFamily" ? `${node.name}包含哪些下级气味节点？` : "",
+    node.nodeType === "NoteIngredient" ? `哪些产品含有${node.name}？` : "",
+    node.nodeType === "ScentProfile" || node.nodeType === "ScentAccord" ? `${node.name}有哪些产品？` : "",
     lead ? `${lead.name} 多少钱？` : "",
     "有没有适合送礼的产品？",
   ]).filter(Boolean).slice(0, 4);
@@ -579,14 +1028,23 @@ function buildNodeAnswer(node: FrontendGraphNode, linkedProducts: FrontendProduc
       return `${node.name} 当前关联 ${count} 个产品，主要分布在 ${topFamilies.join("、") || "待补充"} 下。代表产品有 ${sampleNames || "待补充"}。`;
     case "CollectionOrScent":
       return `${node.name} 当前在图谱中连到 ${count} 个产品，覆盖的品型主要有 ${topForms.join("、") || "待补充"}。如果你想继续看系列延展，可以从代表产品 ${sampleNames || node.name} 开始。`;
+    case "NoteIngredient":
+      return `${node.name} 当前作为具体香材关联 ${count} 个产品，依据来自原始商品的香气描述。覆盖品型主要有 ${topForms.join("、") || "待补充"}，代表产品有 ${sampleNames || "待补充"}。`;
+    case "ScentProfile":
+      return `${node.name} 是气味类型，不是具体香材。当前关联 ${count} 个产品，代表产品有 ${sampleNames || "待补充"}。`;
+    case "ScentAccord":
+      return `${node.name} 是原始描述中的复合香调词，当前关联 ${count} 个产品，代表产品有 ${sampleNames || "待补充"}。`;
+    case "OntologyDomain":
+      return `${node.name} 是一级本体入口。点击下一级节点可以继续查看完整分类。`;
+    case "NoteFamily":
+      return `${node.name} 是香调家族，当前完整香材清单已在左侧图谱展开。`;
+
     case "MarketingTag":
       return `${node.name} 这类标签当前命中 ${count} 个产品。它更像运营筛选维度，代表商品有 ${sampleNames || node.name}，核心大类主要分布在 ${topFamilies.join("、") || "待补充"}。`;
     case "MaterialOrCraft":
       return `${node.name} 当前主要关联 ${count} 个产品，常见品型包括 ${topForms.join("、") || "待补充"}。你可以继续看它在花瓶、烛罩或托盘里的分布。`;
     case "VariantTag":
       return `${node.name} 当前关联 ${count} 个产品，代表商品有 ${sampleNames || node.name}。这类节点适合继续对比正装、补充装和不同 SKU。`;
-    case "DerivedType":
-      return `${node.name} 是清洗后推导出的业务类型。当前它连到了 ${count} 个产品，核心大类主要是 ${topFamilies.join("、") || "待补充"}。`;
     default:
       return `${node.displayLabel || node.name} 当前连到了 ${count} 个产品。代表商品有 ${sampleNames || "待补充"}，常见系列包括 ${topCollections.join("、") || "待补充"}。`;
   }
@@ -775,6 +1233,36 @@ function circlePositions(ids: string[], radius: number, startAngle = -Math.PI / 
   return positions;
 }
 
+function concentricPositions(ids: string[]) {
+  const positions = new Map<string, { x: number; y: number }>();
+  const capacities = [12, 18, 24, 30];
+  const radii = [92, 144, 194, 236];
+  let offset = 0;
+
+  capacities.forEach((capacity, index) => {
+    const ringIds = ids.slice(offset, offset + capacity);
+    circlePositions(ringIds, radii[index], -Math.PI / 2).forEach((value, key) => positions.set(key, value));
+    offset += capacity;
+  });
+
+  return positions;
+}
+
+function overviewSecondaryPositions(ids: string[]) {
+  const positions = new Map<string, { x: number; y: number }>();
+  const capacities = [18, 24, 30];
+  const radii = [148, 202, 258];
+  let offset = 0;
+
+  capacities.forEach((capacity, index) => {
+    const ringIds = ids.slice(offset, offset + capacity);
+    circlePositions(ringIds, radii[index], -Math.PI / 2).forEach((value, key) => positions.set(key, value));
+    offset += capacity;
+  });
+
+  return positions;
+}
+
 function mergePositions(...groups: Array<Map<string, { x: number; y: number }>>) {
   const positions = new Map<string, { x: number; y: number }>();
   groups.forEach((group) => {
@@ -788,12 +1276,18 @@ function nodeRadius(nodeType: string) {
     case "Product":
       return 15;
     case "CoreFamily":
+    case "OntologyDomain":
       return 12;
     case "ProductForm":
       return 10;
     case "CollectionOrScent":
       return 9;
+    case "NoteFamily":
+      return 10;
     case "MaterialOrCraft":
+    case "NoteIngredient":
+    case "ScentProfile":
+    case "ScentAccord":
     case "MarketingTag":
     case "VariantTag":
       return 8.5;
@@ -819,7 +1313,7 @@ function makeNode(id: string, positions: Map<string, { x: number; y: number }>, 
     id: source.id,
     label: source.displayLabel || source.name,
     nodeType: source.nodeType,
-    persistent: ["Product", "CoreFamily", "ProductForm", "CollectionOrScent"].includes(source.nodeType),
+    persistent: ["Product", "CoreFamily", "ProductForm", "CollectionOrScent", "OntologyDomain", "NoteFamily"].includes(source.nodeType),
     r: id === focusId ? nodeRadius(source.nodeType) + 1.8 : nodeRadius(source.nodeType),
     x: position.x,
     y: position.y,
@@ -836,15 +1330,31 @@ function lineDataFromEdges(edges: FrontendGraphEdge[], positions: Map<string, { 
     if (!source || !target || hiddenEdgeTypes.has(edge.edgeType)) return;
 
     lines.push({
-      dashed: edge.edgeType === "HAS_DERIVED_TYPE" || edge.edgeType === "HAS_SKU",
+      dashed:
+        edge.edgeType === "HAS_DERIVED_TYPE" ||
+        edge.edgeType === "HAS_SKU" ||
+        edge.relationLayer === "recommendation",
+      edgeId: edge.source + "|" + edge.edgeType + "|" + edge.target,
+      edgeType: edge.edgeType,
+      label: edge.displayLabel ?? edgeLabelMap[edge.edgeType] ?? edge.edgeType,
+      sourceName: edge.sourceName,
       sourceId: edge.source,
+      targetName: edge.targetName,
       targetId: edge.target,
+      relationLayer: edge.relationLayer,
+      evidenceType: edge.evidenceType,
+      evidenceText: edge.evidenceText,
+      evidenceUrl: edge.evidenceUrl,
+      confidence: edge.confidence,
+      reviewStatus: edge.reviewStatus,
+      scenario: edge.scenario,
+      viaField: edge.viaField,
       x1: source.x,
       x2: target.x,
       y1: source.y,
       y2: target.y,
     });
-    edgeLabels.push(edgeLabelMap[edge.edgeType] ?? edge.edgeType);
+    edgeLabels.push(edge.displayLabel ?? edgeLabelMap[edge.edgeType] ?? edge.edgeType);
   });
 
   return { edgeLabels, lines };
@@ -877,23 +1387,49 @@ function buildProductFocusGraph(focusId: string, filterNodeIds: string[] = []): 
     return buildOverviewGraph();
   }
 
-  const neighborIds = uniq([...directNeighborIds(product.id), ...filterNodeIds.filter((id) => id !== product.id)]);
-  const siblingIds = relatedProducts(product).map((item) => item.id);
+  const directIds = directNeighborIds(product.id);
+  const compatibilityEdges = derivedCompatibilityEdges.filter(
+    (edge) => edge.source === product.id || edge.target === product.id
+  );
+  const recommendationEdges = derivedRecommendationEdges.filter(
+    (edge) => edge.source === product.id || edge.target === product.id
+  );
+  const compatibilityProductIds = compatibilityEdges.map((edge) =>
+    edge.source === product.id ? edge.target : edge.source
+  );
+  const recommendationProductIds = recommendationEdges.map((edge) =>
+    edge.source === product.id ? edge.target : edge.source
+  );
+  const familyIds = directIds
+    .filter((id) => nodeById.get(id)?.nodeType === "ProductForm")
+    .flatMap((id) => directNeighborIds(id))
+    .filter((id) => nodeById.get(id)?.nodeType === "CoreFamily");
+  const filterPathIds = uniq([...hierarchyAncestorIdsFor(filterNodeIds), ...filterNodeIds]);
+  const filterPathSet = new Set(filterPathIds);
+  const neighborIds = uniq([...directIds, ...familyIds, ...filterPathIds.filter((id) => id !== product.id)]);
+  const relationProductIds = directIds.filter((id) => nodeById.get(id)?.nodeType === "Product");
+  const siblingIds = uniq([
+    ...compatibilityProductIds,
+    ...recommendationProductIds,
+    ...relationProductIds,
+    ...relatedProducts(product).map((item) => item.id),
+  ]).slice(0, 6);
   const leftIds = neighborIds.filter((id) => {
     const node = nodeById.get(id);
-    return node?.nodeType === "CoreFamily" || node?.nodeType === "ProductForm" || node?.nodeType === "DerivedType";
+    return !filterPathSet.has(id) && (node?.nodeType === "CoreFamily" || node?.nodeType === "ProductForm");
   });
   const topIds = neighborIds.filter((id) => {
     const node = nodeById.get(id);
-    return node?.nodeType === "CollectionOrScent" || node?.nodeType === "MaterialOrCraft";
+    return !filterPathSet.has(id) && ["CollectionOrScent", "MaterialOrCraft", "NoteIngredient", "ScentProfile", "ScentAccord"].includes(node?.nodeType ?? "");
   });
   const rightIds = neighborIds.filter((id) => {
     const node = nodeById.get(id);
-    return node?.nodeType === "MarketingTag" || node?.nodeType === "VariantTag";
+    return !filterPathSet.has(id) && (node?.nodeType === "MarketingTag" || node?.nodeType === "VariantTag");
   });
   const bottomIds = neighborIds.filter((id) => nodeById.get(id)?.nodeType === "SKU");
 
   const positions = new Map<string, { x: number; y: number }>();
+  linePositions(filterPathIds, 82, 104).forEach((value, key) => positions.set(key, value));
   positions.set(product.id, { x: VIEWBOX_CENTER_X, y: 256 });
   arcPositions(leftIds, 170, Math.PI * 0.85, Math.PI * 1.15).forEach((value, key) => positions.set(key, value));
   arcPositions(topIds, 180, -Math.PI * 0.88, -Math.PI * 0.12).forEach((value, key) => positions.set(key, value));
@@ -901,11 +1437,15 @@ function buildProductFocusGraph(focusId: string, filterNodeIds: string[] = []): 
   arcPositions(bottomIds, 160, 0.78, 2.34).forEach((value, key) => positions.set(key, value));
   arcPositions(siblingIds, 262, 0.38, 2.76).forEach((value, key) => positions.set(key, value));
 
-  const nodeIds = uniq([product.id, ...leftIds, ...topIds, ...rightIds, ...bottomIds, ...siblingIds]);
+  const nodeIds = uniq([...filterPathIds, product.id, ...leftIds, ...topIds, ...rightIds, ...bottomIds, ...siblingIds]);
   const nodeSet = new Set(nodeIds);
-  const linesSource = graphEdges.filter(
-    (edge) => nodeSet.has(edge.source) && nodeSet.has(edge.target) && !hiddenEdgeTypes.has(edge.edgeType)
-  );
+  const linesSource = [
+    ...graphEdges.filter(
+      (edge) => nodeSet.has(edge.source) && nodeSet.has(edge.target) && !hiddenEdgeTypes.has(edge.edgeType)
+    ),
+    ...compatibilityEdges.filter((edge) => nodeSet.has(edge.source) && nodeSet.has(edge.target)),
+    ...recommendationEdges.filter((edge) => nodeSet.has(edge.source) && nodeSet.has(edge.target)),
+  ];
 
   const nodes = nodeIds.map((id) => makeNode(id, positions, product.id)).filter((node): node is GraphNode => node !== null);
   const { edgeLabels, lines } = lineDataFromEdges(linesSource, positions);
@@ -921,33 +1461,51 @@ function buildProductFocusGraph(focusId: string, filterNodeIds: string[] = []): 
   };
 }
 
+const hierarchyAncestorTypes = new Set(["CoreFamily", "OntologyDomain", "NoteFamily", "ProductForm"]);
+
+function hierarchyAncestorIdsFor(nodeIds: string[]) {
+  const result: string[] = [];
+  const visited = new Set<string>();
+
+  function visit(nodeId: string) {
+    (edgesByTarget.get(nodeId) ?? [])
+      .filter((edge) => hierarchyAncestorTypes.has(edge.sourceType))
+      .forEach((edge) => {
+        visit(edge.source);
+        if (!visited.has(edge.source)) {
+          visited.add(edge.source);
+          result.push(edge.source);
+        }
+      });
+  }
+
+  nodeIds.forEach(visit);
+  return result;
+}
+
 function buildFilteredGraph(filterNodeIds: string[], activeNodeId?: string | null): GraphDataset {
   const trail = getFilterTrail(filterNodeIds);
   const activeFocusId = activeNodeId && filterNodeIds.includes(activeNodeId) ? activeNodeId : filterNodeIds.at(-1) ?? undefined;
   const matchedProducts = productsForFilterIds(filterNodeIds);
-  const productIds = matchedProducts.slice(0, 8).map((product) => product.id);
-
-  const refinementCounts = new Map<string, number>();
-  matchedProducts.slice(0, 14).forEach((product) => {
-    (edgesBySource.get(product.id) ?? []).forEach((edge) => {
-      const node = nodeById.get(edge.target);
-      if (!node || !isFilterableNodeType(node.nodeType) || filterNodeIds.includes(node.id)) return;
-      refinementCounts.set(node.id, (refinementCounts.get(node.id) ?? 0) + 1);
-    });
-  });
-
-  const refinementIds = Array.from(refinementCounts.entries())
-    .sort((a, b) => (b[1] - a[1]) || a[0].localeCompare(b[0], "zh-CN"))
-    .slice(0, 8)
-    .map(([id]) => id);
+  const productIds = matchedProducts.slice(0, 12).map((product) => product.id);
+  const ancestorIds = hierarchyAncestorIdsFor(filterNodeIds);
+  const pathIds = uniq([...ancestorIds, ...filterNodeIds]);
+  const hasFamilyFilter = pathIds.some((id) => nodeById.get(id)?.nodeType === "CoreFamily");
+  const hierarchyIds = hasFamilyFilter
+    ? uniq(
+        matchedProducts
+          .map((product) => `form:${product.productForm}`)
+          .filter((id) => nodeById.has(id) && !pathIds.includes(id))
+      ).slice(0, 12)
+    : [];
 
   const positions = mergePositions(
-    linePositions(filterNodeIds, 106, 118),
-    circlePositions(productIds, matchedProducts.length > 5 ? 138 : 118),
-    arcPositions(refinementIds, 238, 0.62, 2.52)
+    linePositions(pathIds, 106, 118),
+    arcPositions(hierarchyIds, 176, Math.PI * 0.76, Math.PI * 1.24),
+    circlePositions(productIds, matchedProducts.length > 5 ? 150 : 124)
   );
 
-  const nodeIds = uniq([...filterNodeIds, ...productIds, ...refinementIds]);
+  const nodeIds = uniq([...pathIds, ...hierarchyIds, ...productIds]);
   const nodeSet = new Set(nodeIds);
   const linesSource = graphEdges.filter(
     (edge) => nodeSet.has(edge.source) && nodeSet.has(edge.target) && !hiddenEdgeTypes.has(edge.edgeType)
@@ -974,37 +1532,98 @@ function buildNeighborhoodGraph(focusId: string): GraphDataset {
   }
 
   const directIds = directNeighborIds(focusId);
+  if (focusNode.nodeType === "OntologyDomain") {
+    const childIds = (edgesBySource.get(focusId) ?? []).map((edge) => edge.target);
+    const leafIds = uniq(
+      childIds.flatMap((childId) =>
+        (edgesBySource.get(childId) ?? [])
+          .filter((edge) => ["NoteIngredient", "ScentProfile", "ScentAccord"].includes(edge.targetType))
+          .slice(0, 2)
+          .map((edge) => edge.target)
+      )
+    );
+    const positions = mergePositions(
+      linePositions([focusId], 106, 118),
+      arcPositions(childIds, 176, Math.PI * 0.76, Math.PI * 1.24),
+      circlePositions(leafIds, 252, -Math.PI / 2)
+    );
+    const nodeIds = [focusId, ...childIds, ...leafIds];
+    const nodeSet = new Set(nodeIds);
+    const linesSource = graphEdges.filter((edge) => nodeSet.has(edge.source) && nodeSet.has(edge.target));
+    const nodes = nodeIds.map((id) => makeNode(id, positions, focusId)).filter((node): node is GraphNode => node !== null);
+    const { edgeLabels, lines } = lineDataFromEdges(linesSource, positions);
+
+    return {
+      edgeLabels,
+      focusLabel: focusId,
+      lines,
+      modeLabel: `${focusNode.name} 分类`,
+      nodes,
+      summaryText: `${focusNode.name} · 二级香调家族 ${childIds.length} · 叶子节点示例 ${leafIds.length}`,
+      viewBox: `0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`,
+    };
+  }
+
+  if (focusNode.nodeType === "NoteFamily") {
+    const parentIds = (edgesByTarget.get(focusId) ?? [])
+      .filter((edge) => edge.sourceType === "OntologyDomain")
+      .map((edge) => edge.source);
+    const childIds = (edgesBySource.get(focusId) ?? []).map((edge) => edge.target);
+    const productLeafIds = uniq(
+      childIds.flatMap((childId) =>
+        (edgesBySource.get(childId) ?? [])
+          .filter((edge) => edge.targetType === "Product")
+          .slice(0, 1)
+          .map((edge) => edge.target)
+      )
+    ).slice(0, 20);
+    const pathIds = [...parentIds, focusId];
+    const positions = mergePositions(
+      linePositions(pathIds, 72, 118),
+      concentricPositions(childIds),
+      circlePositions(productLeafIds, 282, -Math.PI / 2)
+    );
+    const nodeIds = [...pathIds, ...childIds, ...productLeafIds];
+    const nodeSet = new Set(nodeIds);
+    const linesSource = graphEdges.filter((edge) => nodeSet.has(edge.source) && nodeSet.has(edge.target));
+    const nodes = nodeIds.map((id) => makeNode(id, positions, focusId)).filter((node): node is GraphNode => node !== null);
+    const { edgeLabels, lines } = lineDataFromEdges(linesSource, positions);
+
+    return {
+      edgeLabels,
+      focusLabel: focusId,
+      lines,
+      modeLabel: `${focusNode.name} 本体`,
+      nodes,
+      summaryText: `${parentIds.map((id) => nodeById.get(id)?.name).filter(Boolean).join(" > ")} > ${focusNode.name} · 具体香味 ${childIds.length} · 商品叶子 ${productLeafIds.length}`,
+      viewBox: `0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`,
+    };
+  }
+
   const linkedProducts = connectedProductsForNode(focusNode).slice(0, 5);
   const productIds = uniq([
     ...directIds.filter((id) => nodeById.get(id)?.nodeType === "Product"),
     ...linkedProducts.map((product) => product.id),
   ]).filter((id) => id !== focusId).slice(0, 5);
 
-  const semanticIds = uniq([
-    ...directIds.filter((id) => {
+  const semanticIds = directIds
+    .filter((id) => {
       const nodeType = nodeById.get(id)?.nodeType;
       return nodeType && nodeType !== "Product" && nodeType !== "SKU";
-    }),
-    ...productIds.slice(0, 3).flatMap((id) =>
-      directNeighborIds(id).filter((candidateId) => {
-        const nodeType = nodeById.get(candidateId)?.nodeType;
-        return candidateId !== focusId && nodeType && nodeType !== "Product" && nodeType !== "SKU";
-      })
-    ),
-  ]).slice(0, 12);
+    })
+    .slice(0, 12);
 
-  const skuIds = uniq([
-    ...directIds.filter((id) => nodeById.get(id)?.nodeType === "SKU"),
-    ...productIds.slice(0, 3).flatMap((id) => directNeighborIds(id).filter((candidateId) => nodeById.get(candidateId)?.nodeType === "SKU")),
-  ]).slice(0, 6);
+  const skuIds = directIds
+    .filter((id) => nodeById.get(id)?.nodeType === "SKU")
+    .slice(0, 6);
 
   const leftIds = semanticIds.filter((id) => {
     const nodeType = nodeById.get(id)?.nodeType;
-    return nodeType === "CoreFamily" || nodeType === "ProductForm" || nodeType === "DerivedType";
+    return nodeType === "CoreFamily" || nodeType === "ProductForm";
   });
   const topIds = semanticIds.filter((id) => {
     const nodeType = nodeById.get(id)?.nodeType;
-    return nodeType === "CollectionOrScent" || nodeType === "MaterialOrCraft";
+    return ["CollectionOrScent", "MaterialOrCraft", "NoteIngredient", "ScentProfile", "ScentAccord", "NoteFamily"].includes(nodeType ?? "");
   });
   const rightIds = semanticIds.filter((id) => {
     const nodeType = nodeById.get(id)?.nodeType;
@@ -1073,106 +1692,33 @@ function overviewNodeId(kind: string, value: string) {
 }
 
 const allFamilies = uniq(products.map((product) => product.coreFamily).filter(Boolean));
-const topForms = topKeys(countBy(products.map((product) => product.productForm).filter(Boolean)), 18);
-const topCollections = topKeys(countBy(products.flatMap((product) => product.collections)), 12);
-const topMarketingTags = topKeys(countBy(products.flatMap((product) => product.marketingTags)), 6);
-const topMaterials = topKeys(countBy(products.flatMap((product) => product.materials)), 7);
-
-const collectionToForm = dominantLink(
-  products.flatMap((product) => product.collections.map((collection) => ({ key: collection, target: product.productForm }))).filter((item) => item.target)
-);
-const marketingToFamily = dominantLink(
-  products.flatMap((product) => product.marketingTags.map((tag) => ({ key: tag, target: product.coreFamily }))).filter((item) => item.target)
-);
-const materialToForm = dominantLink(
-  products.flatMap((product) => product.materials.map((material) => ({ key: material, target: product.productForm }))).filter((item) => item.target)
-);
 
 function buildOverviewGraph(): GraphDataset {
   const familyIds = allFamilies.map((family) => overviewNodeId("family", family)).filter((id) => nodeById.has(id));
-  const formIds = topForms.map((form) => overviewNodeId("form", form)).filter((id) => nodeById.has(id));
-  const collectionIds = topCollections.map((collection) => overviewNodeId("collection", collection)).filter((id) => nodeById.has(id));
-  const marketingIds = topMarketingTags.map((tag) => overviewNodeId("marketing", tag)).filter((id) => nodeById.has(id));
-  const materialIds = topMaterials.map((material) => overviewNodeId("material", material)).filter((id) => nodeById.has(id));
+  const domainIds = ["domain:香调"].filter((id) => nodeById.has(id));
+  const coreIds = [...familyIds, ...domainIds];
+  const familyIdSet = new Set(familyIds);
+
+  const formEdges = graphEdges.filter(
+    (edge) => edge.edgeType === "HAS_PRODUCT_FORM"
+      && edge.sourceType === "CoreFamily"
+      && edge.targetType === "ProductForm"
+      && familyIdSet.has(edge.source)
+  );
+  const formIds = uniq(formEdges.map((edge) => edge.target));
+  const noteFamilyEdges = graphEdges.filter(
+    (edge) => edge.edgeType === "HAS_NOTE_FAMILY"
+      && edge.source === "domain:香调"
+      && edge.targetType === "NoteFamily"
+  );
+  const noteFamilyIds = uniq(noteFamilyEdges.map((edge) => edge.target));
+  const secondaryIds = [...formIds, ...noteFamilyIds];
 
   const positions = mergePositions(
-    circlePositions(familyIds, 82),
-    circlePositions(formIds, 176, -Math.PI / 2),
-    arcPositions(collectionIds, 276, -Math.PI + 0.26, -0.12),
-    arcPositions(marketingIds, 252, 1.95, 3.06),
-    arcPositions(materialIds, 252, 0.1, 1.24)
+    circlePositions(coreIds, 88),
+    overviewSecondaryPositions(secondaryIds)
   );
-
-  const overviewEdges: FrontendGraphEdge[] = [];
-
-  formIds.forEach((formId) => {
-    const formName = nodeById.get(formId)?.name;
-    const familyName = products.find((product) => product.productForm === formName)?.coreFamily;
-    if (formName && familyName) {
-      overviewEdges.push({
-        edgeType: "FORM_UNDER_FAMILY",
-        source: overviewNodeId("family", familyName),
-        sourceName: familyName,
-        sourceType: "CoreFamily",
-        target: formId,
-        targetName: formName,
-        targetType: "ProductForm",
-        viaField: "overview",
-      });
-    }
-  });
-
-  collectionIds.forEach((collectionId) => {
-    const collectionName = nodeById.get(collectionId)?.name;
-    const formName = collectionName ? collectionToForm.get(collectionName) : undefined;
-    if (collectionName && formName) {
-      overviewEdges.push({
-        edgeType: "IN_COLLECTION",
-        source: overviewNodeId("form", formName),
-        sourceName: formName,
-        sourceType: "ProductForm",
-        target: collectionId,
-        targetName: collectionName,
-        targetType: "CollectionOrScent",
-        viaField: "overview",
-      });
-    }
-  });
-
-  marketingIds.forEach((marketingId) => {
-    const tagName = nodeById.get(marketingId)?.name;
-    const familyName = tagName ? marketingToFamily.get(tagName) : undefined;
-    if (tagName && familyName) {
-      overviewEdges.push({
-        edgeType: "HAS_MARKETING_TAG",
-        source: overviewNodeId("family", familyName),
-        sourceName: familyName,
-        sourceType: "CoreFamily",
-        target: marketingId,
-        targetName: tagName,
-        targetType: "MarketingTag",
-        viaField: "overview",
-      });
-    }
-  });
-
-  materialIds.forEach((materialId) => {
-    const materialName = nodeById.get(materialId)?.name;
-    const formName = materialName ? materialToForm.get(materialName) : undefined;
-    if (materialName && formName) {
-      overviewEdges.push({
-        edgeType: "HAS_MATERIAL",
-        source: overviewNodeId("form", formName),
-        sourceName: formName,
-        sourceType: "ProductForm",
-        target: materialId,
-        targetName: materialName,
-        targetType: "MaterialOrCraft",
-        viaField: "overview",
-      });
-    }
-  });
-
+  const overviewEdges = [...formEdges, ...noteFamilyEdges];
   const nodes = Array.from(positions.keys()).map((id) => makeNode(id, positions)).filter((node): node is GraphNode => node !== null);
   const { edgeLabels, lines } = lineDataFromEdges(overviewEdges, positions);
 
@@ -1181,35 +1727,35 @@ function buildOverviewGraph(): GraphDataset {
     lines,
     modeLabel: "分类概览",
     nodes,
-    summaryText: `核心大类 ${familyIds.length} · 具体品型 ${formIds.length} · 系列/标签/材质 ${collectionIds.length + marketingIds.length + materialIds.length}`,
+    summaryText: `核心入口 ${coreIds.length} · 商品品型 ${formIds.length} · 香调家族 ${noteFamilyIds.length}`,
     viewBox: `0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`,
   };
 }
-
 export const legendItems = [
-  { color: nodeColorMap.CoreFamily, label: "核心大类" },
+  { color: nodeColorMap.CoreFamily, label: "商品大类" },
+  { color: nodeColorMap.OntologyDomain, label: "香调入口" },
+  { color: nodeColorMap.NoteFamily, label: "香调家族" },
   { color: nodeColorMap.ProductForm, label: "具体品型" },
   { color: nodeColorMap.CollectionOrScent, label: "系列/香型" },
   { color: nodeColorMap.MaterialOrCraft, label: "材质/工艺" },
-  { color: nodeColorMap.MarketingTag, label: "运营标签" },
   { color: nodeColorMap.Product, label: "商品" },
   { color: nodeColorMap.SKU, label: "SKU" },
 ] as const;
 
 export const defaultSuggestions = [
-  "奥费恩系列有哪些产品？",
-  "有没有适合送礼的产品？",
+  "香调有哪些家族？",
+  "晚香玉系列有哪些产品？",
+  "哪些产品含有晚香玉？",
   "有哪些补充装？",
-  "东京淡香水多少钱？",
 ];
 
 export const initialMessages: KnowledgeMessage[] = [
   {
     id: "welcome",
-    note: "支持按系列、品型、标签和 SKU 继续追问，也支持图谱节点点击联动",
+    note: "支持按商品分类、系列、香材、气味类型、材质、标签和 SKU 继续追问",
     role: "bot",
     suggestions: defaultSuggestions,
-    text: "欢迎使用 Diptyque 商品知识图谱。你可以问具体产品，也可以问送礼、人气精选、补充装或某个系列。",
+    text: "欢迎使用 Diptyque 商品知识图谱。页面区分原始事实、规格兼容和经审核推荐关系；同名的系列、香材和气味类型会按查询口径区分。",
   },
 ];
 
@@ -1230,7 +1776,7 @@ export function getGraphDataset(focusLabel: string | null, filterNodeIds: string
   if (focusLabel) {
     const node = nodeById.get(focusLabel);
     if (!node) {
-      const product = products.find((candidate) => candidate.name === focusLabel || candidate.identityName === focusLabel);
+      const product = products.find((candidate) => candidate.name === focusLabel);
       return product ? buildProductFocusGraph(product.id) : overviewDataset;
     }
     return node.nodeType === "Product" ? buildProductFocusGraph(node.id) : buildNeighborhoodGraph(node.id);
@@ -1238,9 +1784,3 @@ export function getGraphDataset(focusLabel: string | null, filterNodeIds: string
 
   return overviewDataset;
 }
-
-
-
-
-
-

@@ -1,6 +1,7 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ExternalLink, X } from "lucide-react";
 
 import {
   defaultSuggestions,
@@ -21,6 +22,7 @@ import {
 type MobileTab = "chat" | "graph";
 type GraphMode = {
   filterNodeIds: string[];
+  focusEdgeIds: string[];
   focusLabel: string | null;
 };
 type PendingReply = {
@@ -63,8 +65,60 @@ function lineMidpoint(x1: number, y1: number, x2: number, y2: number, offset = 0
   };
 }
 
+function relationLayerText(value: string) {
+  const labels: Record<string, string> = {
+    fact: "事实关系",
+    factual_compatibility: "兼容事实",
+    recommendation: "推荐关系",
+    derived_compatibility: "规格推导",
+  };
+  return labels[value] ?? value;
+}
+
+function relationProvenanceText(line: GraphLine) {
+  if (line.reviewStatus === "derived_from_approved_rule") return "策展规则推导";
+  if (line.reviewStatus === "derived_from_approved_spec") return "审核规格推导";
+  if (line.reviewStatus === "approved" && line.evidenceType.includes("official_")) return "官方证据 + 人工审核";
+  if (line.reviewStatus === "approved") return "人工审核关系";
+  if (line.reviewStatus === "source_derived") return "原始字段推导";
+  return relationLayerText(line.relationLayer);
+}
+
+function reviewStatusText(value: string) {
+  const labels: Record<string, string> = {
+    approved: "人工审核通过",
+    source_derived: "原始字段推导",
+    derived_from_approved_spec: "由已审核规格推导",
+    derived_from_approved_rule: "由已审核推荐规则推导",
+  };
+  return labels[value] ?? value;
+}
+
+function evidenceTypeText(value: string) {
+  const labels: Record<string, string> = {
+    official_product_copy: "官方商品文案",
+    official_product_identity: "官方商品信息",
+    verified_collection: "已核验系列",
+    source_field: "原始数据字段",
+    curatorial_review: "人工策展审核",
+    curatorial_rule: "人工策展规则",
+  };
+  return value
+    .split("+")
+    .map((item) => labels[item] ?? item)
+    .join(" + ");
+}
+
 function makeId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function currentTimeMs() {
+  return Date.now();
+}
+
+function monotonicTimeMs() {
+  return performance.now();
 }
 
 function nodeFloatSeed(nodeId: string) {
@@ -193,17 +247,18 @@ function ProductAnswerCard({
 
 export function DiptyqueKnowledgeBase() {
   const [activeTab, setActiveTab] = useState<MobileTab>("graph");
-  const [graphMode, setGraphMode] = useState<GraphMode>({ filterNodeIds: [], focusLabel: null });
+  const [graphMode, setGraphMode] = useState<GraphMode>({ filterNodeIds: [], focusEdgeIds: [], focusLabel: null });
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<KnowledgeMessage[]>(initialMessages);
   const [graphScale, setGraphScale] = useState(1);
-  const [isDraggingNode, setIsDraggingNode] = useState(false);
+  const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
   const [pendingReply, setPendingReply] = useState<PendingReply | null>(null);
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
   const [thinkingSeconds, setThinkingSeconds] = useState(0);
   const [renderNodes, setRenderNodes] = useState<GraphNode[]>([]);
   const [renderLines, setRenderLines] = useState<GraphLine[]>([]);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [selectedEdge, setSelectedEdge] = useState<GraphLine | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const simulationFrameRef = useRef<number | null>(null);
@@ -218,6 +273,39 @@ export function DiptyqueKnowledgeBase() {
     [graphMode.filterNodeIds, graphMode.focusLabel]
   );
   const filterTrail = useMemo(() => getFilterTrail(graphMode.filterNodeIds), [graphMode.filterNodeIds]);
+  const focusedEdgeIds = useMemo(() => new Set(graphMode.focusEdgeIds), [graphMode.focusEdgeIds]);
+  const orderedRenderLines = useMemo(
+    () => [...renderLines].sort((a, b) => Number(focusedEdgeIds.has(a.edgeId)) - Number(focusedEdgeIds.has(b.edgeId))),
+    [focusedEdgeIds, renderLines]
+  );
+  const structuralCoreIds = useMemo(() => {
+    const result = new Set<string>();
+    if (graphDataset.modeLabel === "分类概览") {
+      renderNodes
+        .filter((node) => ["CoreFamily", "OntologyDomain"].includes(node.nodeType))
+        .forEach((node) => result.add(node.id));
+      return result;
+    }
+
+    const explicitCoreTypes = ["CoreFamily", "OntologyDomain", "ProductForm", "NoteFamily"];
+    if (graphDataset.modeLabel.endsWith("本体")) {
+      explicitCoreTypes.push("NoteIngredient", "ScentProfile", "ScentAccord");
+    }
+    renderNodes
+      .filter((node) => explicitCoreTypes.includes(node.nodeType))
+      .forEach((node) => result.add(node.id));
+    renderLines.forEach((line) => result.add(line.sourceId));
+    renderLines
+      .filter((line) => focusedEdgeIds.has(line.edgeId))
+      .forEach((line) => {
+        result.add(line.sourceId);
+        result.add(line.targetId);
+      });
+    graphMode.filterNodeIds.forEach((id) => result.add(id));
+    if (graphDataset.focusLabel) result.add(graphDataset.focusLabel);
+    return result;
+  }, [focusedEdgeIds, graphDataset.focusLabel, graphDataset.modeLabel, graphMode.filterNodeIds, renderLines, renderNodes]);
+
   const hoveredHighlightIds = useMemo(() => {
     const result = new Set<string>();
     if (!hoveredNodeId) return result;
@@ -228,7 +316,6 @@ export function DiptyqueKnowledgeBase() {
     result.add(hoveredNodeId);
     const directLines = renderLines.filter((line) => line.sourceId === hoveredNodeId || line.targetId === hoveredNodeId);
     const directNeighborIds = Array.from(new Set(directLines.map((line) => (line.sourceId === hoveredNodeId ? line.targetId : line.sourceId))));
-    const outgoingIds = directLines.filter((line) => line.sourceId === hoveredNodeId).map((line) => line.targetId);
     const incomingProductIds = directNeighborIds.filter((id) => renderNodes.find((node) => node.id === id)?.nodeType === "Product");
 
     if (hoveredNode.nodeType === "Product") {
@@ -236,8 +323,7 @@ export function DiptyqueKnowledgeBase() {
       return result;
     }
 
-    if (["CoreFamily", "ProductForm", "DerivedType"].includes(hoveredNode.nodeType)) {
-      outgoingIds.forEach((id) => result.add(id));
+    if (["CoreFamily", "ProductForm"].includes(hoveredNode.nodeType)) {
       incomingProductIds.forEach((productId) => {
         result.add(productId);
         renderLines.forEach((line) => {
@@ -246,10 +332,7 @@ export function DiptyqueKnowledgeBase() {
           }
         });
       });
-
-      if (!outgoingIds.length && !incomingProductIds.length) {
-        directNeighborIds.forEach((id) => result.add(id));
-      }
+      directNeighborIds.forEach((id) => result.add(id));
       return result;
     }
 
@@ -281,9 +364,7 @@ export function DiptyqueKnowledgeBase() {
       const source = positions.get(edge.sourceId);
       const target = positions.get(edge.targetId);
       return {
-        dashed: edge.dashed,
-        sourceId: edge.sourceId,
-        targetId: edge.targetId,
+        ...edge,
         x1: source?.x ?? edge.x1,
         x2: target?.x ?? edge.x2,
         y1: source?.y ?? edge.y1,
@@ -327,10 +408,12 @@ export function DiptyqueKnowledgeBase() {
     nodes.forEach((node) => {
       if (dragged?.id === node.id) return;
       const force = forces.get(node.id)!;
-      const restSpring = node.persistent ? 0.012 : 0.0075;
+      const restSpring = 0.016;
       const seed = nodeFloatSeed(node.id);
-      const driftX = Math.sin(timeSeconds * (0.66 + seed * 0.58) + seed * Math.PI * 2) * (node.persistent ? 7.2 : 12.4);
-      const driftY = Math.cos(timeSeconds * (0.58 + seed * 0.46) + seed * Math.PI * 1.4) * (node.persistent ? 6.2 : 10.4);
+      const driftXAmplitude = graphDataset.modeLabel === "分类概览" ? 5.2 : 3.6;
+      const driftYAmplitude = graphDataset.modeLabel === "分类概览" ? 4 : 2.8;
+      const driftX = Math.sin(timeSeconds * (0.28 + seed * 0.18) + seed * Math.PI * 2) * driftXAmplitude;
+      const driftY = Math.cos(timeSeconds * (0.24 + seed * 0.16) + seed * Math.PI * 1.4) * driftYAmplitude;
       force.x += (node.restX + driftX - node.x) * restSpring;
       force.y += (node.restY + driftY - node.y) * restSpring;
     });
@@ -397,10 +480,10 @@ export function DiptyqueKnowledgeBase() {
       const force = forces.get(node.id)!;
       node.vx += force.x * dt;
       node.vy += force.y * dt;
-      node.vx *= 0.962;
-      node.vy *= 0.962;
-      node.x += node.vx * dt * 1.02;
-      node.y += node.vy * dt * 1.02;
+      node.vx *= 0.91;
+      node.vy *= 0.91;
+      node.x += node.vx * dt * 0.76;
+      node.y += node.vy * dt * 0.76;
       clampNodePosition(node);
       totalMotion += Math.abs(node.vx) + Math.abs(node.vy) + Math.abs(node.restX - node.x) * 0.02 + Math.abs(node.restY - node.y) * 0.02;
     });
@@ -429,18 +512,16 @@ export function DiptyqueKnowledgeBase() {
   }
 
   useEffect(() => {
-    const previousNodes = simNodesRef.current;
     const nextNodes = new Map<string, SimNode>();
     graphDataset.nodes.forEach((node) => {
-      const previous = previousNodes.get(node.id);
       nextNodes.set(node.id, {
         ...node,
         restX: node.x,
         restY: node.y,
-        vx: previous?.vx ?? 0,
-        vy: previous?.vy ?? 0,
-        x: previous?.x ?? node.x,
-        y: previous?.y ?? node.y,
+        vx: 0,
+        vy: 0,
+        x: node.x,
+        y: node.y,
       });
     });
     simNodesRef.current = nextNodes;
@@ -452,7 +533,7 @@ export function DiptyqueKnowledgeBase() {
     kickSimulation();
     return () => {
       draggedNodeRef.current = null;
-      setIsDraggingNode(false);
+      setDraggedNodeId(null);
     };
   }, [graphDataset]);
 
@@ -487,7 +568,7 @@ export function DiptyqueKnowledgeBase() {
         node.vy = dragged.vy * 0.85;
       }
       draggedNodeRef.current = null;
-      setIsDraggingNode(false);
+      setDraggedNodeId(null);
       kickSimulation();
     }
 
@@ -503,14 +584,15 @@ export function DiptyqueKnowledgeBase() {
   function applyGraphMode(nextMode: GraphMode) {
     setGraphMode(nextMode);
     setGraphScale(1);
+    setSelectedEdge(null);
     draggedNodeRef.current = null;
-    setIsDraggingNode(false);
+    setDraggedNodeId(null);
     suppressNodeClickRef.current = false;
     stopSimulation();
   }
 
   function resetGraph() {
-    applyGraphMode({ filterNodeIds: [], focusLabel: null });
+    applyGraphMode({ filterNodeIds: [], focusEdgeIds: [], focusLabel: null });
     setMessages((current) => [
       ...current,
       {
@@ -528,7 +610,7 @@ export function DiptyqueKnowledgeBase() {
   }
 
   function focusGraph(focusLabel: string) {
-    applyGraphMode({ filterNodeIds: graphMode.filterNodeIds, focusLabel });
+    applyGraphMode({ filterNodeIds: graphMode.filterNodeIds, focusEdgeIds: [], focusLabel });
     setActiveTab("graph");
   }
 
@@ -550,15 +632,17 @@ export function DiptyqueKnowledgeBase() {
   useEffect(() => {
     if (!pendingReply) return undefined;
 
-    const tick = window.setInterval(() => {
-      setThinkingSeconds(Math.max(0, Math.floor((Date.now() - pendingReply.startedAt) / 1000)));
-    }, 200);
-
-    const response = resolveDiptyqueResponse(pendingReply.question);
-    const messageId = makeId("bot");
+    const { question, startedAt } = pendingReply;
+    const controller = new AbortController();
+    let cancelled = false;
     let streamInterval: number | null = null;
+    const tick = window.setInterval(() => {
+      setThinkingSeconds(Math.max(0, Math.floor((Date.now() - startedAt) / 1000)));
+    }, 200);
+    const localResponse = resolveDiptyqueResponse(question);
+    const messageId = makeId("bot");
 
-    const finishThinking = window.setTimeout(() => {
+    function streamResponse(response: ResponseEntry) {
       setMessages((current) => [
         ...current,
         {
@@ -598,16 +682,45 @@ export function DiptyqueKnowledgeBase() {
                 : message
             )
           );
-          applyGraphMode({ filterNodeIds: [], focusLabel: response.focusNodeLabel ?? null });
+          applyGraphMode({
+            filterNodeIds: [],
+            focusEdgeIds: response.focusEdgeIds ?? [],
+            focusLabel: response.focusNodeLabel ?? null,
+          });
           setStreamingMessageId(null);
         }
       }, 35);
-    }, 1600);
+    }
+
+    async function answerQuestion() {
+      let response = localResponse;
+      try {
+        const apiResponse = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: question }),
+          signal: controller.signal,
+        });
+        if (!apiResponse.ok) throw new Error(`chat_http_${apiResponse.status}`);
+        const data = (await apiResponse.json()) as {
+          answer?: string;
+          fallback?: boolean;
+        };
+        if (!data.fallback && data.answer?.trim()) {
+          response = { ...localResponse, answer: data.answer.trim() };
+        }
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") return;
+      }
+      if (!cancelled) streamResponse(response);
+    }
+
+    void answerQuestion();
 
     return () => {
+      cancelled = true;
+      controller.abort();
       window.clearInterval(tick);
-      window.clearTimeout(finishThinking);
-      if (streamInterval !== null) window.clearInterval(streamInterval);
     };
   }, [pendingReply]);
 
@@ -620,6 +733,7 @@ export function DiptyqueKnowledgeBase() {
     const interaction = resolveGraphInteraction(nodeId, graphMode.filterNodeIds);
     applyGraphMode({
       filterNodeIds: interaction.nextFilterNodeIds,
+      focusEdgeIds: interaction.response.focusEdgeIds ?? [],
       focusLabel: interaction.nextFocusLabel,
     });
     pushImmediateResponse(interaction.response, "来自图谱点击");
@@ -641,9 +755,9 @@ export function DiptyqueKnowledgeBase() {
       vy: 0,
       lastPointerX: point.x,
       lastPointerY: point.y,
-      lastTime: performance.now(),
+      lastTime: monotonicTimeMs(),
     };
-    setIsDraggingNode(true);
+    setDraggedNodeId(nodeId);
     suppressNodeClickRef.current = false;
     kickSimulation();
   }
@@ -653,7 +767,7 @@ export function DiptyqueKnowledgeBase() {
     if (!trimmed || pendingReply || streamingMessageId) return;
 
     setMessages((current) => [...current, { id: makeId("user"), role: "user", text: trimmed }]);
-    setPendingReply({ question: trimmed, startedAt: Date.now() });
+    setPendingReply({ question: trimmed, startedAt: currentTimeMs() });
     setInputValue("");
     setThinkingSeconds(0);
     setActiveTab("chat");
@@ -720,7 +834,7 @@ export function DiptyqueKnowledgeBase() {
             ) : null}
           </div>
 
-          <div className={`panel-body graph-stage ${isDraggingNode ? "dragging" : ""}`} role="presentation">
+          <div className={`panel-body graph-stage ${draggedNodeId ? "dragging" : ""}`} role="presentation">
             <div className="graph-toolbar">
               <button type="button" className="zoom-btn" onClick={() => zoomGraph(graphScale - 0.06)}>−</button>
               <span className="zoom-label">{Math.round(graphScale * 100)}%</span>
@@ -734,24 +848,44 @@ export function DiptyqueKnowledgeBase() {
                   </marker>
                 </defs>
                 <g>
-                  {renderLines.map((line, index) => {
-                    const lineLabel = graphDataset.edgeLabels[index];
+                  {orderedRenderLines.map((line, index) => {
+                    const lineLabel = line.label || graphDataset.edgeLabels[index];
                     const labelPoint = lineMidpoint(line.x1, line.y1, line.x2, line.y2, index % 2 === 0 ? 0 : 2);
                     const isHoverLine = hoveredHighlightIds.has(line.sourceId) && hoveredHighlightIds.has(line.targetId);
+                    const isProductRelation = line.relationLayer !== "fact" || ["REFILL_FOR", "ACCESSORY_FOR", "PAIRS_WITH", "LAYER_WITH", "EXTENDS_TO_HOME"].includes(line.edgeType);
+                    const isAnswerEdge = focusedEdgeIds.has(line.edgeId);
+                    const isDimmedEdge = focusedEdgeIds.size > 0 && !isAnswerEdge;
+                    const isSelectedEdge = selectedEdge?.edgeId === line.edgeId;
                     return (
-                      <g key={`${line.sourceId}-${line.targetId}-${index}`}>
+                      <g
+                        key={line.edgeId}
+                        className={"graph-edge " + (isSelectedEdge ? "selected-relation " : "") + (isAnswerEdge ? "answer-relation " : "") + (isDimmedEdge ? "dimmed-relation" : "")}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setSelectedEdge(line);
+                        }}
+                      >
+                        <line
+                          className="graph-link-hit"
+                          x1={line.x1}
+                          y1={line.y1}
+                          x2={line.x2}
+                          y2={line.y2}
+                          stroke="transparent"
+                          strokeWidth={isAnswerEdge || isSelectedEdge ? 11 : 7}
+                        />
                         <line
                           className="graph-link"
                           x1={line.x1}
                           y1={line.y1}
                           x2={line.x2}
                           y2={line.y2}
-                          stroke="#d2cbc0"
-                          opacity={isHoverLine ? 0.82 : 0.24}
+                          stroke={isSelectedEdge || isAnswerEdge ? "#7f0019" : "#d2cbc0"}
+                          opacity={isSelectedEdge ? 0.96 : isAnswerEdge ? 0.86 : isDimmedEdge ? 0.08 : isHoverLine ? 0.82 : 0.24}
                           strokeDasharray={line.dashed ? "5 3" : undefined}
                           markerEnd={line.dashed ? "url(#arrowhead)" : undefined}
                         />
-                        {lineLabel ? <text className="graph-link-label" x={labelPoint.x} y={labelPoint.y} fill="#8c857d" opacity={isHoverLine ? 0.86 : 0}>{lineLabel}</text> : null}
+                        {lineLabel ? <text className={"graph-link-label " + (isProductRelation ? "product-relation-label" : "")} x={labelPoint.x} y={labelPoint.y} fill={isAnswerEdge || isSelectedEdge ? "#7f0019" : "#8c857d"} opacity={isSelectedEdge || isAnswerEdge ? 1 : isDimmedEdge ? 0 : isHoverLine || isProductRelation ? 0.9 : 0}>{lineLabel}</text> : null}
                       </g>
                     );
                   })}
@@ -760,8 +894,8 @@ export function DiptyqueKnowledgeBase() {
                   {renderNodes.map((node) => {
                     const isSelectedFilter = graphMode.filterNodeIds.includes(node.id);
                     const isFocusedNode = graphDataset.focusLabel === node.id;
-                    const isCoreNode = node.nodeType === "CoreFamily" || isSelectedFilter || isFocusedNode;
-                    const isDraggingThisNode = draggedNodeRef.current?.id === node.id;
+                    const isCoreNode = structuralCoreIds.has(node.id) || isSelectedFilter || isFocusedNode;
+                    const isDraggingThisNode = draggedNodeId === node.id;
                     const isHoverHighlight = hoveredHighlightIds.has(node.id);
                     return (
                       <g
@@ -794,6 +928,73 @@ export function DiptyqueKnowledgeBase() {
                 </g>
               </svg>
             </div>
+            {selectedEdge ? (
+              <aside className="relation-detail-panel" aria-live="polite">
+                <header className="relation-detail-header">
+                  <div>
+                    <span className="relation-layer-label">{relationProvenanceText(selectedEdge)}</span>
+                    <h2>{selectedEdge.label}</h2>
+                  </div>
+                  <button
+                    type="button"
+                    className="relation-detail-close"
+                    aria-label="关闭关系详情"
+                    title="关闭关系详情"
+                    onClick={() => setSelectedEdge(null)}
+                  >
+                    <X size={16} aria-hidden="true" />
+                  </button>
+                </header>
+
+                <div className="relation-route">
+                  <strong>{selectedEdge.sourceName}</strong>
+                  <span>{selectedEdge.label}</span>
+                  <strong>{selectedEdge.targetName}</strong>
+                </div>
+
+                <dl className="relation-meta-grid">
+                  <div>
+                    <dt>关系层</dt>
+                    <dd>{relationLayerText(selectedEdge.relationLayer)}</dd>
+                  </div>
+                  <div>
+                    <dt>场景</dt>
+                    <dd>{selectedEdge.scenario || "未标注"}</dd>
+                  </div>
+                  <div>
+                    <dt>证据类型</dt>
+                    <dd>{evidenceTypeText(selectedEdge.evidenceType)}</dd>
+                  </div>
+                  <div>
+                    <dt>置信度</dt>
+                    <dd>{selectedEdge.confidence || "未标注"}</dd>
+                  </div>
+                  <div>
+                    <dt>审核状态</dt>
+                    <dd>{reviewStatusText(selectedEdge.reviewStatus)}</dd>
+                  </div>
+                </dl>
+
+                {selectedEdge.evidenceText ? (
+                  <div className="relation-evidence">
+                    <span>关系依据</span>
+                    <p>{selectedEdge.evidenceText}</p>
+                  </div>
+                ) : (
+                  <div className="relation-evidence">
+                    <span>来源字段</span>
+                    <p>{selectedEdge.viaField || "图谱结构关系"}</p>
+                  </div>
+                )}
+
+                {selectedEdge.evidenceUrl ? (
+                  <a className="relation-source-link" href={selectedEdge.evidenceUrl} target="_blank" rel="noreferrer">
+                    查看来源
+                    <ExternalLink size={14} aria-hidden="true" />
+                  </a>
+                ) : null}
+              </aside>
+            ) : null}
           </div>
 
           <div className="panel-footer">
@@ -853,14 +1054,3 @@ export function DiptyqueKnowledgeBase() {
     </main>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
