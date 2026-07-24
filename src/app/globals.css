@@ -167,6 +167,9 @@
 .product-card-specs { margin-top: 10px; font-size: 12px; color: var(--muji-dark); }
 .product-card-talk { margin-top: 10px; color: var(--muji-gray); font-size: 12px; line-height: 1.55; }
 .product-card-footer { margin-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.product-card-actions { display: flex; align-items: center; gap: 8px; }
+.product-card-name-link { color: inherit; text-decoration: none; }
+.product-card-name-link:hover { text-decoration: underline; text-underline-offset: 3px; }
 .product-card-price { font-size: 13px; font-weight: 600; color: var(--muji-red); }
 .focus-btn { min-height: 36px; padding: 6px 14px; }
 .recommendation-products { width: min(100%, 720px); }

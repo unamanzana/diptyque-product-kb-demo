@@ -125,6 +125,8 @@ for (const query of [
   "朋友说杜桑有哪些产品",
   "晚香玉香味有哪些产品",
   "为什么香水留香时间不同",
+  "奥费恩香氛护手霜有哪些香调",
+  "这款花瓶的材质是什么",
 ]) {
   queryChecks += 1;
   if (extractProductCatalogScope(query, vocabulary)) {

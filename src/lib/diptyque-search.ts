@@ -270,8 +270,7 @@ function giftRecommendationProducts(query: string) {
         Number(Boolean(b.materials.length)) - Number(Boolean(a.materials.length)) ||
         a.productForm.localeCompare(b.productForm, "zh-CN") ||
         a.name.localeCompare(b.name, "zh-CN")
-    )
-    .slice(0, 60);
+    );
 }
 function productPrice(product: FrontendProduct) {
   if (product.priceMin == null && product.priceMax == null) return "price unavailable";
@@ -281,7 +280,7 @@ function productPrice(product: FrontendProduct) {
   return `￥${product.priceMin ?? product.priceMax}`;
 }
 
-function productSummary(product: FrontendProduct) {
+function productSummary(product: FrontendProduct, includeNarrative = true) {
   return [
     `Product: ${product.name}`,
     `Core family: ${product.coreFamily || "unknown"}`,
@@ -298,9 +297,9 @@ function productSummary(product: FrontendProduct) {
     `Subtitle notes: ${subtitleNotes(product).join(" / ") || "none"}`,
     `Sizes: ${product.sizes.join(" / ") || "none"}`,
     `Price: ${productPrice(product)}`,
-    product.subtitle ? `Subtitle: ${product.subtitle}` : "",
-    product.description ? `Description: ${product.description}` : "",
-    product.storyText ? `Story: ${product.storyText.slice(0, 220)}` : "",
+    includeNarrative && product.subtitle ? `Subtitle: ${product.subtitle.slice(0, 160)}` : "",
+    includeNarrative && product.description ? `Description: ${product.description.slice(0, 280)}` : "",
+    includeNarrative && product.storyText ? `Story: ${product.storyText.slice(0, 240)}` : "",
   ].filter(Boolean).join("\n");
 }
 
@@ -384,7 +383,10 @@ export function buildDiptyqueContext(query: string) {
     (edge) => primaryProductIds.has(edge.source) || primaryProductIds.has(edge.target)
   );
   const productContext = matchedProducts.length
-    ? matchedProducts.map((product, index) => `Candidate product ${index + 1}\n${productSummary(product)}`).join("\n\n")
+    ? matchedProducts.map((product, index) => {
+        const includeNarrative = answerMode !== "gift_recommendation" || index < 20;
+        return `Candidate product ${index + 1}\n${productSummary(product, includeNarrative)}`;
+      }).join("\n\n")
     : "No explicit product match was found. Answer conservatively and suggest asking about series, product forms, gifting tags, refill products, prices, or specific scent notes.";
   const relationContext = matchedRelations.length
     ? matchedRelations.map((edge, index) => `Approved relation ${index + 1}\n${relationSummary(edge)}`).join("\n\n")

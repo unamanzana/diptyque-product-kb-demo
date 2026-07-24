@@ -505,7 +505,7 @@ function buildProductCard(
   };
 }
 
-export function getProductCardsByNames(productNames: string[]) {
+export function getProductCardsByNames(productNames: string[], intentLabel = "商品检索") {
   const seen = new Set<string>();
   return productNames
     .map((name) => products.find((product) => product.name === name))
@@ -515,7 +515,7 @@ export function getProductCardsByNames(productNames: string[]) {
       return true;
     })
     .slice(0, 5)
-    .map((product) => buildProductCard(product, "送礼推荐", 9, { focusPrompt: "单品图谱" }));
+    .map((product) => buildProductCard(product, intentLabel, 9, { focusPrompt: "单品图谱" }));
 }
 
 function isFilterableNodeType(nodeType: string) {
@@ -1960,22 +1960,6 @@ function buildNeighborhoodGraph(focusId: string): GraphDataset {
     summaryText: `${focusNode.nodeType} · 直接邻居 ${directIds.length} · 关联商品 ${linkedProducts.length}`,
     viewBox: `0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`,
   };
-}
-
-function dominantLink<T extends string>(pairs: Array<{ key: string; target: T }>) {
-  const grouped = new Map<string, Map<T, number>>();
-  pairs.forEach(({ key, target }) => {
-    const targetCounts = grouped.get(key) ?? new Map<T, number>();
-    targetCounts.set(target, (targetCounts.get(target) ?? 0) + 1);
-    grouped.set(key, targetCounts);
-  });
-
-  const result = new Map<string, T>();
-  grouped.forEach((targetCounts, key) => {
-    const top = Array.from(targetCounts.entries()).sort((a, b) => (b[1] - a[1]) || String(a[0]).localeCompare(String(b[0]), "zh-CN"))[0];
-    if (top) result.set(key, top[0]);
-  });
-  return result;
 }
 
 function overviewNodeId(kind: string, value: string) {

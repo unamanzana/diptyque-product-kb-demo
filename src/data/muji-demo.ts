@@ -392,8 +392,6 @@ function pointKey(x: number, y: number) {
   return `${x.toFixed(3)}:${y.toFixed(3)}`;
 }
 
-const baseNodeMap = new Map(baseGraph.nodes.map((node) => [pointKey(node.x, node.y), node]));
-
 function transformGraph(nodes: GraphNode[], lines: GraphLine[]) {
   const xs = nodes.map((node) => node.x);
   const ys = nodes.map((node) => node.y);

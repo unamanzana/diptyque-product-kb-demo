@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
@@ -79,7 +80,7 @@ function ProductAnswerCard({
     <>
       <div className="product-card">
         <div className="product-card-header">
-          {card.image ? <img className="product-card-img" src={card.image} alt={card.name} /> : null}
+          {card.image ? <Image className="product-card-img" src={card.image} alt={card.name} width={72} height={72} /> : null}
           <div className="product-card-info">
             <h4>{card.name}</h4>
             <div className="name-en">{card.englishName}</div>

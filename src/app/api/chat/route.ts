@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { generateDiptyqueAnswer } from "@/lib/deepseek";
+import { productNamesByIds } from "@/lib/diptyque-agent-tools";
+import { logModelRequest, logZeroHit } from "@/lib/chat-observability";
+import { generateDiptyqueAnswer, type ChatHistoryMessage } from "@/lib/deepseek";
 import { buildDiptyqueContext } from "@/lib/diptyque-search";
-import { selectMentionedProductNames } from "@/lib/diptyque-recommendation-selection";
 
 export const runtime = "nodejs";
 
@@ -10,6 +11,7 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as {
       message?: string;
+      history?: ChatHistoryMessage[];
     };
     const message = body.message?.trim();
 
@@ -17,37 +19,73 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "missing_message" }, { status: 400 });
     }
 
-    const { answerMode, deterministicAnswer, matchedProducts, contextText } = buildDiptyqueContext(message);
-    if (deterministicAnswer) {
+    const history = Array.isArray(body.history)
+      ? body.history
+          .filter(
+            (item): item is ChatHistoryMessage =>
+              Boolean(item)
+              && (item.role === "user" || item.role === "assistant")
+              && typeof item.content === "string"
+          )
+          .slice(-8)
+      : [];
+
+    const deterministic = buildDiptyqueContext(message);
+    if (deterministic.deterministicAnswer) {
       return NextResponse.json({
-        answer: deterministicAnswer,
-        answerMode,
+        answer: deterministic.deterministicAnswer,
+        answerMode: deterministic.answerMode,
         answerSource: "ontology_full_list",
         fallback: false,
-        matchedProductNames: matchedProducts.map((product) => product.name),
+        matchedProductNames: deterministic.matchedProducts.map((product) => product.name),
+        recommendedProductNames: [],
         model: "ontology",
         reasoningUsed: false,
       });
     }
+
+    const modelStartedAt = performance.now();
     const result = await generateDiptyqueAnswer({
-      contextText,
+      history,
       message,
     });
+    const durationMs = Math.round(performance.now() - modelStartedAt);
+    const reason = "reason" in result ? result.reason : undefined;
+    const usage = "usage" in result ? result.usage : undefined;
+    const matchedProductNames = productNamesByIds(result.matchedProductIds);
+    const recommendedProductNames = productNamesByIds(result.selectedProductIds);
+    const zeroHitQueryId = !result.fallback && result.matchedProductIds.length === 0
+      ? logZeroHit(message, result.answerMode)
+      : undefined;
 
-    const recommendedProductNames = answerMode === "gift_recommendation" && !result.fallback
-      ? selectMentionedProductNames(result.answer, matchedProducts)
-      : [];
+    logModelRequest({
+      answerMode: result.answerMode,
+      durationMs,
+      fallback: result.fallback,
+      model: result.model,
+      reason,
+      reasoningUsed: result.reasoningUsed,
+      toolTrace: result.toolTrace,
+      usage,
+    });
 
     return NextResponse.json({
       answer: result.answer,
-      answerMode,
-      answerSource: result.fallback ? "local_fallback" : "deepseek",
+      answerMode: result.answerMode,
+      answerSource: result.fallback ? "local_fallback" : "deepseek_tools",
       fallback: result.fallback,
-      matchedProductNames: matchedProducts.map((product) => product.name),
+      matchedProductNames,
       recommendedProductNames,
       model: result.model,
       reasoningUsed: result.reasoningUsed,
-      reason: "reason" in result ? result.reason : undefined,
+      reason,
+      diagnostics: {
+        durationMs,
+        usage,
+        zeroHit: Boolean(zeroHitQueryId),
+        zeroHitQueryId,
+        toolTrace: result.toolTrace,
+      },
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown_error";

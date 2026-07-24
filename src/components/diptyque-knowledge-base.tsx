@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { ExternalLink, Network, X } from "lucide-react";
 
 import {
@@ -29,6 +30,7 @@ type GraphMode = {
   recommendationProductNames?: string[];
 };
 type PendingReply = {
+  history: Array<{ role: "assistant" | "user"; content: string }>;
   question: string;
   startedAt: number;
 };
@@ -155,9 +157,17 @@ function ProductAnswerCard({
     <>
       <div className="product-card">
         <div className="product-card-header">
-          {card.image ? <img className="product-card-img" src={card.image} alt={card.name} /> : null}
+          {card.image ? (
+            card.url ? (
+              <a href={card.url} target="_blank" rel="noreferrer" title={"打开 " + card.name + " 官网商品页"}>
+                <Image className="product-card-img" src={card.image} alt={card.name} width={72} height={72} />
+              </a>
+            ) : (
+              <Image className="product-card-img" src={card.image} alt={card.name} width={72} height={72} />
+            )
+          ) : null}
           <div className="product-card-info">
-            <h4>{card.name}</h4>
+            <h4>{card.url ? <a className="product-card-name-link" href={card.url} target="_blank" rel="noreferrer">{card.name}</a> : card.name}</h4>
             <div className="name-en">{card.englishName}</div>
             <div className="product-card-category">{card.category}</div>
           </div>
@@ -173,13 +183,27 @@ function ProductAnswerCard({
         <div className="product-card-talk">💬 {card.recommendation}</div>
         <div className="product-card-footer">
           <span className="product-card-price">{card.price}</span>
-          <button
-            type="button"
-            className="muji-btn outline focus-btn"
-            onClick={() => onFocusGraph(card.focusNodeLabel)}
-          >
-            ◉ {card.focusPrompt ?? "图谱"}
-          </button>
+          <div className="product-card-actions">
+            {card.url ? (
+              <a
+                className="muji-btn outline focus-btn"
+                href={card.url}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={"打开 " + card.name + " 官网商品页"}
+              >
+                <ExternalLink size={15} aria-hidden="true" />
+                官网
+              </a>
+            ) : null}
+            <button
+              type="button"
+              className="muji-btn outline focus-btn"
+              onClick={() => onFocusGraph(card.focusNodeLabel)}
+            >
+              ◉ {card.focusPrompt ?? "图谱"}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -275,10 +299,10 @@ function RecommendationProductCards({
             <div className="recommendation-product-main">
               {card.url ? (
                 <a href={card.url} target="_blank" rel="noreferrer" title={`打开 ${card.name} 商品页`}>
-                  {card.image ? <img className="recommendation-product-image" src={card.image} alt={card.name} /> : null}
+                  {card.image ? <Image className="recommendation-product-image" src={card.image} alt={card.name} width={62} height={62} /> : null}
                 </a>
               ) : card.image ? (
-                <img className="recommendation-product-image" src={card.image} alt={card.name} />
+                <Image className="recommendation-product-image" src={card.image} alt={card.name} width={62} height={62} />
               ) : null}
               <div className="recommendation-product-info">
                 {card.url ? (
@@ -549,8 +573,6 @@ export function DiptyqueKnowledgeBase() {
       }
     });
 
-    let totalMotion = 0;
-
     nodes.forEach((node) => {
       if (dragged?.id === node.id) {
         node.x = dragged.pointerX - dragged.offsetX;
@@ -558,7 +580,6 @@ export function DiptyqueKnowledgeBase() {
         node.vx = dragged.vx;
         node.vy = dragged.vy;
         clampNodePosition(node);
-        totalMotion += Math.abs(node.vx) + Math.abs(node.vy);
         return;
       }
 
@@ -570,7 +591,6 @@ export function DiptyqueKnowledgeBase() {
       node.x += node.vx * dt * 0.76;
       node.y += node.vy * dt * 0.76;
       clampNodePosition(node);
-      totalMotion += Math.abs(node.vx) + Math.abs(node.vy) + Math.abs(node.restX - node.x) * 0.02 + Math.abs(node.restY - node.y) * 0.02;
     });
 
     syncRenderFromSimulation();
@@ -596,6 +616,10 @@ export function DiptyqueKnowledgeBase() {
     return { x: transformed.x, y: transformed.y };
   }
 
+  const kickSimulationEffect = useEffectEvent(() => {
+    kickSimulation();
+  });
+
   useEffect(() => {
     const nextNodes = new Map<string, SimNode>();
     graphDataset.nodes.forEach((node) => {
@@ -615,7 +639,7 @@ export function DiptyqueKnowledgeBase() {
       restLength: Math.hypot(line.x2 - line.x1, line.y2 - line.y1),
     }));
     syncRenderFromSimulation();
-    kickSimulation();
+    kickSimulationEffect();
     return () => {
       draggedNodeRef.current = null;
       setDraggedNodeId(null);
@@ -641,7 +665,7 @@ export function DiptyqueKnowledgeBase() {
       dragged.lastPointerY = nextPoint.y;
       dragged.lastTime = now;
       if (dragged.moved) suppressNodeClickRef.current = true;
-      kickSimulation();
+      kickSimulationEffect();
     }
 
     function handlePointerUp() {
@@ -654,7 +678,7 @@ export function DiptyqueKnowledgeBase() {
       }
       draggedNodeRef.current = null;
       setDraggedNodeId(null);
-      kickSimulation();
+      kickSimulationEffect();
     }
 
     window.addEventListener("pointermove", handlePointerMove);
@@ -675,6 +699,10 @@ export function DiptyqueKnowledgeBase() {
     suppressNodeClickRef.current = false;
     stopSimulation();
   }
+
+  const applyGraphModeEffect = useEffectEvent((nextMode: GraphMode) => {
+    applyGraphMode(nextMode);
+  });
 
   function resetGraph() {
     applyGraphMode({ filterNodeIds: [], focusEdgeIds: [], focusLabel: null });
@@ -718,7 +746,7 @@ export function DiptyqueKnowledgeBase() {
   useEffect(() => {
     if (!pendingReply) return undefined;
 
-    const { question, startedAt } = pendingReply;
+    const { history, question, startedAt } = pendingReply;
     const controller = new AbortController();
     let cancelled = false;
     let streamInterval: number | null = null;
@@ -772,7 +800,7 @@ export function DiptyqueKnowledgeBase() {
                 : message
             )
           );
-          applyGraphMode({
+          applyGraphModeEffect({
             filterNodeIds: response.filterNodeIds ?? [],
             focusEdgeIds: response.focusEdgeIds ?? [],
             focusLabel: response.focusNodeLabel ?? null,
@@ -790,7 +818,7 @@ export function DiptyqueKnowledgeBase() {
         const apiResponse = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: question }),
+          body: JSON.stringify({ history, message: question }),
           signal: controller.signal,
         });
         if (!apiResponse.ok) throw new Error(`chat_http_${apiResponse.status}`);
@@ -813,13 +841,16 @@ export function DiptyqueKnowledgeBase() {
               focusEdgeIds: [],
               focusNodeLabel: localResponse.focusNodeLabel ?? "domain:香调",
             };
-          } else if (data.answerMode === "gift_recommendation") {
+          } else if (data.answerSource === "deepseek_tools") {
             const recommendationProductNames = data.recommendedProductNames ?? [];
             response = {
               ...localResponse,
               answer: data.answer.trim(),
               card: undefined,
-              cards: getProductCardsByNames(recommendationProductNames),
+              cards: getProductCardsByNames(
+                recommendationProductNames,
+                data.answerMode === "gift_recommendation" ? "送礼推荐" : "工具检索"
+              ),
               filterNodeIds: [],
               focusEdgeIds: [],
               focusNodeLabel: undefined,
@@ -829,11 +860,9 @@ export function DiptyqueKnowledgeBase() {
             response = { ...localResponse, answer: data.answer.trim() };
           }
           responseNote = data.answerSource === "ontology_full_list"
-            ? `本体全量检索 · ${data.matchedProductNames?.length ?? 0}款`
-            : data.reasoningUsed
-              ? data.answerMode === "gift_recommendation"
-                ? `${data.model ?? "DeepSeek"} · 已比较香调、品型、价格与礼赠证据`
-                : `${data.model ?? "DeepSeek"} · 深度思考`
+            ? "本体全量检索 · " + (data.matchedProductNames?.length ?? 0) + "款"
+            : data.answerSource === "deepseek_tools"
+              ? (data.model ?? "DeepSeek") + " · 思考并检索 " + (data.matchedProductNames?.length ?? 0) + " 款"
               : data.model;
         }
       } catch (error) {
@@ -894,7 +923,17 @@ export function DiptyqueKnowledgeBase() {
     if (!trimmed || pendingReply || streamingMessageId) return;
 
     setMessages((current) => [...current, { id: makeId("user"), role: "user", text: trimmed }]);
-    setPendingReply({ question: trimmed, startedAt: currentTimeMs() });
+    setPendingReply({
+      history: messages
+        .filter((message) => message.role === "user" || (message.role === "bot" && message.text.trim()))
+        .slice(-8)
+        .map((message) => ({
+          role: message.role === "user" ? "user" : "assistant",
+          content: message.text,
+        })),
+      question: trimmed,
+      startedAt: currentTimeMs(),
+    });
     setInputValue("");
     setThinkingSeconds(0);
     setActiveTab("chat");
