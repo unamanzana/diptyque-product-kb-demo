@@ -134,10 +134,63 @@ for (const query of [
   }
 }
 
+function normalizeProductName(value) {
+  return String(value ?? "").replace(/\s|-/gu, "");
+}
+
+const productsByNormalizedName = new Map();
+for (const product of products) {
+  const key = normalizeProductName(product.name);
+  if (!productsByNormalizedName.has(key)) productsByNormalizedName.set(key, []);
+  productsByNormalizedName.get(key).push(product);
+}
+for (const [normalizedName, matches] of productsByNormalizedName) {
+  if (matches.length > 1) {
+    failures.push({
+      type: "duplicate_product_concept",
+      normalizedName,
+      products: matches.map((product) => ({ id: product.id, name: product.name, sizes: product.sizes })),
+    });
+  }
+}
+
+const mergedConceptCases = [
+  { name: "肌肤之花润肤乳", sizes: ["200ML"], skuCount: 1 },
+  { name: "浆果香烛台香氛蜡烛", sizes: ["190G", "67G"], skuCount: 2 },
+  { name: "炭木香烛台香氛蜡烛", sizes: ["190G", "67G"], skuCount: 2 },
+  { name: "椭圆漆木收纳托盘", sizes: ["L", "S"], skuCount: 2 },
+  { name: "琥珀室内扩香摆件补充瓶", sizes: ["200ML", "2L"], skuCount: 2 },
+];
+let conceptChecks = 0;
+for (const expected of mergedConceptCases) {
+  conceptChecks += 1;
+  const matches = products.filter((product) => normalizeProductName(product.name) === normalizeProductName(expected.name));
+  if (matches.length !== 1) {
+    failures.push({ type: "merged_product_count", expected, actualCount: matches.length });
+    continue;
+  }
+  const product = matches[0];
+  const actualSizes = sorted(product.sizes ?? []);
+  if (
+    product.skuCount !== expected.skuCount
+    || JSON.stringify(actualSizes) !== JSON.stringify(sorted(expected.sizes))
+  ) {
+    failures.push({
+      type: "merged_product_variants",
+      name: expected.name,
+      expectedSizes: sorted(expected.sizes),
+      actualSizes,
+      expectedSkuCount: expected.skuCount,
+      actualSkuCount: product.skuCount,
+    });
+  }
+}
+
 console.log("Core families: " + vocabulary.coreFamilies.length);
 console.log("Product forms: " + vocabulary.productForms.length);
 console.log("Product catalog query checks: " + queryChecks);
 console.log("Product membership checks: " + membershipChecks);
+console.log("Product concept merge checks: " + conceptChecks);
 console.log("Audit failures: " + failures.length);
 
 if (failures.length) {

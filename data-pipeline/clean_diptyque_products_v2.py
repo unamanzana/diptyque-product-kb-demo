@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import csv
 import re
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 
 
@@ -353,6 +353,49 @@ def make_product_key(spu: str, name: str, sku: str) -> str:
     return f"{spu or sku}::{stable_name}"
 
 
+def numeric_value(value: str) -> float:
+    try:
+        return float((value or "").strip() or 0)
+    except ValueError:
+        return 0
+
+
+def assign_product_concepts(rows: list[dict[str, str]]) -> None:
+    groups: dict[tuple[str, str, str], list[dict[str, str]]] = defaultdict(list)
+    for row in rows:
+        stable_name = normalize_product_name(row.get("product_name") or "")
+        core_family = (row.get("core_family") or "").strip()
+        product_form = (row.get("product_form") or "").strip()
+        if not stable_name or not core_family or not product_form:
+            signature = ((row.get("product_key") or "").strip(), "", "")
+        else:
+            signature = (stable_name, core_family, product_form)
+        groups[signature].append(row)
+
+    for (stable_name, core_family, product_form), group in groups.items():
+        source_keys = {(row.get("product_key") or "").strip() for row in group}
+        if len(source_keys) == 1:
+            concept_key = next(iter(source_keys))
+        else:
+            concept_key = f"concept::{core_family}::{product_form}::{stable_name}"
+
+        preferred = max(
+            group,
+            key=lambda row: (
+                numeric_value(row.get("stock") or "") > 0,
+                numeric_value(row.get("stock") or ""),
+                bool((row.get("type_raw") or "").strip()),
+                bool((row.get("fragrance_normalized") or "").strip()),
+                len((row.get("category_tokens_clean") or "").strip()),
+                " - " not in (row.get("product_name") or ""),
+            ),
+        )
+        concept_name = (preferred.get("product_name") or "").strip()
+        for row in group:
+            row["product_concept_key"] = concept_key
+            row["product_concept_name"] = concept_name
+
+
 def keep_longest_matches(values: list[str]) -> list[str]:
     result: list[str] = []
     for value in sorted(uniq_keep_order(values), key=lambda item: (-len(item), item)):
@@ -686,8 +729,12 @@ def main() -> None:
             }
         )
 
+    assign_product_concepts(output_rows)
+
     output_fields = [
         "product_key",
+        "product_concept_key",
+        "product_concept_name",
         "product_name",
         "identity_name",
         "spu",

@@ -46,6 +46,25 @@ def to_int(value: str) -> int | None:
         return None
 
 
+def product_row_priority(row: dict[str, str]) -> tuple[bool, bool, int, bool, bool, int]:
+    stock = to_int(row.get("stock") or "") or 0
+    return (
+        (row.get("product_name") or "").strip() == (row.get("product_concept_name") or "").strip(),
+        stock > 0,
+        stock,
+        bool((row.get("type_raw") or "").strip()),
+        bool((row.get("fragrance_normalized") or "").strip()),
+        len((row.get("category_tokens_clean") or "").strip()),
+    )
+
+
+def sku_variant_key(row: dict[str, str]) -> str:
+    size = (row.get("size") or "").strip().upper()
+    if size:
+        return f"size:{size}"
+    return f"source:{(row.get('product_key') or row.get('sku') or '').strip()}"
+
+
 def main() -> None:
     cleaned_rows = read_csv(CLEANED_CSV)
     raw_rows = read_csv(RAW_CSV)
@@ -54,14 +73,25 @@ def main() -> None:
     recommendation_rule_rows = read_csv(RECOMMENDATION_RULES_CSV) if RECOMMENDATION_RULES_CSV.exists() else []
 
     raw_by_sku = {(row.get("sku") or "").strip(): row for row in raw_rows if (row.get("sku") or "").strip()}
+    source_to_concept = {
+        (row.get("product_key") or "").strip(): (row.get("product_concept_key") or "").strip() or (row.get("product_key") or "").strip()
+        for row in cleaned_rows
+    }
     product_groups: dict[str, list[dict[str, str]]] = defaultdict(list)
     for row in cleaned_rows:
-        product_groups[(row.get("product_key") or "").strip()].append(row)
+        source_key = (row.get("product_key") or "").strip()
+        concept_key = (row.get("product_concept_key") or "").strip() or source_key
+        product_groups[concept_key].append(row)
 
     products: list[dict[str, object]] = []
 
     for product_key, group in sorted(product_groups.items(), key=lambda item: item[0]):
-        first = max(group, key=lambda row: (len((row.get("product_name") or "").strip()), (row.get("product_name") or "").strip()))
+        first = max(group, key=product_row_priority)
+        ordered_group = sorted(group, key=product_row_priority, reverse=True)
+        variant_rows: dict[str, dict[str, str]] = {}
+        for row in ordered_group:
+            variant_rows.setdefault(sku_variant_key(row), row)
+        variant_skus = {(row.get("sku") or "").strip() for row in variant_rows.values()}
         spu = (first.get("spu") or "").strip()
         sku_items: list[dict[str, object]] = []
         sizes: list[str] = []
@@ -84,7 +114,7 @@ def main() -> None:
         story_text = ""
         url = ""
 
-        for row in group:
+        for row in ordered_group:
             sku = (row.get("sku") or "").strip()
             raw = raw_by_sku.get(sku, {})
 
@@ -93,13 +123,15 @@ def main() -> None:
             stock = to_int(row.get("stock") or "")
             sku_url = (row.get("url") or "").strip() or (raw.get("url") or "").strip()
             sku_image = (raw.get("thumbnail") or "").strip() or (raw.get("small_image") or "").strip() or (raw.get("base_image") or "").strip()
+            is_variant = sku in variant_skus
 
-            if size:
-                sizes.append(size)
-            if price is not None:
-                prices.append(price)
-            if stock is not None:
-                stocks.append(stock)
+            if is_variant:
+                if size:
+                    sizes.append(size)
+                if price is not None:
+                    prices.append(price)
+                if stock is not None:
+                    stocks.append(stock)
 
             collections.extend(split_multi(row.get("collection_or_scent") or ""))
             notes.extend(split_multi(row.get("note_tokens") or ""))
@@ -113,7 +145,7 @@ def main() -> None:
             category_tokens.extend(split_multi(row.get("category_tokens_clean") or ""))
             other_tokens.extend(split_multi(row.get("other_tokens") or ""))
 
-            if not image and sku_image:
+            if is_variant and not image and sku_image:
                 image = sku_image
             if not subtitle:
                 subtitle = (raw.get("subtitle") or "").strip()
@@ -121,26 +153,27 @@ def main() -> None:
                 description = (raw.get("pdp_short_description") or "").strip() or (raw.get("plp_description") or "").strip()
             if not story_text:
                 story_text = (raw.get("story_text") or "").strip()
-            if not url and sku_url:
+            if is_variant and not url and sku_url:
                 url = sku_url
 
-            sku_items.append(
-                {
-                    "id": f"sku:{sku}",
-                    "sku": sku,
-                    "size": size,
-                    "price": price,
-                    "stock": stock,
-                    "url": sku_url,
-                    "image": sku_image,
-                }
-            )
+            if is_variant:
+                sku_items.append(
+                    {
+                        "id": f"sku:{sku}",
+                        "sku": sku,
+                        "size": size,
+                        "price": price,
+                        "stock": stock,
+                        "url": sku_url,
+                        "image": sku_image,
+                    }
+                )
 
         products.append(
             {
                 "id": f"product:{product_key}",
-                "name": (first.get("product_name") or "").strip(),
-                "identityName": next(((row.get("identity_name") or "").strip() for row in group if (row.get("identity_name") or "").strip()), ""),
+                "name": (first.get("product_concept_name") or "").strip() or (first.get("product_name") or "").strip(),
+                "identityName": (first.get("identity_name") or "").strip() or next(((row.get("identity_name") or "").strip() for row in group if (row.get("identity_name") or "").strip()), ""),
                 "spu": spu,
                 "coreFamily": (first.get("core_family") or "").strip(),
                 "productForm": (first.get("product_form") or "").strip(),
@@ -224,7 +257,7 @@ def main() -> None:
     recommendation_rules = [
         {
             "ruleId": row["rule_id"],
-            "sourceProductId": f"product:{row['source_product_key']}",
+            "sourceProductId": f"product:{source_to_concept.get(row['source_product_key'], row['source_product_key'])}",
             "sourceProductName": row["source_product_name"],
             "relationType": row["relation_type"],
             "targetCollection": row["target_collection"],

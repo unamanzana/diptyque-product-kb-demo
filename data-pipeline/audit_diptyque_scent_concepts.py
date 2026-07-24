@@ -25,14 +25,14 @@ def main() -> None:
         edge_rows = list(csv.DictReader(handle))
 
     product_names = {
-        (row.get("product_key") or "").strip(): (row.get("product_name") or "").strip()
+        ((row.get("product_concept_key") or "").strip() or (row.get("product_key") or "").strip()): ((row.get("product_concept_name") or "").strip() or (row.get("product_name") or "").strip())
         for row in cleaned_rows
     }
     expected: dict[str, set[str]] = defaultdict(set)
     families: dict[str, set[str]] = defaultdict(set)
     forms: dict[str, set[str]] = defaultdict(set)
     for row in cleaned_rows:
-        product_key = (row.get("product_key") or "").strip()
+        product_key = (row.get("product_concept_key") or "").strip() or (row.get("product_key") or "").strip()
         for concept in split_multi(row.get("scent_concepts") or ""):
             expected[concept].add(product_key)
             if row.get("core_family"):

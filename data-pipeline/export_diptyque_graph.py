@@ -38,6 +38,31 @@ def first_nonblank(*values: str) -> str:
     return ""
 
 
+def numeric_value(value: str) -> float:
+    try:
+        return float((value or "").strip() or 0)
+    except ValueError:
+        return 0
+
+
+def product_row_priority(row: dict[str, str]) -> tuple[bool, bool, float, bool, bool, int]:
+    return (
+        (row.get("product_name") or "").strip() == (row.get("product_concept_name") or "").strip(),
+        numeric_value(row.get("stock") or "") > 0,
+        numeric_value(row.get("stock") or ""),
+        bool((row.get("type_raw") or "").strip()),
+        bool((row.get("fragrance_normalized") or "").strip()),
+        len((row.get("category_tokens_clean") or "").strip()),
+    )
+
+
+def sku_variant_key(row: dict[str, str]) -> str:
+    size = (row.get("size") or "").strip().upper()
+    if size:
+        return f"size:{size}"
+    return f"source:{(row.get('product_key') or row.get('sku') or '').strip()}"
+
+
 def main() -> None:
     with INPUT_CSV.open("r", encoding="utf-8-sig", newline="") as handle:
         rows = list(csv.DictReader(handle))
@@ -45,17 +70,22 @@ def main() -> None:
     nodes: dict[str, dict[str, str]] = {}
     edge_keys: set[tuple[str, str, str]] = set()
     edges: list[dict[str, str]] = []
-    product_keys_by_name: dict[str, set[str]] = defaultdict(set)
-    sizes_by_product_key: dict[str, set[str]] = defaultdict(set)
+    concept_keys_by_name: dict[str, set[str]] = defaultdict(set)
+    sizes_by_concept_key: dict[str, set[str]] = defaultdict(set)
+    source_to_concept: dict[str, str] = {}
+    rows_by_concept: dict[str, list[dict[str, str]]] = defaultdict(list)
     semantic_names: set[str] = set()
 
     for row in rows:
-        product_key = (row.get("product_key") or "").strip()
-        product_name = (row.get("product_name") or "").strip()
-        product_keys_by_name[product_name].add(product_key)
+        source_key = (row.get("product_key") or "").strip()
+        concept_key = (row.get("product_concept_key") or "").strip() or source_key
+        concept_name = (row.get("product_concept_name") or "").strip() or (row.get("product_name") or "").strip()
+        source_to_concept[source_key] = concept_key
+        rows_by_concept[concept_key].append(row)
+        concept_keys_by_name[concept_name].add(concept_key)
         size = (row.get("size") or "").strip()
         if size:
-            sizes_by_product_key[product_key].add(size)
+            sizes_by_concept_key[concept_key].add(size)
         semantic_names.update(
             value
             for value in [
@@ -72,6 +102,22 @@ def main() -> None:
             ]
             if value
         )
+
+    representative_by_concept = {
+        concept_key: max(group, key=product_row_priority)
+        for concept_key, group in rows_by_concept.items()
+    }
+    sku_representatives: set[str] = set()
+    for group in rows_by_concept.values():
+        rows_by_variant: dict[str, list[dict[str, str]]] = defaultdict(list)
+        for row in group:
+            rows_by_variant[sku_variant_key(row)].append(row)
+        for variant_rows in rows_by_variant.values():
+            representative = max(variant_rows, key=product_row_priority)
+            sku_representatives.add((representative.get("product_key") or "").strip())
+
+    def canonical_product_key(source_key: str) -> str:
+        return source_to_concept.get(source_key, source_key)
 
     def add_node(
         id_value: str,
@@ -209,23 +255,25 @@ def main() -> None:
         )
 
     for row in rows:
-        product_name = (row.get("product_name") or "").strip()
-        product_key = (row.get("product_key") or "").strip()
-        spu = (row.get("spu") or "").strip()
+        source_key = (row.get("product_key") or "").strip()
+        product_key = (row.get("product_concept_key") or "").strip() or source_key
+        representative = representative_by_concept[product_key]
+        product_name = (row.get("product_concept_name") or "").strip() or (representative.get("product_name") or "").strip()
+        spu = (representative.get("spu") or "").strip()
         sku = (row.get("sku") or "").strip()
-        product_display = first_nonblank(product_name, (row.get("identity_name") or "").strip())
-        if len(product_keys_by_name[product_name]) > 1:
-            qualifier = " / ".join(sorted(sizes_by_product_key[product_key])) or spu
+        product_display = product_name
+        if len(concept_keys_by_name[product_name]) > 1:
+            qualifier = " / ".join(sorted(sizes_by_concept_key[product_key])) or spu
             product_display = f"{product_display}（{qualifier}）"
         elif product_name in semantic_names:
             product_display = f"{product_display}（商品）"
         product_id = node_id("product", product_key)
         sku_id = node_id("sku", sku)
 
-        type_raw = (row.get("type_raw") or "").strip()
-        type_derived = (row.get("type_derived") or "").strip()
-        core_family = (row.get("core_family") or "").strip()
-        product_form = (row.get("product_form") or "").strip()
+        type_raw = (representative.get("type_raw") or "").strip()
+        type_derived = (representative.get("type_derived") or "").strip()
+        core_family = (representative.get("core_family") or "").strip()
+        product_form = (representative.get("product_form") or "").strip()
 
         add_node(
             product_id,
@@ -233,38 +281,39 @@ def main() -> None:
             product_name,
             display_label=product_display,
             spu=spu,
-            url=(row.get("url") or "").strip(),
+            url=(representative.get("url") or "").strip(),
             type_raw=type_raw,
             type_derived=type_derived,
             core_family=core_family,
             product_form=product_form,
         )
-        add_node(
-            sku_id,
-            "SKU",
-            first_nonblank(f"{product_name} {(row.get('size') or '').strip()}".strip(), sku),
-            display_label=first_nonblank((row.get("size") or "").strip(), sku),
-            spu=spu,
-            sku=sku,
-            size=(row.get("size") or "").strip(),
-            price=(row.get("price") or "").strip(),
-            stock=(row.get("stock") or "").strip(),
-            url=(row.get("url") or "").strip(),
-            type_raw=type_raw,
-            type_derived=type_derived,
-            core_family=core_family,
-            product_form=product_form,
-        )
-        add_edge(
-            product_id,
-            sku_id,
-            "HAS_SKU",
-            source_type="Product",
-            target_type="SKU",
-            source_name=product_name,
-            target_name=sku,
-            via_field="product_key/sku",
-        )
+        if source_key in sku_representatives:
+            add_node(
+                sku_id,
+                "SKU",
+                first_nonblank(f"{product_name} {(row.get('size') or '').strip()}".strip(), sku),
+                display_label=first_nonblank((row.get("size") or "").strip(), sku),
+                spu=(row.get("spu") or "").strip(),
+                sku=sku,
+                size=(row.get("size") or "").strip(),
+                price=(row.get("price") or "").strip(),
+                stock=(row.get("stock") or "").strip(),
+                url=(row.get("url") or "").strip(),
+                type_raw=(row.get("type_raw") or "").strip(),
+                type_derived=(row.get("type_derived") or "").strip(),
+                core_family=(row.get("core_family") or "").strip(),
+                product_form=(row.get("product_form") or "").strip(),
+            )
+            add_edge(
+                product_id,
+                sku_id,
+                "HAS_SKU",
+                source_type="Product",
+                target_type="SKU",
+                source_name=product_name,
+                target_name=sku,
+                via_field="product_concept/size",
+            )
 
         if core_family:
             family_id = node_id("family", core_family)
@@ -473,9 +522,10 @@ def main() -> None:
     product_spec_edge_count = 0
     candle_form_exclusions = {"烛罩", "烛台", "烛盖和灭烛罩", "香氛蜡烛配饰"}
     for row in rows:
-        product_key = (row.get("product_key") or "").strip()
+        source_key = (row.get("product_key") or "").strip()
+        product_key = (row.get("product_concept_key") or "").strip() or source_key
         product_id = node_id("product", product_key)
-        product_name = (row.get("product_name") or "").strip()
+        product_name = (row.get("product_concept_name") or "").strip() or (row.get("product_name") or "").strip()
         product_form = (row.get("product_form") or "").strip()
         core_family = (row.get("core_family") or "").strip()
 
@@ -568,8 +618,8 @@ def main() -> None:
                 raise ValueError(f"Unknown approved relation type: {relation_type}")
             if definition.get("source_node_type") != "Product" or definition.get("target_node_type") != "Product":
                 raise ValueError(f"Unsupported approved relation endpoints for {relation_type}")
-            source_id = node_id("product", (relation.get("source_product_key") or "").strip())
-            target_id = node_id("product", (relation.get("target_product_key") or "").strip())
+            source_id = node_id("product", canonical_product_key((relation.get("source_product_key") or "").strip()))
+            target_id = node_id("product", canonical_product_key((relation.get("target_product_key") or "").strip()))
             if source_id not in nodes or target_id not in nodes:
                 raise ValueError(
                     f"Approved relation references missing product: {relation.get('relation_id') or relation_type}"
@@ -609,7 +659,7 @@ def main() -> None:
         for relation in spec_relation_rows:
             if (relation.get("review_status") or "").strip().lower() != "approved":
                 continue
-            source_id = node_id("product", (relation.get("source_product_key") or "").strip())
+            source_id = node_id("product", canonical_product_key((relation.get("source_product_key") or "").strip()))
             spec_type = (relation.get("spec_type") or "").strip()
             spec_value = (relation.get("spec_value") or "").strip()
             spec_id = node_id("compatibility_spec", f"{spec_type}:{spec_value}")
