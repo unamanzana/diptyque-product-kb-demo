@@ -411,6 +411,14 @@ export function DiptyqueKnowledgeBase() {
         result.add(line.targetId);
       });
     graphMode.filterNodeIds.forEach((id) => result.add(id));
+    const activeFilterId = graphMode.filterNodeIds.at(-1);
+    const activeFilterNode = renderNodes.find((node) => node.id === activeFilterId);
+    const branchNodeTypes = new Set(["CoreFamily", "OntologyDomain", "NoteFamily"]);
+    if (activeFilterNode && graphDataset.focusLabel === activeFilterId && !branchNodeTypes.has(activeFilterNode.nodeType)) {
+      renderNodes
+        .filter((node) => node.nodeType === "Product")
+        .forEach((node) => result.add(node.id));
+    }
     if (graphDataset.focusLabel) result.add(graphDataset.focusLabel);
     return result;
   }, [focusedEdgeIds, graphDataset.focusLabel, graphDataset.modeLabel, graphMode.filterNodeIds, renderLines, renderNodes]);
