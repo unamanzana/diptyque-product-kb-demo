@@ -1,4 +1,5 @@
 import frontendData from "@/data/diptyque-frontend-data.json";
+import { isGiftRecommendationQuery } from "@/lib/diptyque-query-intent";
 
 export type GraphLine = {
   dashed: boolean;
@@ -935,9 +936,6 @@ function detectIntent(query: string) {
   return "商品检索";
 }
 
-function isGiftRecommendationQuery(query: string) {
-  return /送礼|礼赠|礼物|礼品|送给|送一?款|送什么|赠送|朋友|长辈|男朋友|女朋友|男友|女友|伴侣|生日|纪念日/.test(query);
-}
 
 function localGiftRecommendation(query: string): ResponseEntry {
   const wantsHomeGift = /家居|摆件|装饰|文创|烛台|花瓶|托盘|香氛蜡烛|扩香/.test(query);

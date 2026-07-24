@@ -19,6 +19,7 @@ import {
   type ProductCard,
   type ResponseEntry,
 } from "@/data/diptyque-demo";
+import { isGiftRecommendationQuery } from "@/lib/diptyque-query-intent";
 
 type MobileTab = "chat" | "graph";
 type GraphMode = {
@@ -117,6 +118,14 @@ function makeId(prefix: string) {
 
 function currentTimeMs() {
   return Date.now();
+}
+
+function recommendationThinkingStatus(seconds: number, question: string) {
+  if (!isGiftRecommendationQuery(question)) return "正在检索图谱并组织答案";
+  if (seconds < 4) return "正在理解送礼需求";
+  if (seconds < 10) return "正在检索候选商品";
+  if (seconds < 20) return "正在比较香调、品型与价格";
+  return "正在生成逐款推荐依据";
 }
 
 function monotonicTimeMs() {
@@ -822,7 +831,9 @@ export function DiptyqueKnowledgeBase() {
           responseNote = data.answerSource === "ontology_full_list"
             ? `本体全量检索 · ${data.matchedProductNames?.length ?? 0}款`
             : data.reasoningUsed
-              ? `${data.model ?? "DeepSeek"} · 深度思考`
+              ? data.answerMode === "gift_recommendation"
+                ? `${data.model ?? "DeepSeek"} · 已比较香调、品型、价格与礼赠证据`
+                : `${data.model ?? "DeepSeek"} · 深度思考`
               : data.model;
         }
       } catch (error) {
@@ -1142,7 +1153,7 @@ export function DiptyqueKnowledgeBase() {
             {pendingReply ? (
               <div className="chat-msg bot thinking">
                 <div className="chat-bubble thinking-bubble">
-                  <div className="answer-text">思考中 {thinkingSeconds} 秒</div>
+                  <div className="answer-text">{recommendationThinkingStatus(thinkingSeconds, pendingReply.question)} · {thinkingSeconds} 秒</div>
                 </div>
               </div>
             ) : null}

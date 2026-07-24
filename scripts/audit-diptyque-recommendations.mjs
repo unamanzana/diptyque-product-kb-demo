@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 
+import { isGiftRecommendationQuery } from "../src/lib/diptyque-query-intent.ts";
 import { selectMentionedProductNames } from "../src/lib/diptyque-recommendation-selection.ts";
 
 const payload = JSON.parse(
@@ -36,6 +37,32 @@ assertNames(
   [exactRecommendations[0].name]
 );
 
+const giftBox = perfumeCandidates.find((product) => product.productForm === "淡香水礼盒");
+const giftBoxContents = perfumeCandidates.filter(
+  (product) => product.name !== giftBox?.name && product.productForm === "淡香水"
+).slice(0, 2);
+if (!giftBox || giftBoxContents.length < 2) {
+  failures.push({ label: "gift_box_fixture_missing" });
+} else {
+  assertNames(
+    "numbered_heading_excludes_reason_mentions",
+    selectMentionedProductNames(
+      "1. " + giftBox.name + " —— 内含 " + giftBoxContents.map((product) => product.name).join("、") + "，适合探索。",
+      perfumeCandidates
+    ),
+    [giftBox.name]
+  );
+}
+
+assertNames(
+  "intro_mentions_are_not_cards",
+  selectMentionedProductNames(
+    "我比较了 " + exactRecommendations[4].name + "。\n1. " + exactRecommendations[0].name + "｜推荐依据：更符合需求。",
+    perfumeCandidates
+  ),
+  [exactRecommendations[0].name]
+);
+
 const collectionVariants = new Map();
 for (const product of perfumeCandidates) {
   for (const collection of product.collections) {
@@ -63,6 +90,14 @@ if (!variantPairEntry) {
     selectMentionedProductNames(`${eauDeParfum.name}（或${eauDeToilette.productForm}）都可以考虑。`, variants),
     [eauDeParfum.name, eauDeToilette.name]
   );
+  assertNames(
+    "numbered_exact_name_does_not_expand_variant",
+    selectMentionedProductNames(
+      "1. " + eauDeParfum.name + "｜推荐依据：这一浓度符合需求。",
+      variants
+    ),
+    [eauDeParfum.name]
+  );
 }
 
 const homeCandidates = products
@@ -74,8 +109,33 @@ assertNames(
   homeCandidates.map((product) => product.name)
 );
 
+const positiveGiftQueries = [
+  "送长辈推荐什么当礼物",
+  "给妈妈挑一款香水",
+  "预算 1500 送朋友",
+  "父亲节什么香水合适",
+  "有没有适合送人的家居用品",
+  "客户乔迁该选什么",
+  "想买个伴手礼",
+  "推荐一款生日礼物",
+];
+const negativeGiftQueries = [
+  "朋友说杜桑有哪些产品",
+  "长辈平时用香水吗",
+  "生日香氛蜡烛有哪些",
+  "纪念日是哪一天",
+  "妈妈喜欢的晚香玉有哪些产品",
+];
+for (const query of positiveGiftQueries) {
+  if (!isGiftRecommendationQuery(query)) failures.push({ label: "gift_intent_false_negative", query });
+}
+for (const query of negativeGiftQueries) {
+  if (isGiftRecommendationQuery(query)) failures.push({ label: "gift_intent_false_positive", query });
+}
+
+console.log(`Gift intent cases: ${positiveGiftQueries.length + negativeGiftQueries.length}`);
 console.log(`Perfume candidates: ${perfumeCandidates.length}`);
-console.log(`Recommendation selection cases: 4`);
+console.log(`Recommendation selection cases: 7`);
 console.log(`Audit failures: ${failures.length}`);
 
 if (failures.length) {

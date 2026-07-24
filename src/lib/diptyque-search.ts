@@ -1,6 +1,7 @@
 import frontendData from "@/data/diptyque-frontend-data.json";
 import {
   extractScentCatalogTerm,
+  isGiftRecommendationQuery,
   productMatchesScentCatalogTerm,
 } from "@/lib/diptyque-query-intent";
 
@@ -219,9 +220,6 @@ function scentCatalogProducts(term: string) {
     });
 }
 
-function isGiftRecommendationQuery(query: string) {
-  return /送礼|礼物|礼品|送给|送一?款|送什么|赠送|朋友|长辈|男朋友|女朋友|男友|女友|伴侣|生日|纪念日/.test(query);
-}
 
 function giftRecommendationProducts(query: string) {
   const wantsHomeGift = /家居|摆件|装饰|文创|烛台|花瓶|托盘|香氛蜡烛|扩香/.test(query);
