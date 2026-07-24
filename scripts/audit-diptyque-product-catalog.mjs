@@ -87,16 +87,17 @@ for (const form of vocabulary.productForms) {
 assertScope(
   "home_alias",
   "家居用品有哪些",
-  ["家居香氛", "艺术家居", "文创"],
+  ["家居香氛", "艺术家居"],
   []
 );
 assertScope("perfume_alias", "香水有哪些", ["个人香氛"], ["淡香水", "淡香精"]);
 assertScope(
   "decor_alias",
   "家居装饰品都有什么",
-  ["艺术家居", "文创"],
+  ["艺术家居"],
   []
 );
+assertScope("creative_alias", "文创用品有哪些", ["文创"], []);
 assertScope(
   "candle_alias",
   "香氛蜡烛有哪些",

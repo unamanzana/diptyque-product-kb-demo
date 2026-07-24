@@ -247,13 +247,21 @@ function productCatalogProducts(scope: { coreFamilies: string[]; productForms: s
 }
 
 function giftRecommendationProducts(query: string) {
-  const wantsHomeGift = /家居|摆件|装饰|文创|烛台|花瓶|托盘|香氛蜡烛|扩香/.test(query);
+  const wantsCreativeGift = /文创|笔记本|笔筒|便签本/.test(query);
+  const wantsHomeGift = /家居|摆件|装饰|烛台|花瓶|托盘|香氛蜡烛|扩香/.test(query);
+  const requestedFamilies = wantsCreativeGift
+    ? wantsHomeGift
+      ? new Set(["艺术家居", "家居香氛", "文创"])
+      : new Set(["文创"])
+    : wantsHomeGift
+      ? new Set(["艺术家居", "家居香氛"])
+      : null;
   const preferredForms = new Set(["淡香水", "淡香精", "香膏", "淡香水礼盒", "礼盒"]);
   return products
     .filter((product) => {
       if (product.variantTags.includes("补充装")) return false;
-      return wantsHomeGift
-        ? ["艺术家居", "文创", "家居香氛"].includes(product.coreFamily)
+      return requestedFamilies
+        ? requestedFamilies.has(product.coreFamily)
         : product.coreFamily === "个人香氛" && preferredForms.has(product.productForm);
     })
     .sort(

@@ -43,7 +43,7 @@ const PRODUCT_CATALOG_ALIASES: Array<{
   productForms?: string[];
 }> = [
   {
-    coreFamilies: ["家居香氛", "艺术家居", "文创"],
+    coreFamilies: ["家居香氛", "艺术家居"],
     label: "家居用品",
     pattern: /家居用品|家居产品|家居类/,
   },
@@ -68,7 +68,7 @@ const PRODUCT_CATALOG_ALIASES: Array<{
     ],
   },
   {
-    coreFamilies: ["艺术家居", "文创"],
+    coreFamilies: ["艺术家居"],
     label: "家居装饰品",
     pattern: /家居装饰|装饰品|家居饰品/,
   },

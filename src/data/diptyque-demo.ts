@@ -1027,12 +1027,20 @@ function localProductCatalogResponse(scope: ProductCatalogScope): ResponseEntry 
 }
 
 function localGiftRecommendation(query: string): ResponseEntry {
-  const wantsHomeGift = /家居|摆件|装饰|文创|烛台|花瓶|托盘|香氛蜡烛|扩香/.test(query);
+  const wantsCreativeGift = /文创|笔记本|笔筒|便签本/.test(query);
+  const wantsHomeGift = /家居|摆件|装饰|烛台|花瓶|托盘|香氛蜡烛|扩香/.test(query);
+  const requestedFamilies = wantsCreativeGift
+    ? wantsHomeGift
+      ? new Set(["艺术家居", "家居香氛", "文创"])
+      : new Set(["文创"])
+    : wantsHomeGift
+      ? new Set(["艺术家居", "家居香氛"])
+      : null;
   const candidates = products
     .filter((product) => {
       if (product.variantTags.includes("补充装")) return false;
-      return wantsHomeGift
-        ? ["艺术家居", "文创", "家居香氛"].includes(product.coreFamily)
+      return requestedFamilies
+        ? requestedFamilies.has(product.coreFamily)
         : product.coreFamily === "个人香氛" && ["淡香水", "淡香精", "香膏", "淡香水礼盒", "礼盒"].includes(product.productForm);
     })
     .sort(
@@ -1044,16 +1052,24 @@ function localGiftRecommendation(query: string): ResponseEntry {
     )
     .slice(0, 5);
   const recommendationProductNames = candidates.map((product) => product.name);
-  const categoryLabel = wantsHomeGift ? "家居与文创商品" : "个人香氛";
+  const categoryLabel = wantsCreativeGift
+    ? wantsHomeGift
+      ? "家居与文创商品"
+      : "文创商品"
+    : wantsHomeGift
+      ? "家居商品"
+      : "个人香氛";
   return {
     answer: `可以先从这 ${candidates.length} 款${categoryLabel}中比较：${recommendationProductNames.join("、")}。你可以再告诉我偏好的风格、预算或送礼对象，我会继续缩小范围。`,
     cards: getProductCardsByNames(recommendationProductNames),
     confidence: "82% · 🟡 medium",
     keywords: recommendationProductNames,
     recommendationProductNames,
-    suggestions: wantsHomeGift
-      ? ["推荐陶瓷家居礼物", "推荐有搭配关系的家居用品", "预算 1000 元以内", "有哪些烛台？"]
-      : ["推荐木质调香水", "推荐清新香水", "预算 1500 元以内", "有哪些香水礼盒？"],
+    suggestions: wantsCreativeGift && !wantsHomeGift
+      ? ["推荐文创礼物", "文创用品有哪些？", "预算 500 元以内", "有哪些笔记本？"]
+      : wantsHomeGift
+        ? ["推荐陶瓷家居礼物", "推荐有搭配关系的家居用品", "预算 1000 元以内", "有哪些烛台？"]
+        : ["推荐木质调香水", "推荐清新香水", "预算 1500 元以内", "有哪些香水礼盒？"],
   };
 }
 function genericFallback(): ResponseEntry {
