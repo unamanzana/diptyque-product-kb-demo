@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
-import { ExternalLink, Network, X } from "lucide-react";
+import { ExternalLink, MessageCircle, Network, Send, X } from "lucide-react";
 
 import {
   defaultSuggestions,
@@ -180,7 +180,7 @@ function ProductAnswerCard({
           ))}
         </div>
         <div className="product-card-specs">{card.specs}</div>
-        <div className="product-card-talk">💬 {card.recommendation}</div>
+        <div className="product-card-talk"><span>推荐理由</span>{card.recommendation}</div>
         <div className="product-card-footer">
           <span className="product-card-price">{card.price}</span>
           <div className="product-card-actions">
@@ -209,7 +209,7 @@ function ProductAnswerCard({
 
       <div className={`retrieval-pipeline ${expanded ? "expanded" : "collapsed"}`}>
         <div className="pipeline-header">
-          <div className="pipeline-title">🔍 检索决策链路</div>
+          <div className="pipeline-title">检索决策链路</div>
           <div className="pipeline-controls">
             <span className="pipeline-mode-badge">{card.trace.mode}</span>
             <button type="button" className="pipeline-toggle" onClick={() => setExpanded((value) => !value)}>
@@ -220,7 +220,7 @@ function ProductAnswerCard({
 
         <div className="pipeline-body">
           <div className="fusion-results">
-            <div className="fusion-results-title">📦 匹配商品</div>
+            <div className="fusion-results-title">匹配商品</div>
             <div className="fusion-result-row">
               <div className="fusion-result-name">{card.trace.matchedProduct}</div>
               <div className="fusion-result-score">{card.category}</div>
@@ -959,7 +959,7 @@ export function DiptyqueKnowledgeBase() {
             aria-pressed={activeTab === "graph"}
             onClick={() => setActiveTab("graph")}
           >
-            <span className="tab-icon">◉</span>
+            <Network className="tab-icon" size={18} aria-hidden="true" />
             <span className="tab-label">图谱</span>
           </button>
           <button
@@ -968,7 +968,7 @@ export function DiptyqueKnowledgeBase() {
             aria-pressed={activeTab === "chat"}
             onClick={() => setActiveTab("chat")}
           >
-            <span className="tab-icon">💬</span>
+            <MessageCircle className="tab-icon" size={18} aria-hidden="true" />
             <span className="tab-label">问答</span>
           </button>
         </nav>
@@ -980,9 +980,9 @@ export function DiptyqueKnowledgeBase() {
               <span className="graph-mode-label">{graphDataset.modeLabel}</span>
             </div>
             <div className="legend-row">
-              {legendItems.map((item) => (
+              {legendItems.map((item, index) => (
                 <span key={item.label} className="legend-item">
-                  <span className="legend-dot" style={{ backgroundColor: item.color }} />
+                  <span className={`legend-dot legend-dot-${index + 1}`} style={{ backgroundColor: item.color }} />
                   {item.label}
                 </span>
               ))}
@@ -1071,7 +1071,8 @@ export function DiptyqueKnowledgeBase() {
                     return (
                       <g
                         key={node.id}
-                        className={`graph-node interactive ${isCoreNode ? "core-node" : "ambient-node"} ${isHoverHighlight ? "hover-highlight" : ""} ${isFocusedNode ? "focused" : ""} ${isSelectedFilter ? "selected-filter" : ""} ${isDraggingThisNode ? "dragging-node" : ""}`}
+                        className={`graph-node interactive node-type-${node.nodeType} ${isCoreNode ? "core-node" : "ambient-node"} ${isHoverHighlight ? "hover-highlight" : ""} ${isFocusedNode ? "focused" : ""} ${isSelectedFilter ? "selected-filter" : ""} ${isDraggingThisNode ? "dragging-node" : ""}`}
+                        data-node-type={node.nodeType}
                         transform={`translate(${node.x},${node.y})`}
                         style={{ pointerEvents: "auto" }}
                         onPointerEnter={() => setHoveredNodeId(node.id)}
@@ -1175,6 +1176,13 @@ export function DiptyqueKnowledgeBase() {
         </section>
 
         <section id="chat-panel" className={`panel ${activeTab === "chat" ? "is-active" : ""}`}>
+          <header className="chat-panel-header">
+            <div>
+              <span className="chat-panel-eyebrow">DIPTYQUE CONCIERGE</span>
+              <h2>香氛与生活方式顾问</h2>
+            </div>
+            <span className="chat-panel-status">基于商品图谱</span>
+          </header>
           <div className="scroll-container">
             {messages.map((message) => (
               <div key={message.id} className={`chat-msg ${message.role === "user" ? "user" : "bot"}`}>
@@ -1186,7 +1194,7 @@ export function DiptyqueKnowledgeBase() {
                 {message.role === "bot" && message.cards?.length ? <RecommendationProductCards cards={message.cards} onFocusGraph={focusGraph} /> : null}
                 {message.role === "bot" && message.suggestions?.length ? (
                   <div className="suggest-chips">
-                    {message.id === "welcome" ? <div className="suggest-label">💬 试试问：</div> : null}
+                    {message.id === "welcome" ? <div className="suggest-label">你可以这样问</div> : null}
                     {message.suggestions.map((suggestion) => (
                       <button key={`${message.id}-${suggestion}`} type="button" className="suggest-chip" onClick={() => askQuestion(suggestion)}>{suggestion}</button>
                     ))}
@@ -1218,7 +1226,9 @@ export function DiptyqueKnowledgeBase() {
                 value={inputValue}
                 onChange={(event) => setInputValue(event.target.value)}
               />
-              <button type="submit" className="muji-btn" disabled={!!pendingReply || !!streamingMessageId}>发送</button>
+              <button type="submit" className="muji-btn send-btn" disabled={!!pendingReply || !!streamingMessageId} aria-label="发送问题" title="发送">
+                <Send size={17} aria-hidden="true" />
+              </button>
             </form>
           </div>
         </section>

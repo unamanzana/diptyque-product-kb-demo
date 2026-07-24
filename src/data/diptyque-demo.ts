@@ -303,21 +303,21 @@ const edgeLabelMap: Record<string, string> = {
 };
 
 const nodeColorMap: Record<string, string> = {
-  CollectionOrScent: "#4f6d63",
-  CompatibilitySpec: "#6f846f",
-  CoreFamily: "#6d4038",
-  MarketingTag: "#8660a9",
-  NoteIngredient: "#4a7896",
-  ScentProfile: "#6d8294",
-  ScentAccord: "#7b6f93",
-  ScentConcept: "#356f67",
-  NoteFamily: "#2f7d78",
-  OntologyDomain: "#2f6672",
-  MaterialOrCraft: "#8e7b3e",
-  Product: "#7f0019",
-  ProductForm: "#c06346",
-  SKU: "#d2bfa8",
-  VariantTag: "#c26f8e",
+  CollectionOrScent: "#53645f",
+  CompatibilitySpec: "#7b817d",
+  CoreFamily: "#252422",
+  MarketingTag: "#76706b",
+  NoteIngredient: "#6f827d",
+  ScentProfile: "#7e8b87",
+  ScentAccord: "#667772",
+  ScentConcept: "#48635c",
+  NoteFamily: "#61746e",
+  OntologyDomain: "#344b45",
+  MaterialOrCraft: "#817965",
+  Product: "#8f1531",
+  ProductForm: "#55514d",
+  SKU: "#c9c5bd",
+  VariantTag: "#98908a",
 };
 
 function uniq<T>(values: T[]) {
