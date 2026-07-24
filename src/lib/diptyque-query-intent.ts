@@ -25,6 +25,141 @@ export function isGiftRecommendationQuery(query: string) {
   return GIFT_OCCASION_PATTERN.test(normalizedQuery) && GIFT_CHOICE_PATTERN.test(normalizedQuery);
 }
 
+export type ProductCatalogScope = {
+  coreFamilies: string[];
+  label: string;
+  productForms: string[];
+};
+
+type ProductCatalogVocabulary = {
+  coreFamilies: string[];
+  productForms: string[];
+};
+
+const PRODUCT_CATALOG_ALIASES: Array<{
+  coreFamilies: string[];
+  label: string;
+  pattern: RegExp;
+  productForms?: string[];
+}> = [
+  {
+    coreFamilies: ["家居香氛", "艺术家居", "文创"],
+    label: "家居用品",
+    pattern: /家居用品|家居产品|家居类/,
+  },
+  {
+    coreFamilies: ["个人香氛"],
+    label: "香水",
+    pattern: /香水/,
+    productForms: ["淡香水", "淡香精"],
+  },
+  {
+    coreFamilies: ["家居香氛"],
+    label: "香氛蜡烛",
+    pattern: /香氛蜡烛|蜡烛/,
+    productForms: [
+      "迷你香氛蜡烛",
+      "经典香氛蜡烛",
+      "中号香氛蜡烛",
+      "大号香氛蜡烛",
+      "超大号香氛蜡烛",
+      "大千之境香氛蜡烛",
+      "烛台香氛蜡烛",
+    ],
+  },
+  {
+    coreFamilies: ["艺术家居", "文创"],
+    label: "家居装饰品",
+    pattern: /家居装饰|装饰品|家居饰品/,
+  },
+  {
+    coreFamilies: ["身体护理"],
+    label: "身体护理",
+    pattern: /身体护理用品|身体护理产品/,
+  },
+  {
+    coreFamilies: ["文创"],
+    label: "文创",
+    pattern: /文创用品|文创产品/,
+  },
+];
+
+function catalogSubject(query: string) {
+  return normalizeQueryText(query)
+    .replace(/请问|请|帮我|告诉我|查一下|看看|列出|展示/g, "")
+    .replace(/有哪些|有什么|有哪|包括哪些|都包括|全部|所有|多少款|几款/g, "")
+    .replace(/相关的|相关|这一类|这类|类别|种类/g, "")
+    .replace(/产品|商品|用品/g, "")
+    .replace(/的|是/g, "");
+}
+
+export function extractProductCatalogScope(
+  query: string,
+  vocabulary: ProductCatalogVocabulary
+): ProductCatalogScope | null {
+  const normalizedQuery = normalizeQueryText(query);
+  if (!LIST_REQUEST_PATTERN.test(normalizedQuery)) return null;
+
+  const subject = catalogSubject(query);
+  if (subject.length < 2) return null;
+
+  const exactFamilies = vocabulary.coreFamilies.filter((family) => normalizeQueryText(family) === subject);
+  const exactForms = vocabulary.productForms.filter((form) => normalizeQueryText(form) === subject);
+  if (exactFamilies.length || exactForms.length) {
+    return {
+      coreFamilies: exactFamilies,
+      label: [...exactFamilies, ...exactForms].join(" / "),
+      productForms: exactForms,
+    };
+  }
+
+  const mentionedFamilies = vocabulary.coreFamilies.filter((family) =>
+    normalizedQuery.includes(normalizeQueryText(family))
+  );
+  const mentionedForms = vocabulary.productForms
+    .filter((form) => normalizedQuery.includes(normalizeQueryText(form)))
+    .filter((form, _index, forms) =>
+      !forms.some(
+        (other) =>
+          other !== form
+          && normalizeQueryText(other).length > normalizeQueryText(form).length
+          && normalizeQueryText(other).includes(normalizeQueryText(form))
+      )
+    );
+  if (mentionedFamilies.length || mentionedForms.length) {
+    return {
+      coreFamilies: mentionedFamilies,
+      label: [...mentionedFamilies, ...mentionedForms].join(" / "),
+      productForms: mentionedForms,
+    };
+  }
+
+  const alias = PRODUCT_CATALOG_ALIASES.find((item) => item.pattern.test(normalizedQuery));
+  if (alias) {
+    return {
+      coreFamilies: alias.coreFamilies.filter((family) => vocabulary.coreFamilies.includes(family)),
+      label: alias.label,
+      productForms: (alias.productForms ?? []).filter((form) => vocabulary.productForms.includes(form)),
+    };
+  }
+
+  const coreFamilies = vocabulary.coreFamilies.filter((family) => {
+    const normalizedFamily = normalizeQueryText(family);
+    return normalizedFamily.includes(subject) || subject.includes(normalizedFamily);
+  });
+  const productForms = vocabulary.productForms.filter((form) => {
+    const normalizedForm = normalizeQueryText(form);
+    return normalizedForm.includes(subject) || subject.includes(normalizedForm);
+  });
+  if (!coreFamilies.length && !productForms.length) return null;
+
+  return {
+    coreFamilies,
+    label: subject,
+    productForms,
+  };
+}
+
 function scentScopeVariants(term: string) {
   const normalized = normalizeQueryText(term);
   const variants = [

@@ -1,5 +1,6 @@
 import frontendData from "@/data/diptyque-frontend-data.json";
 import {
+  extractProductCatalogScope,
   extractScentCatalogTerm,
   isGiftRecommendationQuery,
   productMatchesScentCatalogTerm,
@@ -202,6 +203,10 @@ function sortProducts(query: string) {
 const scentCatalogVocabulary = uniq(
   products.flatMap((product) => [...product.scentConcepts, ...product.noteFamilies])
 );
+const productCatalogVocabulary = {
+  coreFamilies: uniq(products.map((product) => product.coreFamily)),
+  productForms: uniq(products.map((product) => product.productForm)),
+};
 
 function scentCatalogProducts(term: string) {
   const seenNames = new Set<string>();
@@ -220,6 +225,26 @@ function scentCatalogProducts(term: string) {
     });
 }
 
+
+function productCatalogProducts(scope: { coreFamilies: string[]; productForms: string[] }) {
+  const seenNames = new Set<string>();
+  return products
+    .filter((product) =>
+      (!scope.coreFamilies.length || scope.coreFamilies.includes(product.coreFamily))
+      && (!scope.productForms.length || scope.productForms.includes(product.productForm))
+    )
+    .sort(
+      (a, b) =>
+        a.coreFamily.localeCompare(b.coreFamily, "zh-CN")
+        || a.productForm.localeCompare(b.productForm, "zh-CN")
+        || a.name.localeCompare(b.name, "zh-CN")
+    )
+    .filter((product) => {
+      if (seenNames.has(product.name)) return false;
+      seenNames.add(product.name);
+      return true;
+    });
+}
 
 function giftRecommendationProducts(query: string) {
   const wantsHomeGift = /家居|摆件|装饰|文创|烛台|花瓶|托盘|香氛蜡烛|扩香/.test(query);
@@ -293,7 +318,11 @@ function relationSummary(edge: FrontendGraphEdge) {
   ].join("\n");
 }
 
-function formatCompleteCatalogAnswer(term: string, matchedProducts: FrontendProduct[]) {
+function formatCompleteCatalogAnswer(
+  term: string,
+  matchedProducts: FrontendProduct[],
+  compact = false
+) {
   const grouped = new Map<string, Map<string, FrontendProduct[]>>();
   matchedProducts.forEach((product) => {
     const family = grouped.get(product.coreFamily) ?? new Map<string, FrontendProduct[]>();
@@ -308,24 +337,40 @@ function formatCompleteCatalogAnswer(term: string, matchedProducts: FrontendProd
       `${familyName}（${familyCount}款）`,
       ...Array.from(forms.entries()).map(
         ([formName, formProducts]) =>
-          `- ${formName}（${formProducts.length}款）：${formProducts.map((product) => product.name).join("、")}`
+          compact
+            ? `- ${formName}（${formProducts.length}款）`
+            : `- ${formName}（${formProducts.length}款）：${formProducts.map((product) => product.name).join("、")}`
       ),
     ];
   });
-  return `${term}相关产品共${matchedProducts.length}款，按商品家族和品型完整列出：\n${lines.join("\n")}`;
+  const heading = compact
+    ? `${term}相关产品共${matchedProducts.length}款，先按商品大类和品型概览：`
+    : `${term}相关产品共${matchedProducts.length}款，按商品大类和品型完整列出：`;
+  const followUp = compact
+    ? "\n可以继续问某个具体品型，我会列出该品型的全部商品。"
+    : "";
+  return `${heading}\n${lines.join("\n")}${followUp}`;
 }
 export function buildDiptyqueContext(query: string) {
   const scentListTerm = extractScentCatalogTerm(query, scentCatalogVocabulary);
+  const giftRecommendationQuery = isGiftRecommendationQuery(query);
+  const productCatalogScope = !scentListTerm && !giftRecommendationQuery
+    ? extractProductCatalogScope(query, productCatalogVocabulary)
+    : null;
   const answerMode = scentListTerm
     ? "ontology_catalog_list"
-    : isGiftRecommendationQuery(query)
+    : giftRecommendationQuery
       ? "gift_recommendation"
-      : "knowledge_search";
+      : productCatalogScope
+        ? "product_catalog_list"
+        : "knowledge_search";
   const matchedProducts = scentListTerm
     ? scentCatalogProducts(scentListTerm)
     : answerMode === "gift_recommendation"
       ? giftRecommendationProducts(query)
-      : sortProducts(query).map((item) => item.product);
+      : productCatalogScope
+        ? productCatalogProducts(productCatalogScope)
+        : sortProducts(query).map((item) => item.product);
   const primaryProductIds = new Set(matchedProducts.slice(0, 3).map((product) => product.id));
   const matchedRelations = approvedProductRelations.filter(
     (edge) => primaryProductIds.has(edge.source) || primaryProductIds.has(edge.target)
@@ -350,7 +395,13 @@ export function buildDiptyqueContext(query: string) {
     deterministicAnswer:
       answerMode === "ontology_catalog_list"
         ? formatCompleteCatalogAnswer(scentListTerm, matchedProducts)
-        : "",
+        : answerMode === "product_catalog_list" && productCatalogScope
+          ? formatCompleteCatalogAnswer(
+              productCatalogScope.label,
+              matchedProducts,
+              matchedProducts.length > 40
+            )
+          : "",
     matchedProducts,
     contextText,
   };

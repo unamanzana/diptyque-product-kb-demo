@@ -1,5 +1,9 @@
 import frontendData from "@/data/diptyque-frontend-data.json";
-import { isGiftRecommendationQuery } from "@/lib/diptyque-query-intent";
+import {
+  extractProductCatalogScope,
+  isGiftRecommendationQuery,
+  type ProductCatalogScope,
+} from "@/lib/diptyque-query-intent";
 
 export type GraphLine = {
   dashed: boolean;
@@ -320,6 +324,20 @@ function uniq<T>(values: T[]) {
   return Array.from(new Set(values));
 }
 
+const productCatalogVocabulary = {
+  coreFamilies: uniq(products.map((product) => product.coreFamily).filter(Boolean)),
+  productForms: uniq(products.map((product) => product.productForm).filter(Boolean)),
+};
+
+function uniqueProductsByName(items: FrontendProduct[]) {
+  const seenNames = new Set<string>();
+  return items.filter((product) => {
+    if (seenNames.has(product.name)) return false;
+    seenNames.add(product.name);
+    return true;
+  });
+}
+
 function normalizeText(value: string) {
   return value.toLowerCase().replace(/\s+/g, "").replace(/[·\-—_|/]/g, "");
 }
@@ -514,7 +532,13 @@ function getFilterTrail(nodeIds: string[]): FilterTrailItem[] {
 export { getFilterTrail };
 
 function trailText(nodeIds: string[]) {
-  return getFilterTrail(nodeIds).map((item) => item.label).join(" > ");
+  const grouped = new Map<string, string[]>();
+  getFilterTrail(nodeIds).forEach((item) => {
+    const labels = grouped.get(item.nodeType) ?? [];
+    labels.push(item.label);
+    grouped.set(item.nodeType, labels);
+  });
+  return Array.from(grouped.values()).map((labels) => labels.join(" / ")).join(" > ");
 }
 
 function matchHierarchyNodeIdByQuery(query: string) {
@@ -660,13 +684,24 @@ function productsForFilterIds(filterNodeIds: string[]) {
 
   if (!validNodes.length) return [] as FrontendProduct[];
 
-  let current = connectedProductsForNode(validNodes[0]);
-  for (const node of validNodes.slice(1)) {
-    const nextIds = new Set(connectedProductsForNode(node).map((product) => product.id));
-    current = current.filter((product) => nextIds.has(product.id));
+  const nodeGroups = new Map<string, FrontendGraphNode[]>();
+  validNodes.forEach((node) => {
+    const group = nodeGroups.get(node.nodeType) ?? [];
+    group.push(node);
+    nodeGroups.set(node.nodeType, group);
+  });
+
+  let current: FrontendProduct[] | null = null;
+  for (const nodes of nodeGroups.values()) {
+    const groupIds = new Set(
+      nodes.flatMap((node) => connectedProductsForNode(node).map((product) => product.id))
+    );
+    current = current == null
+      ? products.filter((product) => groupIds.has(product.id))
+      : current.filter((product) => groupIds.has(product.id));
   }
 
-  return sortProducts(current);
+  return uniqueProductsByName(sortProducts(current ?? []));
 }
 
 function scoreProduct(product: FrontendProduct, query: string) {
@@ -937,6 +972,60 @@ function detectIntent(query: string) {
 }
 
 
+function localProductCatalogResponse(scope: ProductCatalogScope): ResponseEntry {
+  const filterNodeIds = uniq([
+    ...scope.coreFamilies.map((family) => `family:${family}`),
+    ...scope.productForms.map((form) => `form:${form}`),
+  ]).filter((id) => nodeById.has(id));
+  const matchedProducts = products
+    .filter((product) =>
+      (!scope.coreFamilies.length || scope.coreFamilies.includes(product.coreFamily))
+      && (!scope.productForms.length || scope.productForms.includes(product.productForm))
+    )
+    .sort(
+      (a, b) =>
+        a.coreFamily.localeCompare(b.coreFamily, "zh-CN")
+        || a.productForm.localeCompare(b.productForm, "zh-CN")
+        || a.name.localeCompare(b.name, "zh-CN")
+    );
+  const uniqueMatchedProducts = uniqueProductsByName(matchedProducts);
+  const grouped = new Map<string, Map<string, FrontendProduct[]>>();
+  uniqueMatchedProducts.forEach((product) => {
+    const family = grouped.get(product.coreFamily) ?? new Map<string, FrontendProduct[]>();
+    const form = family.get(product.productForm) ?? [];
+    form.push(product);
+    family.set(product.productForm, form);
+    grouped.set(product.coreFamily, family);
+  });
+  const lines = Array.from(grouped.entries()).flatMap(([familyName, forms]) => [
+    `${familyName}（${Array.from(forms.values()).flat().length}款）`,
+    ...Array.from(forms.entries()).map(([formName, formProducts]) =>
+      uniqueMatchedProducts.length > 40
+        ? `- ${formName}（${formProducts.length}款）`
+        : `- ${formName}（${formProducts.length}款）：${formProducts.map((product) => product.name).join("、")}`
+    ),
+  ]);
+  const baseResponse = filterNodeIds.length
+    ? resolveCombinedFilterSelection(filterNodeIds)
+    : genericFallback();
+  return {
+    ...baseResponse,
+    answer: uniqueMatchedProducts.length > 40
+      ? `${scope.label}相关产品共${uniqueMatchedProducts.length}款，先按商品大类和品型概览：\n${lines.join("\n")}\n可以继续问某个具体品型，我会列出该品型的全部商品。`
+      : `${scope.label}相关产品共${uniqueMatchedProducts.length}款，按商品大类和品型完整列出：\n${lines.join("\n")}`,
+    card: undefined,
+    filterNodeIds,
+    focusNodeLabel: filterNodeIds.at(-1),
+    keywords: uniq([scope.label, ...scope.coreFamilies, ...scope.productForms]),
+    suggestions: scope.productForms.length
+      ? ["还有哪些相关品型？", "有没有适合送礼的产品？"]
+      : [
+          ...scope.coreFamilies.map((family) => `${family}有哪些产品？`),
+          "香氛蜡烛有哪些？",
+        ].slice(0, 4),
+  };
+}
+
 function localGiftRecommendation(query: string): ResponseEntry {
   const wantsHomeGift = /家居|摆件|装饰|文创|烛台|花瓶|托盘|香氛蜡烛|扩香/.test(query);
   const candidates = products
@@ -981,6 +1070,9 @@ export function resolveDiptyqueResponse(input: string): ResponseEntry {
   if (!query) return genericFallback();
 
   if (isGiftRecommendationQuery(query)) return localGiftRecommendation(query);
+
+  const productCatalogScope = extractProductCatalogScope(query, productCatalogVocabulary);
+  if (productCatalogScope) return localProductCatalogResponse(productCatalogScope);
 
   if (/搭配|叠香|空间同香|家居同香|补充关系|对应补充|的补充装|适用于|适配|兼容/.test(query)) {
     const publishedRelationResponse = resolvePublishedRelationQuery(query);
