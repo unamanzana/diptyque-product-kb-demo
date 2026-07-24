@@ -260,6 +260,112 @@ function searchProducts(args: Record<string, unknown>): ToolExecution {
   };
 }
 
+function selectDiverseGiftProducts(candidates: Product[], limit: number) {
+  const ranked = [...candidates].sort((a, b) => {
+    const availability = Number(b.stockTotal > 0) - Number(a.stockTotal > 0);
+    const popularity =
+      Number(b.marketingTags.includes("人气精选")) - Number(a.marketingTags.includes("人气精选"));
+    return availability
+      || popularity
+      || (productPrice(a) ?? Number.MAX_SAFE_INTEGER) - (productPrice(b) ?? Number.MAX_SAFE_INTEGER)
+      || a.name.localeCompare(b.name, "zh-CN");
+  });
+  const selected: Product[] = [];
+  const selectedIds = new Set<string>();
+  const usedFamilies = new Set<string>();
+  const usedForms = new Set<string>();
+
+  const take = (product: Product) => {
+    if (selected.length >= limit || selectedIds.has(product.id)) return;
+    selected.push(product);
+    selectedIds.add(product.id);
+    usedFamilies.add(product.coreFamily);
+    usedForms.add(product.productForm);
+  };
+
+  ranked.forEach((product) => {
+    if (!usedFamilies.has(product.coreFamily)) take(product);
+  });
+  ranked.forEach((product) => {
+    if (!usedForms.has(product.productForm)) take(product);
+  });
+  ranked.forEach(take);
+  return selected;
+}
+
+function searchGiftCandidates(args: Record<string, unknown>): ToolExecution {
+  const requestedFamilies = expandFamilies(stringArray(args.core_families));
+  const maxPrice = numberValue(args.max_price);
+  const limit = Math.min(5, Math.max(3, Math.floor(numberValue(args.limit) ?? 5)));
+  const eligible = products.filter((product) => {
+    if (!product.marketingTags.includes("臻选礼赠")) return false;
+    if (product.variantTags.includes("补充装")) return false;
+    if (requestedFamilies.length && !requestedFamilies.includes(product.coreFamily)) return false;
+    const price = productPrice(product);
+    if (maxPrice != null && (price == null || price > maxPrice)) return false;
+    return true;
+  });
+  const inStock = eligible.filter((product) => product.stockTotal > 0);
+  const pool = inStock.length >= Math.min(5, limit) ? inStock : eligible;
+  const selected = selectDiverseGiftProducts(pool, limit);
+  return {
+    content: JSON.stringify({
+      total: eligible.length,
+      returned: selected.length,
+      selectionPolicy: "official_gifting_tag_non_refill_diverse_family_and_form",
+      products: selected.map(compactProduct),
+    }),
+    productIds: selected.map((product) => product.id),
+    summary: [
+      "search_gift_candidates",
+      "total=" + eligible.length,
+      "returned=" + selected.length,
+      maxPrice != null ? "maxPrice=" + maxPrice : "",
+      requestedFamilies.length ? "families=" + requestedFamilies.join("|") : "",
+    ].filter(Boolean).join(" "),
+  };
+}
+
+function formatGiftPrice(product: Product) {
+  if (product.priceMin == null && product.priceMax == null) return "价格待确认";
+  if (product.priceMin != null && product.priceMax != null && product.priceMin !== product.priceMax) {
+    return "¥" + product.priceMin + "-" + product.priceMax;
+  }
+  return "¥" + (product.priceMin ?? product.priceMax);
+}
+
+export function buildGiftFallbackRecommendation(maxPrice?: number) {
+  const selected = selectDiverseGiftProducts(
+    products.filter((product) => {
+      if (!product.marketingTags.includes("臻选礼赠")) return false;
+      if (product.variantTags.includes("补充装") || product.stockTotal <= 0) return false;
+      const price = productPrice(product);
+      return maxPrice == null || (price != null && price <= maxPrice);
+    }),
+    5
+  );
+  const lines = selected.map((product, index) => {
+    const evidence = [
+      product.coreFamily,
+      product.productForm,
+      product.collections[0],
+      product.notes[0],
+      product.materials[0],
+    ].filter(Boolean).slice(0, 4).join(" / ");
+    return (index + 1) + ". " + product.name + "（" + formatGiftPrice(product) + "）- " + evidence;
+  });
+  return {
+    answer: [
+      "我先按当前图谱中的“臻选礼赠”标签、在售状态和商品资料，给你几个不同方向的选择：",
+      ...lines,
+      "你可以再告诉我更具体的送礼对象、预算，以及更偏向香水、身体护理还是家居用品，我会继续缩小范围。",
+    ].join("\n"),
+    answerMode: "gift_recommendation",
+    matchedProductIds: selected.map((product) => product.id),
+    selectedProductIds: selected.map((product) => product.id),
+  };
+}
+
 function getProductDetails(args: Record<string, unknown>): ToolExecution {
   const ids = stringArray(args.product_ids).slice(0, 12);
   const selected = ids.map((id) => productById.get(id)).filter((product): product is Product => Boolean(product));
@@ -375,6 +481,23 @@ export const diptyqueAgentTools: ToolDefinition[] = [
   {
     type: "function",
     function: {
+      name: "search_gift_candidates",
+      description:
+        "Retrieve diverse, in-stock, non-refill products supported by the official gifting tag. Use this first for vague gifting questions, then ask for recipient, budget or category preferences after presenting useful candidates.",
+      parameters: {
+        type: "object",
+        properties: {
+          core_families: { type: "array", items: { type: "string", enum: coreFamilies } },
+          max_price: { type: "number" },
+          limit: { type: "integer", minimum: 3, maximum: 5 },
+        },
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "get_product_details",
       description: "Get detailed factual fields for selected products before explaining or recommending them.",
       parameters: {
@@ -437,6 +560,7 @@ export function executeDiptyqueTool(name: string, rawArguments: string): ToolExe
   }
 
   if (name === "search_products") return searchProducts(args);
+  if (name === "search_gift_candidates") return searchGiftCandidates(args);
   if (name === "get_product_details") return getProductDetails(args);
   if (name === "get_product_relations") return getProductRelations(args);
   if (name === "list_catalog_values") return listCatalogValues(args);

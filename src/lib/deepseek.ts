@@ -1,14 +1,21 @@
 import {
+  buildGiftFallbackRecommendation,
   diptyqueAgentTools,
   executeDiptyqueTool,
   productIdsMentionedInAnswer,
 } from "@/lib/diptyque-agent-tools";
 import type { ModelUsage } from "@/lib/chat-observability";
+import {
+  extractGiftBudgetCeiling,
+  isGiftRecommendationQuery,
+} from "@/lib/diptyque-query-intent";
 
 const DEFAULT_BASE_URL = "https://api.deepseek.com";
 const DEFAULT_MODEL = "deepseek-v4-flash";
 const REQUEST_TIMEOUT_MS = 60000;
 const MAX_TOOL_ROUNDS = 5;
+const MAX_PROVIDER_ATTEMPTS = 3;
+const RETRYABLE_PROVIDER_STATUSES = new Set([429, 500, 502, 503, 504]);
 
 export type ChatHistoryMessage = {
   role: "assistant" | "user";
@@ -46,6 +53,35 @@ type DeepSeekResponse = {
     prompt_tokens?: number;
   };
 };
+
+async function waitForRetry(delayMs: number) {
+  await new Promise((resolve) => setTimeout(resolve, delayMs));
+}
+
+async function fetchDeepSeekWithRetry(
+  url: string,
+  init: RequestInit,
+  toolTrace: string[]
+) {
+  let lastErrorText = "";
+  for (let attempt = 1; attempt <= MAX_PROVIDER_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await fetch(url, init);
+      if (response.ok) return { response, errorText: "", attempts: attempt };
+      lastErrorText = await response.text();
+      const shouldRetry =
+        RETRYABLE_PROVIDER_STATUSES.has(response.status) && attempt < MAX_PROVIDER_ATTEMPTS;
+      if (!shouldRetry) return { response, errorText: lastErrorText, attempts: attempt };
+      toolTrace.push("provider_retry status=" + response.status + " attempt=" + attempt);
+    } catch (error) {
+      const isAbort = error instanceof Error && error.name === "AbortError";
+      if (isAbort || attempt >= MAX_PROVIDER_ATTEMPTS) throw error;
+      toolTrace.push("provider_retry status=network_error attempt=" + attempt);
+    }
+    await waitForRetry(400 * (2 ** (attempt - 1)));
+  }
+  throw new Error(lastErrorText || "deepseek_retry_exhausted");
+}
 
 function addUsage(total: ModelUsage, usage: DeepSeekResponse["usage"]) {
   total.completionTokens = (total.completionTokens ?? 0) + (usage?.completion_tokens ?? 0);
@@ -93,9 +129,11 @@ function parseFinalResponse(content: string) {
 
 const SYSTEM_PROMPT = [
   "You are the retrieval planner and grounded answer writer for a Diptyque product knowledge graph.",
-  "Before answering any product question, call search_products with semantic, ontology and numeric constraints inferred from the current question and conversation history.",
+  "Before answering any product question, call the appropriate retrieval tool: search_gift_candidates for gifting, otherwise search_products with semantic, ontology and numeric constraints inferred from the current question and conversation history.",
   "Carry forward an active category, product form, collection, scent, material or budget from recent turns unless the user explicitly changes or clears it.",
   "For example, after a user asks about home products, a follow-up asking what to gift an elder must keep the home-product constraint.",
+  "For every gifting request, including vague requests such as what can I give my family, call search_gift_candidates first. Present useful candidates before asking for recipient, budget or scent preferences.",
+  "Do not call list_catalog_values for a gifting request unless the user explicitly asks for catalog dimensions. Missing preferences are not a reason to return zero products.",
   "Use numeric filters for price questions. For a question about products at or below 500 yuan, call search_products with max_price 500. For the cheapest product, sort price_asc and use a small limit.",
   "Use get_product_details for evidence before recommendations. Use get_product_relations only for approved pairing, layering, refill, accessory or set claims.",
   "Never invent products, prices, URLs or relations. Shared scent, material or category is not an approved direct relation.",
@@ -110,16 +148,19 @@ const SYSTEM_PROMPT = [
 export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
   const apiKey = process.env.DEEPSEEK_API_KEY;
   const model = process.env.DEEPSEEK_MODEL || DEFAULT_MODEL;
+  const giftFallback = isGiftRecommendationQuery(input.message)
+    ? buildGiftFallbackRecommendation(extractGiftBudgetCeiling(input.message))
+    : undefined;
   if (!apiKey) {
     return {
-      answer: "",
-      answerMode: "agentic_search",
+      answer: giftFallback?.answer ?? "",
+      answerMode: giftFallback?.answerMode ?? "agentic_search",
       fallback: true,
       reasoningUsed: false,
       model,
       reason: "missing_api_key",
-      matchedProductIds: [] as string[],
-      selectedProductIds: [] as string[],
+      matchedProductIds: giftFallback?.matchedProductIds ?? [],
+      selectedProductIds: giftFallback?.selectedProductIds ?? [],
       toolTrace: [] as string[],
     };
   }
@@ -147,41 +188,46 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
 
   try {
     for (let round = 0; round < MAX_TOOL_ROUNDS; round += 1) {
-      const response = await fetch(baseUrl + "/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + apiKey,
-          "Content-Type": "application/json",
+      const providerResult = await fetchDeepSeekWithRetry(
+        baseUrl + "/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + apiKey,
+            "Content-Type": "application/json",
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            model,
+            thinking: { type: "enabled" },
+            reasoning_effort: "high",
+            max_tokens: 2200,
+            messages,
+            tools: diptyqueAgentTools,
+            tool_choice: "auto",
+          }),
         },
-        signal: controller.signal,
-        body: JSON.stringify({
-          model,
-          thinking: { type: "enabled" },
-          reasoning_effort: "high",
-          max_tokens: 2200,
-          messages,
-          tools: diptyqueAgentTools,
-          tool_choice: "auto",
-        }),
-      });
+        toolTrace
+      );
+      const response = providerResult.response;
 
       if (!response.ok) {
-        const errorText = await response.text();
+        const errorText = providerResult.errorText;
         console.error(JSON.stringify({
           event: "deepseek_provider_error",
           status: response.status,
           error: errorText.slice(0, 800),
         }));
         return {
-          answer: "",
-          answerMode: "agentic_search",
+          answer: giftFallback?.answer ?? "",
+          answerMode: giftFallback?.answerMode ?? "agentic_search",
           fallback: true,
           reasoningUsed,
           model,
           reason: "deepseek_http_" + response.status,
           errorText,
-          matchedProductIds,
-          selectedProductIds: [] as string[],
+          matchedProductIds: giftFallback?.matchedProductIds ?? matchedProductIds,
+          selectedProductIds: giftFallback?.selectedProductIds ?? [],
           toolTrace,
           usage,
         };
@@ -250,7 +296,7 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
 
       return {
         answer: final.answer,
-        answerMode: final.answerMode,
+        answerMode: giftFallback ? "gift_recommendation" : final.answerMode,
         fallback: false,
         reasoningUsed,
         model,
@@ -267,21 +313,26 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
         role: "user",
         content: "You have enough retrieved evidence. Do not request or describe more tools. Produce the required final JSON now using only the existing tool results.",
       });
-      const finalResponse = await fetch(baseUrl + "/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + apiKey,
-          "Content-Type": "application/json",
+      const finalProviderResult = await fetchDeepSeekWithRetry(
+        baseUrl + "/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + apiKey,
+            "Content-Type": "application/json",
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            model,
+            thinking: { type: "enabled" },
+            reasoning_effort: "high",
+            max_tokens: 2200,
+            messages,
+          }),
         },
-        signal: controller.signal,
-        body: JSON.stringify({
-          model,
-          thinking: { type: "enabled" },
-          reasoning_effort: "high",
-          max_tokens: 2200,
-          messages,
-        }),
-      });
+        toolTrace
+      );
+      const finalResponse = finalProviderResult.response;
       if (finalResponse.ok) {
         const finalData = (await finalResponse.json()) as DeepSeekResponse;
         addUsage(usage, finalData.usage);
@@ -310,7 +361,7 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
         ])).slice(0, 5);
         return {
           answer: final.answer,
-          answerMode: final.answerMode,
+          answerMode: giftFallback ? "gift_recommendation" : final.answerMode,
           fallback: false,
           reasoningUsed,
           model,
@@ -324,28 +375,30 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
     }
 
     return {
-      answer: "",
-      answerMode: "agentic_search",
+      answer: giftFallback?.answer ?? "",
+      answerMode: giftFallback?.answerMode ?? "agentic_search",
       fallback: true,
       reasoningUsed,
       model,
       reason: "tool_round_limit",
-      matchedProductIds: Array.from(new Set(matchedProductIds)),
-      selectedProductIds: [] as string[],
+      matchedProductIds:
+        giftFallback?.matchedProductIds ?? Array.from(new Set(matchedProductIds)),
+      selectedProductIds: giftFallback?.selectedProductIds ?? [],
       toolTrace,
       usage,
     };
   } catch (error) {
     return {
-      answer: "",
-      answerMode: "agentic_search",
+      answer: giftFallback?.answer ?? "",
+      answerMode: giftFallback?.answerMode ?? "agentic_search",
       fallback: true,
       reasoningUsed,
       model,
       reason: error instanceof Error && error.name === "AbortError" ? "deepseek_timeout" : "deepseek_exception",
       errorText: error instanceof Error ? error.message : "unknown_error",
-      matchedProductIds: Array.from(new Set(matchedProductIds)),
-      selectedProductIds: [] as string[],
+      matchedProductIds:
+        giftFallback?.matchedProductIds ?? Array.from(new Set(matchedProductIds)),
+      selectedProductIds: giftFallback?.selectedProductIds ?? [],
       toolTrace,
       usage,
     };

@@ -1,6 +1,9 @@
 import { readFileSync } from "node:fs";
 
-import { isGiftRecommendationQuery } from "../src/lib/diptyque-query-intent.ts";
+import {
+  extractGiftBudgetCeiling,
+  isGiftRecommendationQuery,
+} from "../src/lib/diptyque-query-intent.ts";
 import { selectMentionedProductNames } from "../src/lib/diptyque-recommendation-selection.ts";
 
 const payload = JSON.parse(
@@ -110,6 +113,10 @@ assertNames(
 );
 
 const positiveGiftQueries = [
+  "可以送家人什么",
+  "给亲人选哪款比较合适",
+  "想送同事一份礼物",
+  "预算 800 送朋友什么好",
   "送长辈推荐什么当礼物",
   "给妈妈挑一款香水",
   "预算 1500 送朋友",
@@ -126,6 +133,16 @@ const negativeGiftQueries = [
   "纪念日是哪一天",
   "妈妈喜欢的晚香玉有哪些产品",
 ];
+const giftBudgetCases = [
+  ["预算 800 送同事什么好", 800],
+  ["送朋友500元以内的礼物", 500],
+  ["预算不超过 1,500 元", 1500],
+];
+for (const [query, expected] of giftBudgetCases) {
+  const actual = extractGiftBudgetCeiling(query);
+  if (actual !== expected) failures.push({ label: "gift_budget_mismatch", query, actual, expected });
+}
+
 for (const query of positiveGiftQueries) {
   if (!isGiftRecommendationQuery(query)) failures.push({ label: "gift_intent_false_negative", query });
 }

@@ -832,7 +832,7 @@ export function DiptyqueKnowledgeBase() {
           reasoningUsed?: boolean;
           fallback?: boolean;
         };
-        if (!data.fallback && data.answer?.trim()) {
+        if (data.answer?.trim()) {
           if (data.answerSource === "ontology_full_list") {
             response = {
               ...localResponse,
@@ -841,7 +841,10 @@ export function DiptyqueKnowledgeBase() {
               focusEdgeIds: [],
               focusNodeLabel: localResponse.focusNodeLabel ?? "domain:香调",
             };
-          } else if (data.answerSource === "deepseek_tools") {
+          } else if (
+            data.answerSource === "deepseek_tools"
+            || (data.answerSource === "local_fallback" && (data.recommendedProductNames?.length ?? 0) > 0)
+          ) {
             const recommendationProductNames = data.recommendedProductNames ?? [];
             response = {
               ...localResponse,
@@ -863,7 +866,9 @@ export function DiptyqueKnowledgeBase() {
             ? "本体全量检索 · " + (data.matchedProductNames?.length ?? 0) + "款"
             : data.answerSource === "deepseek_tools"
               ? (data.model ?? "DeepSeek") + " · 思考并检索 " + (data.matchedProductNames?.length ?? 0) + " 款"
-              : data.model;
+              : data.answerSource === "local_fallback" && (data.recommendedProductNames?.length ?? 0) > 0
+                ? "本地图谱兜底 · " + (data.matchedProductNames?.length ?? 0) + " 款"
+                : data.model;
         }
       } catch (error) {
         if (error instanceof Error && error.name === "AbortError") return;
