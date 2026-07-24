@@ -1,4 +1,4 @@
-﻿import frontendData from "@/data/diptyque-frontend-data.json";
+import frontendData from "@/data/diptyque-frontend-data.json";
 
 export type GraphLine = {
   dashed: boolean;
@@ -45,6 +45,7 @@ export type ProductCard = {
   focusPrompt?: string;
   image?: string;
   mode: string;
+  url?: string;
   name: string;
   price: string;
   recommendation: string;
@@ -64,6 +65,7 @@ export type ProductCard = {
 
 export type KnowledgeMessage = {
   card?: ProductCard;
+  cards?: ProductCard[];
   confidence?: string;
   id: string;
   note?: string;
@@ -75,6 +77,8 @@ export type KnowledgeMessage = {
 export type ResponseEntry = {
   answer: string;
   card?: ProductCard;
+  cards?: ProductCard[];
+  recommendationProductNames?: string[];
   confidence?: string;
   filterNodeIds?: string[];
   focusEdgeIds?: string[];
@@ -464,6 +468,7 @@ function buildProductCard(
     image: product.image || undefined,
     mode: intentLabel,
     name: product.name,
+    url: product.url || undefined,
     price: formatPrice(product),
     recommendation: makeRecommendation(product),
     specs: formatSpecs(product),
@@ -479,6 +484,19 @@ function buildProductCard(
       scenario: makeScenario(product),
     },
   };
+}
+
+export function getProductCardsByNames(productNames: string[]) {
+  const seen = new Set<string>();
+  return productNames
+    .map((name) => products.find((product) => product.name === name))
+    .filter((product): product is FrontendProduct => {
+      if (!product || seen.has(product.name)) return false;
+      seen.add(product.name);
+      return true;
+    })
+    .slice(0, 5)
+    .map((product) => buildProductCard(product, "送礼推荐", 9, { focusPrompt: "单品图谱" }));
 }
 
 function isFilterableNodeType(nodeType: string) {
@@ -917,6 +935,40 @@ function detectIntent(query: string) {
   return "商品检索";
 }
 
+function isGiftRecommendationQuery(query: string) {
+  return /送礼|礼赠|礼物|礼品|送给|送一?款|送什么|赠送|朋友|长辈|男朋友|女朋友|男友|女友|伴侣|生日|纪念日/.test(query);
+}
+
+function localGiftRecommendation(query: string): ResponseEntry {
+  const wantsHomeGift = /家居|摆件|装饰|文创|烛台|花瓶|托盘|香氛蜡烛|扩香/.test(query);
+  const candidates = products
+    .filter((product) => {
+      if (product.variantTags.includes("补充装")) return false;
+      return wantsHomeGift
+        ? ["艺术家居", "文创", "家居香氛"].includes(product.coreFamily)
+        : product.coreFamily === "个人香氛" && ["淡香水", "淡香精", "香膏", "淡香水礼盒", "礼盒"].includes(product.productForm);
+    })
+    .sort(
+      (a, b) =>
+        Number(b.marketingTags.includes("臻选礼赠")) - Number(a.marketingTags.includes("臻选礼赠")) ||
+        Number(Boolean(b.materials.length)) - Number(Boolean(a.materials.length)) ||
+        a.productForm.localeCompare(b.productForm, "zh-CN") ||
+        a.name.localeCompare(b.name, "zh-CN")
+    )
+    .slice(0, 5);
+  const recommendationProductNames = candidates.map((product) => product.name);
+  const categoryLabel = wantsHomeGift ? "家居与文创商品" : "个人香氛";
+  return {
+    answer: `可以先从这 ${candidates.length} 款${categoryLabel}中比较：${recommendationProductNames.join("、")}。你可以再告诉我偏好的风格、预算或送礼对象，我会继续缩小范围。`,
+    cards: getProductCardsByNames(recommendationProductNames),
+    confidence: "82% · 🟡 medium",
+    keywords: recommendationProductNames,
+    recommendationProductNames,
+    suggestions: wantsHomeGift
+      ? ["推荐陶瓷家居礼物", "推荐有搭配关系的家居用品", "预算 1000 元以内", "有哪些烛台？"]
+      : ["推荐木质调香水", "推荐清新香水", "预算 1500 元以内", "有哪些香水礼盒？"],
+  };
+}
 function genericFallback(): ResponseEntry {
   return {
     answer: "这版 Diptyque 图谱区分事实关系、兼容关系和推荐关系。商品分类、系列、香材与 SKU 来自原始数据；搭配和香气延续仅在存在官方文案或已审核策展规则时展示。",
@@ -929,6 +981,8 @@ function genericFallback(): ResponseEntry {
 export function resolveDiptyqueResponse(input: string): ResponseEntry {
   const query = input.trim();
   if (!query) return genericFallback();
+
+  if (isGiftRecommendationQuery(query)) return localGiftRecommendation(query);
 
   if (/搭配|叠香|空间同香|家居同香|补充关系|对应补充|的补充装|适用于|适配|兼容/.test(query)) {
     const publishedRelationResponse = resolvePublishedRelationQuery(query);
@@ -1478,6 +1532,129 @@ function buildProductFocusGraph(focusId: string, filterNodeIds: string[] = []): 
   };
 }
 
+function buildRecommendationGraph(productNames: string[]): GraphDataset {
+  const seenProductIds = new Set<string>();
+  const selectedProducts = productNames
+    .map((name) => products.find((product) => product.name === name))
+    .filter((product): product is FrontendProduct => {
+      if (!product || seenProductIds.has(product.id)) return false;
+      seenProductIds.add(product.id);
+      return true;
+    })
+    .slice(0, 5);
+  if (!selectedProducts.length) return buildOverviewGraph();
+
+  const selectedProductIds = selectedProducts.map((product) => product.id);
+  const selectedProductIdSet = new Set(selectedProductIds);
+  const attributeEdges: FrontendGraphEdge[] = [];
+  const hierarchyEdges: FrontendGraphEdge[] = [];
+
+  selectedProducts.forEach((product) => {
+    const incoming = (edgesByTarget.get(product.id) ?? []).filter((edge) => edge.targetType === "Product");
+    const formEdge = incoming.find((edge) => edge.sourceType === "ProductForm");
+    if (formEdge) {
+      attributeEdges.push(formEdge);
+      const familyEdge = (edgesByTarget.get(formEdge.source) ?? []).find(
+        (edge) => edge.sourceType === "CoreFamily" && edge.targetType === "ProductForm"
+      );
+      if (familyEdge) hierarchyEdges.push(familyEdge);
+    }
+
+    const prefersMaterial = ["艺术家居", "文创"].includes(product.coreFamily);
+    const preferredType = prefersMaterial ? "MaterialOrCraft" : "ScentConcept";
+    const preferredEdges = incoming.filter((edge) => edge.sourceType === preferredType);
+    const fallbackEdges = incoming.filter(
+      (edge) => edge.sourceType === "CollectionOrScent" && !preferredEdges.some((item) => item.source === edge.source)
+    );
+    attributeEdges.push(...[...preferredEdges, ...fallbackEdges].slice(0, 2));
+  });
+
+  const relationPool = [
+    ...approvedProductRelations,
+    ...derivedCompatibilityEdges,
+    ...derivedRecommendationEdges,
+  ];
+  const relationEdges: FrontendGraphEdge[] = [];
+  const usedRelationKeys = new Set<string>();
+  selectedProductIds.forEach((productId) => {
+    const relation = relationPool
+      .filter((edge) => edge.source === productId || edge.target === productId)
+      .sort((a, b) => {
+        const aOther = a.source === productId ? a.target : a.source;
+        const bOther = b.source === productId ? b.target : b.source;
+        return (
+          Number(selectedProductIdSet.has(bOther)) - Number(selectedProductIdSet.has(aOther)) ||
+          Number(b.relationLayer === "recommendation") - Number(a.relationLayer === "recommendation") ||
+          a.edgeType.localeCompare(b.edgeType)
+        );
+      })
+      .find((edge) => {
+        const key = `${edge.source}|${edge.edgeType}|${edge.target}`;
+        if (usedRelationKeys.has(key)) return false;
+        usedRelationKeys.add(key);
+        return true;
+      });
+    if (relation) relationEdges.push(relation);
+  });
+
+  const allEdges = [...hierarchyEdges, ...attributeEdges, ...relationEdges].filter(
+    (edge, index, edges) =>
+      edges.findIndex((candidate) =>
+        candidate.source === edge.source && candidate.edgeType === edge.edgeType && candidate.target === edge.target
+      ) === index
+  );
+  const semanticIds = uniq(
+    attributeEdges
+      .filter((edge) => ["ScentConcept", "MaterialOrCraft", "CollectionOrScent"].includes(edge.sourceType))
+      .map((edge) => edge.source)
+  );
+  const hierarchyIds = uniq(
+    [...hierarchyEdges, ...attributeEdges]
+      .flatMap((edge) => [edge.source, edge.target])
+      .filter((id) => ["CoreFamily", "ProductForm"].includes(nodeById.get(id)?.nodeType ?? ""))
+  );
+  const relationProductIds = uniq(
+    relationEdges
+      .flatMap((edge) => [edge.source, edge.target])
+      .filter((id) => !selectedProductIdSet.has(id) && nodeById.get(id)?.nodeType === "Product")
+  );
+
+  const productPositions = new Map<string, { x: number; y: number }>();
+  selectedProductIds.forEach((id, index) => {
+    const isRightColumn = index % 2 === 1;
+    productPositions.set(id, {
+      x: isRightColumn ? 442 : 198,
+      y: 218 + Math.floor(index / 2) * 92 + (isRightColumn ? 46 : 0),
+    });
+  });
+  const positions = mergePositions(
+    productPositions,
+    arcPositions(semanticIds, 226, Math.PI * 1.12, Math.PI * 1.88),
+    linePositions(hierarchyIds, 520, 92),
+    arcPositions(relationProductIds, 232, Math.PI * 0.02, Math.PI * 0.42)
+  );
+  const nodeIds = uniq([
+    ...selectedProductIds,
+    ...semanticIds,
+    ...hierarchyIds,
+    ...relationProductIds,
+  ]);
+  const nodeSet = new Set(nodeIds);
+  const visibleEdges = allEdges.filter((edge) => nodeSet.has(edge.source) && nodeSet.has(edge.target));
+  const nodes = nodeIds
+    .map((id) => makeNode(id, positions))
+    .filter((node): node is GraphNode => node !== null);
+  const { edgeLabels, lines } = lineDataFromEdges(visibleEdges, positions);
+
+  return {
+    edgeLabels,
+    lines,
+    modeLabel: "推荐子图",
+    nodes,
+    summaryText: `推荐商品 ${selectedProducts.length} · 关键属性 ${semanticIds.length} · 已审核关系 ${relationEdges.length}`,
+    viewBox: `0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`,
+  };
+}
 const hierarchyAncestorTypes = new Set(["CoreFamily", "OntologyDomain", "NoteFamily", "ScentConcept", "ProductForm"]);
 
 function hierarchyAncestorIdsFor(nodeIds: string[]) {
@@ -1783,7 +1960,14 @@ export const initialMessages: KnowledgeMessage[] = [
 
 const overviewDataset = buildOverviewGraph();
 
-export function getGraphDataset(focusLabel: string | null, filterNodeIds: string[] = []): GraphDataset {
+export function getGraphDataset(
+  focusLabel: string | null,
+  filterNodeIds: string[] = [],
+  recommendationProductNames: string[] = []
+): GraphDataset {
+  if (recommendationProductNames.length) {
+    return buildRecommendationGraph(recommendationProductNames);
+  }
   if (focusLabel) {
     const node = nodeById.get(focusLabel);
     if (node?.nodeType === "Product") {

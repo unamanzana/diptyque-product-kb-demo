@@ -169,7 +169,23 @@
 .product-card-footer { margin-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .product-card-price { font-size: 13px; font-weight: 600; color: var(--muji-red); }
 .focus-btn { min-height: 36px; padding: 6px 14px; }
-.retrieval-pipeline { width: min(100%, 487px); border: 1px solid var(--muji-light-gray); border-radius: 14px; background: var(--muji-white); overflow: hidden; }
+.recommendation-products { width: min(100%, 720px); }
+.recommendation-products-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; color: var(--muji-gray); font-size: 12px; }
+.recommendation-product-strip { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(216px, 236px); gap: 10px; overflow-x: auto; padding: 0 0 8px; scroll-snap-type: x proximity; scrollbar-width: thin; }
+.recommendation-product-card { display: flex; min-height: 194px; flex-direction: column; justify-content: space-between; scroll-snap-align: start; border: 1px solid var(--muji-light-gray); border-radius: 8px; background: rgba(245, 240, 232, 0.5); padding: 12px; }
+.recommendation-product-main { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+.recommendation-product-image { width: 62px; height: 62px; flex: 0 0 62px; object-fit: cover; border: 1px solid var(--muji-light-gray); border-radius: 6px; background: #fff; }
+.recommendation-product-info { min-width: 0; flex: 1; }
+.recommendation-product-name { display: -webkit-box; margin: 0 0 5px; overflow: hidden; color: var(--muji-dark); font-size: 14px; font-weight: 600; line-height: 1.35; text-decoration: none; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.recommendation-product-name:hover { color: var(--muji-red); }
+.recommendation-product-category, .recommendation-product-specs { overflow: hidden; color: var(--muji-gray); font-size: 11px; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
+.recommendation-product-specs { margin-top: 3px; }
+.recommendation-product-badges { display: flex; min-height: 25px; flex-wrap: wrap; gap: 5px; margin-top: 10px; overflow: hidden; }
+.recommendation-product-badges .badge { padding: 3px 7px; }
+.recommendation-product-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; }
+.recommendation-product-actions { display: flex; gap: 6px; }
+.recommendation-icon-button { display: inline-grid; width: 32px; height: 32px; place-items: center; border: 1px solid var(--muji-light-gray); border-radius: 4px; background: var(--muji-white); color: var(--muji-dark); cursor: pointer; text-decoration: none; }
+.recommendation-icon-button:hover { border-color: rgba(127, 0, 25, 0.45); color: var(--muji-red); }.retrieval-pipeline { width: min(100%, 487px); border: 1px solid var(--muji-light-gray); border-radius: 14px; background: var(--muji-white); overflow: hidden; }
 .pipeline-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; }
 .pipeline-title { font-size: 13px; font-weight: 600; }
 .pipeline-controls { display: flex; align-items: center; gap: 8px; }
@@ -196,7 +212,7 @@
 .chat-input { flex: 1 1 auto; min-width: 0; height: 44px; border-radius: 20px; border: 1px solid var(--muji-light-gray); background: var(--muji-beige); color: #000000; padding: 10px 16px; font-size: 14px; }
 .chat-input::placeholder { color: #9d968f; }
 .chat-input:focus { outline: none; border-color: rgba(127, 0, 25, 0.35); box-shadow: 0 0 0 3px rgba(127, 0, 25, 0.08); }
-@media (max-width: 899px) { .panel-header { padding: 10px 16px 6px; } .scroll-container { padding: 16px 12px 20px; } .suggest-chips, .product-card, .retrieval-pipeline, .answer-meta { max-width: none; width: 100%; } }
+@media (max-width: 899px) { .panel-header { padding: 10px 16px 6px; } .scroll-container { padding: 16px 12px 20px; } .suggest-chips, .product-card, .recommendation-products, .retrieval-pipeline, .answer-meta { max-width: none; width: 100%; } .recommendation-product-strip { grid-auto-columns: minmax(210px, 78vw); } }
 @media (min-width: 900px) { .tab-bar { display: none; } .muji-kb { flex-direction: row; } .panel { display: flex; width: 50%; height: 100dvh; } #graph-panel { border-right: 1px solid var(--muji-light-gray); } }
 .graph-node.interactive { opacity: 0.96; }
 .graph-node.interactive:hover circle { filter: drop-shadow(0 0 10px rgba(127, 0, 25, 0.18)); }

@@ -220,24 +220,27 @@ function scentCatalogProducts(term: string) {
 }
 
 function isGiftRecommendationQuery(query: string) {
-  return /送礼|礼物|礼品|男朋友|女朋友|男友|女友|伴侣|生日|纪念日/.test(query);
+  return /送礼|礼物|礼品|送给|送一?款|送什么|赠送|朋友|长辈|男朋友|女朋友|男友|女友|伴侣|生日|纪念日/.test(query);
 }
 
-function giftRecommendationProducts() {
+function giftRecommendationProducts(query: string) {
+  const wantsHomeGift = /家居|摆件|装饰|文创|烛台|花瓶|托盘|香氛蜡烛|扩香/.test(query);
   const preferredForms = new Set(["淡香水", "淡香精", "香膏", "淡香水礼盒", "礼盒"]);
   return products
-    .filter(
-      (product) =>
-        product.coreFamily === "个人香氛" &&
-        !product.variantTags.includes("补充装") &&
-        preferredForms.has(product.productForm)
-    )
+    .filter((product) => {
+      if (product.variantTags.includes("补充装")) return false;
+      return wantsHomeGift
+        ? ["艺术家居", "文创", "家居香氛"].includes(product.coreFamily)
+        : product.coreFamily === "个人香氛" && preferredForms.has(product.productForm);
+    })
     .sort(
       (a, b) =>
         Number(b.marketingTags.includes("臻选礼赠")) - Number(a.marketingTags.includes("臻选礼赠")) ||
+        Number(Boolean(b.materials.length)) - Number(Boolean(a.materials.length)) ||
         a.productForm.localeCompare(b.productForm, "zh-CN") ||
         a.name.localeCompare(b.name, "zh-CN")
-    );
+    )
+    .slice(0, 60);
 }
 function productPrice(product: FrontendProduct) {
   if (product.priceMin == null && product.priceMax == null) return "price unavailable";
@@ -323,7 +326,7 @@ export function buildDiptyqueContext(query: string) {
   const matchedProducts = scentListTerm
     ? scentCatalogProducts(scentListTerm)
     : answerMode === "gift_recommendation"
-      ? giftRecommendationProducts()
+      ? giftRecommendationProducts(query)
       : sortProducts(query).map((item) => item.product);
   const primaryProductIds = new Set(matchedProducts.slice(0, 3).map((product) => product.id));
   const matchedRelations = approvedProductRelations.filter(

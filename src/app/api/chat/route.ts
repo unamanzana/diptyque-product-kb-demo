@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { generateDiptyqueAnswer } from "@/lib/deepseek";
 import { buildDiptyqueContext } from "@/lib/diptyque-search";
+import { selectMentionedProductNames } from "@/lib/diptyque-recommendation-selection";
 
 export const runtime = "nodejs";
 
@@ -33,12 +34,17 @@ export async function POST(request: Request) {
       message,
     });
 
+    const recommendedProductNames = answerMode === "gift_recommendation" && !result.fallback
+      ? selectMentionedProductNames(result.answer, matchedProducts)
+      : [];
+
     return NextResponse.json({
       answer: result.answer,
       answerMode,
       answerSource: result.fallback ? "local_fallback" : "deepseek",
       fallback: result.fallback,
       matchedProductNames: matchedProducts.map((product) => product.name),
+      recommendedProductNames,
       model: result.model,
       reasoningUsed: result.reasoningUsed,
       reason: "reason" in result ? result.reason : undefined,

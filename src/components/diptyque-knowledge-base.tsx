@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ExternalLink, X } from "lucide-react";
+import { ExternalLink, Network, X } from "lucide-react";
 
 import {
   defaultSuggestions,
   getFilterTrail,
   getGraphDataset,
+  getProductCardsByNames,
   initialMessages,
   legendItems,
   resolveDiptyqueResponse,
@@ -24,6 +25,7 @@ type GraphMode = {
   filterNodeIds: string[];
   focusEdgeIds: string[];
   focusLabel: string | null;
+  recommendationProductNames?: string[];
 };
 type PendingReply = {
   question: string;
@@ -245,6 +247,79 @@ function ProductAnswerCard({
   );
 }
 
+function RecommendationProductCards({
+  cards,
+  onFocusGraph,
+}: {
+  cards: ProductCard[];
+  onFocusGraph: (focusLabel: string) => void;
+}) {
+  return (
+    <section className="recommendation-products" aria-label={`推荐商品 ${cards.length} 款`}>
+      <div className="recommendation-products-header">
+        <span>推荐商品</span>
+        <span>{cards.length} 款</span>
+      </div>
+      <div className="recommendation-product-strip">
+        {cards.map((card) => (
+          <article key={card.focusNodeLabel} className="recommendation-product-card">
+            <div className="recommendation-product-main">
+              {card.url ? (
+                <a href={card.url} target="_blank" rel="noreferrer" title={`打开 ${card.name} 商品页`}>
+                  {card.image ? <img className="recommendation-product-image" src={card.image} alt={card.name} /> : null}
+                </a>
+              ) : card.image ? (
+                <img className="recommendation-product-image" src={card.image} alt={card.name} />
+              ) : null}
+              <div className="recommendation-product-info">
+                {card.url ? (
+                  <a className="recommendation-product-name" href={card.url} target="_blank" rel="noreferrer">
+                    {card.name}
+                  </a>
+                ) : (
+                  <h4 className="recommendation-product-name">{card.name}</h4>
+                )}
+                <div className="recommendation-product-category">{card.category}</div>
+                <div className="recommendation-product-specs">{card.specs}</div>
+              </div>
+            </div>
+            <div className="recommendation-product-badges">
+              {card.badges.slice(0, 3).map((badge) => (
+                <span key={badge} className="badge">{badge}</span>
+              ))}
+            </div>
+            <div className="recommendation-product-footer">
+              <span className="product-card-price">{card.price}</span>
+              <div className="recommendation-product-actions">
+                {card.url ? (
+                  <a
+                    className="recommendation-icon-button"
+                    href={card.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`打开 ${card.name} 商品页`}
+                    title="打开商品页"
+                  >
+                    <ExternalLink size={15} aria-hidden="true" />
+                  </a>
+                ) : null}
+                <button
+                  type="button"
+                  className="recommendation-icon-button"
+                  onClick={() => onFocusGraph(card.focusNodeLabel)}
+                  aria-label={`查看 ${card.name} 单品图谱`}
+                  title="查看单品图谱"
+                >
+                  <Network size={15} aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
 export function DiptyqueKnowledgeBase() {
   const [activeTab, setActiveTab] = useState<MobileTab>("graph");
   const [graphMode, setGraphMode] = useState<GraphMode>({ filterNodeIds: [], focusEdgeIds: [], focusLabel: null });
@@ -269,8 +344,8 @@ export function DiptyqueKnowledgeBase() {
   const suppressNodeClickRef = useRef(false);
 
   const graphDataset: GraphDataset = useMemo(
-    () => getGraphDataset(graphMode.focusLabel, graphMode.filterNodeIds),
-    [graphMode.filterNodeIds, graphMode.focusLabel]
+    () => getGraphDataset(graphMode.focusLabel, graphMode.filterNodeIds, graphMode.recommendationProductNames ?? []),
+    [graphMode.filterNodeIds, graphMode.focusLabel, graphMode.recommendationProductNames]
   );
   const filterTrail = useMemo(() => getFilterTrail(graphMode.filterNodeIds), [graphMode.filterNodeIds]);
   const focusedEdgeIds = useMemo(() => new Set(graphMode.focusEdgeIds), [graphMode.focusEdgeIds]);
@@ -288,6 +363,7 @@ export function DiptyqueKnowledgeBase() {
     }
 
     const explicitCoreTypes = ["CoreFamily", "OntologyDomain", "ProductForm", "NoteFamily"];
+    if (graphDataset.modeLabel === "推荐子图") explicitCoreTypes.push("Product");
     if (graphDataset.modeLabel.endsWith("本体")) {
       explicitCoreTypes.push("ScentConcept", "NoteIngredient", "ScentProfile", "ScentAccord");
     }
@@ -619,6 +695,7 @@ export function DiptyqueKnowledgeBase() {
       ...current,
       {
         card: response.card,
+        cards: response.cards,
         confidence: response.confidence,
         id: makeId("bot"),
         note,
@@ -647,6 +724,7 @@ export function DiptyqueKnowledgeBase() {
         ...current,
         {
           card: response.card,
+          cards: response.cards,
           confidence: response.confidence,
           id: messageId,
           note,
@@ -676,6 +754,7 @@ export function DiptyqueKnowledgeBase() {
                 ? {
                     ...message,
                     card: response.card,
+                    cards: response.cards,
                     confidence: response.confidence,
                     note,
                     suggestions: response.suggestions ?? defaultSuggestions,
@@ -688,6 +767,7 @@ export function DiptyqueKnowledgeBase() {
             filterNodeIds: response.filterNodeIds ?? [],
             focusEdgeIds: response.focusEdgeIds ?? [],
             focusLabel: response.focusNodeLabel ?? null,
+            recommendationProductNames: response.recommendationProductNames ?? [],
           });
           setStreamingMessageId(null);
         }
@@ -707,22 +787,38 @@ export function DiptyqueKnowledgeBase() {
         if (!apiResponse.ok) throw new Error(`chat_http_${apiResponse.status}`);
         const data = (await apiResponse.json()) as {
           answer?: string;
+          answerMode?: string;
           answerSource?: string;
           matchedProductNames?: string[];
+          recommendedProductNames?: string[];
           model?: string;
           reasoningUsed?: boolean;
           fallback?: boolean;
         };
         if (!data.fallback && data.answer?.trim()) {
-          response = data.answerSource === "ontology_full_list"
-            ? {
-                ...localResponse,
-                answer: data.answer.trim(),
-                card: undefined,
-                focusEdgeIds: [],
-                focusNodeLabel: localResponse.focusNodeLabel ?? "domain:香调",
-              }
-            : { ...localResponse, answer: data.answer.trim() };
+          if (data.answerSource === "ontology_full_list") {
+            response = {
+              ...localResponse,
+              answer: data.answer.trim(),
+              card: undefined,
+              focusEdgeIds: [],
+              focusNodeLabel: localResponse.focusNodeLabel ?? "domain:香调",
+            };
+          } else if (data.answerMode === "gift_recommendation") {
+            const recommendationProductNames = data.recommendedProductNames ?? [];
+            response = {
+              ...localResponse,
+              answer: data.answer.trim(),
+              card: undefined,
+              cards: getProductCardsByNames(recommendationProductNames),
+              filterNodeIds: [],
+              focusEdgeIds: [],
+              focusNodeLabel: undefined,
+              recommendationProductNames,
+            };
+          } else {
+            response = { ...localResponse, answer: data.answer.trim() };
+          }
           responseNote = data.answerSource === "ontology_full_list"
             ? `本体全量检索 · ${data.matchedProductNames?.length ?? 0}款`
             : data.reasoningUsed
@@ -1032,6 +1128,7 @@ export function DiptyqueKnowledgeBase() {
                   {message.note ? <div className="message-note">{message.note}</div> : null}
                 </div>
                 {message.role === "bot" && message.card ? <ProductAnswerCard card={message.card} confidence={message.confidence} onFocusGraph={focusGraph} /> : null}
+                {message.role === "bot" && message.cards?.length ? <RecommendationProductCards cards={message.cards} onFocusGraph={focusGraph} /> : null}
                 {message.role === "bot" && message.suggestions?.length ? (
                   <div className="suggest-chips">
                     {message.id === "welcome" ? <div className="suggest-label">💬 试试问：</div> : null}
