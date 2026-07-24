@@ -32,8 +32,9 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "check": "npm run lint && npm run typecheck && npm run build",
-    "data:rebuild": "python data-pipeline/rebuild.py"
+    "check": "npm run audit:queries && npm run lint && npm run typecheck && npm run build",
+    "data:rebuild": "python data-pipeline/rebuild.py",
+    "audit:queries": "node --no-warnings --experimental-strip-types scripts/audit-diptyque-query-catalog.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",

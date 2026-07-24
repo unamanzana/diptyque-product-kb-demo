@@ -1,4 +1,8 @@
 import frontendData from "@/data/diptyque-frontend-data.json";
+import {
+  extractScentCatalogTerm,
+  productMatchesScentCatalogTerm,
+} from "@/lib/diptyque-query-intent";
 
 type FrontendSku = {
   price: number | null;
@@ -194,48 +198,14 @@ function sortProducts(query: string) {
     .slice(0, 12);
 }
 
-function extractScentListTerm(query: string) {
-  if (!/(?:产品|商品|香水).*(?:哪些|有什么|有哪|包括)|(?:哪些|有什么|有哪).*(?:产品|商品|香水)/.test(query)) {
-    return "";
-  }
-  const match = query.match(/([\u4e00-\u9fffA-Za-z0-9]{1,16}?)(味|香调)(?:的)?(?:产品|商品|香水)/);
-  if (!match) return "";
-  const term = match[1].replace(/^(?:请问|我想找|我喜欢|想找|想要|有哪些|哪些|有什么|有哪|有)/, "");
-  if (/^(?:什么|哪些|哪种|所有)$/.test(term)) return "";
-  return match[2] === "香调" && /^(?:花|果|辛)$/.test(term) ? `${term}香` : term;
-}
-
-const SCENT_FAMILY_CANONICAL: Record<string, string> = {
-  花香调: "花香",
-  木质香调: "木质",
-  果香调: "果香",
-  辛香调: "辛香",
-  草本香调: "草本",
-  海洋香调: "海洋",
-};
-
-function normalizeScentTerm(term: string) {
-  const trimmed = term.trim();
-  return normalizeText(SCENT_FAMILY_CANONICAL[trimmed] ?? trimmed.replace(/香调$/, ""));
-}
-function normalizedScentTerms(product: FrontendProduct) {
-  return uniq([
-    ...product.collections,
-    ...product.notes,
-    ...product.scentProfiles,
-    ...product.scentAccords,
-    ...product.scentConcepts,
-    ...product.noteFamilies,
-  ]).map(normalizeScentTerm);
-}
+const scentCatalogVocabulary = uniq(
+  products.flatMap((product) => [...product.scentConcepts, ...product.noteFamilies])
+);
 
 function scentCatalogProducts(term: string) {
-  const normalizedTerm = normalizeScentTerm(term);
   const seenNames = new Set<string>();
   return products
-    .filter((product) =>
-      normalizedScentTerms(product).includes(normalizedTerm)
-    )
+    .filter((product) => productMatchesScentCatalogTerm(product, term))
     .sort(
       (a, b) =>
         a.coreFamily.localeCompare(b.coreFamily, "zh-CN") ||
@@ -344,7 +314,7 @@ function formatCompleteCatalogAnswer(term: string, matchedProducts: FrontendProd
   return `${term}相关产品共${matchedProducts.length}款，按商品家族和品型完整列出：\n${lines.join("\n")}`;
 }
 export function buildDiptyqueContext(query: string) {
-  const scentListTerm = extractScentListTerm(query);
+  const scentListTerm = extractScentCatalogTerm(query, scentCatalogVocabulary);
   const answerMode = scentListTerm
     ? "ontology_catalog_list"
     : isGiftRecommendationQuery(query)
