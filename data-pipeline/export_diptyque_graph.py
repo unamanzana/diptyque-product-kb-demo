@@ -16,6 +16,7 @@ NEO4J_NODES_CSV = ROOT / "diptyque_graph_nodes_neo4j.csv"
 NEO4J_EDGES_CSV = ROOT / "diptyque_graph_edges_neo4j.csv"
 RELATION_DICTIONARY_CSV = ROOT / "diptyque_relation_dictionary.csv"
 PRODUCT_RELATIONS_CSV = ROOT / "diptyque_product_relations.csv"
+REVIEWED_RECOMMENDATION_RELATIONS_CSV = ROOT / "diptyque_reviewed_recommendation_relations.csv"
 COMPATIBILITY_SPEC_RELATIONS_CSV = ROOT / "diptyque_compatibility_spec_relations.csv"
 
 
@@ -606,9 +607,12 @@ def main() -> None:
             }
 
     approved_relation_count = 0
-    if PRODUCT_RELATIONS_CSV.exists():
-        with PRODUCT_RELATIONS_CSV.open("r", encoding="utf-8-sig", newline="") as handle:
-            relation_rows = list(csv.DictReader(handle))
+    relation_rows: list[dict[str, str]] = []
+    for relation_path in (PRODUCT_RELATIONS_CSV, REVIEWED_RECOMMENDATION_RELATIONS_CSV):
+        if relation_path.exists():
+            with relation_path.open("r", encoding="utf-8-sig", newline="") as handle:
+                relation_rows.extend(csv.DictReader(handle))
+    if relation_rows:
         for relation in relation_rows:
             if (relation.get("review_status") or "").strip().lower() != "approved":
                 continue

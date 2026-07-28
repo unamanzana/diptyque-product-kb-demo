@@ -1,4 +1,4 @@
-import frontendData from "@/data/diptyque-frontend-data.json";
+import frontendData from "@/data/diptyque-frontend-payload";
 
 type Product = {
   id: string;
@@ -11,6 +11,20 @@ type Product = {
   scentProfiles: string[];
   scentAccords: string[];
   scentConcepts: string[];
+  scentIdentities?: Array<{
+    aliases?: string[];
+    id: string;
+    name: string;
+    scentIdentityType: string;
+  }>;
+  semanticFacts?: {
+    functions: string[];
+    scenes: string[];
+    userNeeds: string[];
+    careInstructions: string[];
+    semanticMaterials: string[];
+    craftTechniques: string[];
+  };
   noteFamilies: string[];
   materials: string[];
   marketingTags: string[];
@@ -112,6 +126,8 @@ function compactProduct(product: Product) {
     scentProfiles: product.scentProfiles,
     scentAccords: product.scentAccords,
     scentConcepts: product.scentConcepts,
+    scentIdentities: product.scentIdentities ?? [],
+    semanticFacts: product.semanticFacts ?? {},
     noteFamilies: product.noteFamilies,
     materials: product.materials,
     marketingTags: product.marketingTags,
@@ -152,6 +168,8 @@ function queryScore(product: Product, query: string) {
     ...product.scentProfiles,
     ...product.scentAccords,
     ...product.scentConcepts,
+    ...(product.scentIdentities ?? []).flatMap((identity) => [identity.name, ...(identity.aliases ?? [])]),
+    ...Object.values(product.semanticFacts ?? {}).flat(),
     ...product.noteFamilies,
     ...product.materials,
     ...product.marketingTags,
@@ -173,6 +191,10 @@ function searchProducts(args: Record<string, unknown>): ToolExecution {
   const collections = stringArray(args.collections);
   const scentTerms = stringArray(args.scent_terms);
   const materials = stringArray(args.materials);
+  const functions = stringArray(args.functions);
+  const scenes = stringArray(args.scenes);
+  const userNeeds = stringArray(args.user_needs);
+  const careInstructions = stringArray(args.care_instructions);
   const marketingTags = stringArray(args.marketing_tags);
   const variantTags = stringArray(args.variant_tags);
   const minPrice = numberValue(args.min_price);
@@ -194,12 +216,17 @@ function searchProducts(args: Record<string, unknown>): ToolExecution {
             ...product.scentProfiles,
             ...product.scentAccords,
             ...product.scentConcepts,
+            ...(product.scentIdentities ?? []).flatMap((identity) => [identity.name, ...(identity.aliases ?? [])]),
             ...product.noteFamilies,
           ],
           scentTerms
         )
       ) return false;
-      if (!matchesAny(product.materials, materials)) return false;
+      if (!matchesAny([...product.materials, ...(product.semanticFacts?.semanticMaterials ?? [])], materials)) return false;
+      if (!matchesAny(product.semanticFacts?.functions ?? [], functions)) return false;
+      if (!matchesAny(product.semanticFacts?.scenes ?? [], scenes)) return false;
+      if (!matchesAny(product.semanticFacts?.userNeeds ?? [], userNeeds)) return false;
+      if (!matchesAny(product.semanticFacts?.careInstructions ?? [], careInstructions)) return false;
       if (!matchesAny(product.marketingTags, marketingTags)) return false;
       if (!matchesAny(product.variantTags, variantTags)) return false;
       if (excludeRefills && product.variantTags.includes("补充装")) return false;
@@ -212,6 +239,10 @@ function searchProducts(args: Record<string, unknown>): ToolExecution {
         || collections.length
         || scentTerms.length
         || materials.length
+        || functions.length
+        || scenes.length
+        || userNeeds.length
+        || careInstructions.length
         || marketingTags.length
         || variantTags.length
         || minPrice != null
@@ -436,13 +467,22 @@ function listCatalogValues(args: Record<string, unknown>): ToolExecution {
                     ...product.scentProfiles,
                     ...product.scentAccords,
                     ...product.scentConcepts,
+                    ...(product.scentIdentities ?? []).flatMap((identity) => [identity.name, ...(identity.aliases ?? [])]),
                     ...product.noteFamilies,
                   ])
                 )
               ).sort((a, b) => a.localeCompare(b, "zh-CN"))
             : dimension === "material"
-              ? Array.from(new Set(products.flatMap((product) => product.materials))).sort((a, b) => a.localeCompare(b, "zh-CN"))
-              : [];
+              ? Array.from(new Set(products.flatMap((product) => [...product.materials, ...(product.semanticFacts?.semanticMaterials ?? [])]))).sort((a, b) => a.localeCompare(b, "zh-CN"))
+              : dimension === "function"
+                ? Array.from(new Set(products.flatMap((product) => product.semanticFacts?.functions ?? []))).sort((a, b) => a.localeCompare(b, "zh-CN"))
+                : dimension === "scene"
+                  ? Array.from(new Set(products.flatMap((product) => product.semanticFacts?.scenes ?? []))).sort((a, b) => a.localeCompare(b, "zh-CN"))
+                  : dimension === "user_need"
+                    ? Array.from(new Set(products.flatMap((product) => product.semanticFacts?.userNeeds ?? []))).sort((a, b) => a.localeCompare(b, "zh-CN"))
+                    : dimension === "care_instruction"
+                      ? Array.from(new Set(products.flatMap((product) => product.semanticFacts?.careInstructions ?? []))).sort((a, b) => a.localeCompare(b, "zh-CN"))
+                      : [];
   return {
     content: JSON.stringify({ dimension, values }),
     productIds: [],
@@ -466,6 +506,10 @@ export const diptyqueAgentTools: ToolDefinition[] = [
           collections: { type: "array", items: { type: "string" } },
           scent_terms: { type: "array", items: { type: "string" } },
           materials: { type: "array", items: { type: "string" } },
+          functions: { type: "array", items: { type: "string" } },
+          scenes: { type: "array", items: { type: "string" } },
+          user_needs: { type: "array", items: { type: "string" } },
+          care_instructions: { type: "array", items: { type: "string" } },
           marketing_tags: { type: "array", items: { type: "string" } },
           variant_tags: { type: "array", items: { type: "string" } },
           min_price: { type: "number" },
@@ -537,7 +581,7 @@ export const diptyqueAgentTools: ToolDefinition[] = [
         properties: {
           dimension: {
             type: "string",
-            enum: ["core_family", "product_form", "collection", "scent", "material"],
+            enum: ["core_family", "product_form", "collection", "scent", "material", "function", "scene", "user_need", "care_instruction"],
           },
         },
         required: ["dimension"],

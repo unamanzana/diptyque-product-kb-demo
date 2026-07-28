@@ -1,0 +1,76 @@
+{
+  "result": "PASS_WITH_REVIEW_ITEMS",
+  "blockingFailures": [],
+  "checks": {
+    "productConceptCount": 155,
+    "scentIdentityCount": 23,
+    "hasScentAssertionCount": 155,
+    "evidenceCount": 155,
+    "maxScentTargetsPerProduct": 1,
+    "pendingExcludedCount": 4,
+    "sameLabelCrossType": {
+      "圣日尔曼大道34号": {
+        "HomeScent": "scent:home:d1bf12d71e9b",
+        "SignatureFragrance": "scent:signature:e64ef421b4b7"
+      }
+    },
+    "duplicateTypedNames": {},
+    "prohibitedTypedIdentities": [],
+    "suffixAliasCandidates": [],
+    "protectedCompoundNames": [
+      {
+        "scentIdentityType": "HomeScent",
+        "shortName": "玫瑰",
+        "compoundName": "玫瑰天竺葵",
+        "decision": "keep_distinct"
+      }
+    ],
+    "retrievedAtMissingCount": 155,
+    "collectionUmbrellaExcludedCount": 7,
+    "approvedAliasAdjudications": [
+      {
+        "scentIdentityType": "SignatureFragrance",
+        "alias": "玫瑰",
+        "canonicalName": "玫瑰香调",
+        "canonicalId": "scent:signature:8e504c9b6b1f",
+        "scopeRule": "Alias resolution requires SignatureFragrance context; HomeScent 玫瑰 remains distinct.",
+        "evidenceProduct": "玫瑰香氛洁肤露",
+        "evidenceFields": [
+          "fragrance",
+          "pdp_short_description",
+          "subtitle"
+        ],
+        "evidenceExcerpt": "fragrance=玫瑰；玫瑰香调洁肤露遇水幻化为丝滑的绵密泡沫；大马士革玫瑰、千叶玫瑰、荔枝香调、龙涎香",
+        "reviewStatus": "approved"
+      }
+    ],
+    "typedAliasCrossType": [
+      {
+        "alias": "玫瑰",
+        "aliasType": "SignatureFragrance",
+        "canonicalIdentity": "玫瑰香调",
+        "sameLabelOtherType": "HomeScent",
+        "decision": "type_scoped_alias"
+      }
+    ]
+  },
+  "legacyComparison": {
+    "scentConceptNodeCount": 94,
+    "collectionOrScentNodeCount": 22,
+    "scentConceptAlsoNoteIngredientCount": 82,
+    "scentConceptMatchingV1IdentityCount": 8,
+    "scentConceptNeitherNoteNorV1IdentityCount": 10,
+    "collectionLabelsMappingToMultipleV1Types": {
+      "圣日尔曼大道34号": {
+        "HomeScent": "scent:home:d1bf12d71e9b",
+        "SignatureFragrance": "scent:signature:e64ef421b4b7"
+      }
+    },
+    "hasProductFromScentConcept": 397,
+    "hasProductFromCollectionOrScent": 166
+  },
+  "publicationEffect": {
+    "graphEdgesAdded": 0,
+    "frontendRecordsChanged": 0
+  }
+}

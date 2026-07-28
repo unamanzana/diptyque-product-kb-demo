@@ -1,0 +1,1442 @@
+{
+  "schemaVersion": "1.0.0",
+  "snapshotId": "scent-query-regression-v1",
+  "status": "PASS",
+  "identityComparisons": [
+    {
+      "scent_identity_id": "scent:home:71ed7bd5bfc3",
+      "scent_identity_type": "HomeScent",
+      "canonical_name": "含羞草",
+      "aliases": "",
+      "legacy_approved_count": "8",
+      "new_count": "8",
+      "expected_pending_count": "0",
+      "expected_pending_products": "",
+      "unexpected_added_count": "0",
+      "unexpected_removed_count": "0",
+      "comparison_status": "exact"
+    },
+    {
+      "scent_identity_id": "scent:home:d1bf12d71e9b",
+      "scent_identity_type": "HomeScent",
+      "canonical_name": "圣日尔曼大道34号",
+      "aliases": "",
+      "legacy_approved_count": "11",
+      "new_count": "11",
+      "expected_pending_count": "0",
+      "expected_pending_products": "",
+      "unexpected_added_count": "0",
+      "unexpected_removed_count": "0",
+      "comparison_status": "exact"
+    },
+    {
+      "scent_identity_id": "scent:home:a0feff139222",
+      "scent_identity_type": "HomeScent",
+      "canonical_name": "无花果",
+      "aliases": "",
+      "legacy_approved_count": "12",
+      "new_count": "12",
+      "expected_pending_count": "0",
+      "expected_pending_products": "",
+      "unexpected_added_count": "0",
+      "unexpected_removed_count": "0",
+      "comparison_status": "exact"
+    },
+    {
+      "scent_identity_id": "scent:home:e0b852b0c207",
+      "scent_identity_type": "HomeScent",
+      "canonical_name": "晚香玉",
+      "aliases": "",
+      "legacy_approved_count": "10",
+      "new_count": "10",
+      "expected_pending_count": "0",
+      "expected_pending_products": "",
+      "unexpected_added_count": "0",
+      "unexpected_removed_count": "0",
+      "comparison_status": "exact"
+    },
+    {
+      "scent_identity_id": "scent:home:9cb3a4c80b60",
+      "scent_identity_type": "HomeScent",
+      "canonical_name": "橙花",
+      "aliases": "",
+      "legacy_approved_count": "8",
+      "new_count": "8",
+      "expected_pending_count": "1",
+      "expected_pending_products": "橙花 - 电子扩香器香氛补充包",
+      "unexpected_added_count": "0",
+      "unexpected_removed_count": "0",
+      "comparison_status": "exact_with_expected_pending_exclusion"
+    },
+    {
+      "scent_identity_id": "scent:baies",
+      "scent_identity_type": "HomeScent",
+      "canonical_name": "浆果香",
+      "aliases": "",
+      "legacy_approved_count": "15",
+      "new_count": "15",
+      "expected_pending_count": "0",
+      "expected_pending_products": "",
+      "unexpected_added_count": "0",
+      "unexpected_removed_count": "0",
+      "comparison_status": "exact"
+    },
+    {
+      "scent_identity_id": "scent:home:9f839def5f16",
+      "scent_identity_type": "HomeScent",
+      "canonical_name": "炭木香",
+      "aliases": "",
+      "legacy_approved_count": "5",
+      "new_count": "5",
+      "expected_pending_count": "1",
+      "expected_pending_products": "炭木香烛台香氛蜡烛",
+      "unexpected_added_count": "0",
+      "unexpected_removed_count": "0",
+      "comparison_status": "exact_with_expected_pending_exclusion"
+    },
+    {
+      "scent_identity_id": "scent:home:7e29b8c11693",
+      "scent_identity_type": "HomeScent",
+      "canonical_name": "玫瑰",
+      "aliases": "",
+      "legacy_approved_count": "11",
+      "new_count": "11",
+      "expected_pending_count": "1",
+      "expected_pending_products": "超大号香氛蜡烛-玫瑰",
+      "unexpected_added_count": "0",
+      "unexpected_removed_count": "0",
+      "comparison_status": "exact_with_expected_pending_exclusion"
+    },
+    {
+      "scent_identity_id": "scent:home:60272c1fa58a",
+      "scent_identity_type": "HomeScent",
+      "canonical_name": "玫瑰天竺葵",
+      "aliases": "",
+      "legacy_approved_count": "1",
+      "new_count": "1",
+      "expected_pending_count": "0",
+      "expected_pending_products": "",
+      "unexpected_added_count": "0",
+      "unexpected_removed_count": "0",
+      "comparison_status": "exact"
+    },
+    {
+      "scent_identity_id": "scent:home:8804ae0c4c63",
+      "scent_identity_type": "HomeScent",
+      "canonical_name": "琥珀",
+      "aliases": "",
+      "legacy_approved_count": "8",
+      "new_count": "8",
+      "expected_pending_count": "0",
+      "expected_pending_products": "",
+      "unexpected_added_count": "0",
+      "unexpected_removed_count": "0",
+      "comparison_status": "exact"
+    },
+    {
+      "scent_identity_id": "scent:home:75c3136d0e43",
+      "scent_identity_type": "HomeScent",
+      "canonical_name": "生姜",
+      "aliases": "",
+      "legacy_approved_count": "4",
+      "new_count": "4",
+      "expected_pending_count": "0",
+      "expected_pending_products": "",
+      "unexpected_added_count": "0",
+      "unexpected_removed_count": "0",
+      "comparison_status": "exact"
+    },
+    {
+      "scent_identity_id": "scent:signature:e64ef421b4b7",
+      "scent_identity_type": "SignatureFragrance",
+      "canonical_name": "圣日尔曼大道34号",
+      "aliases": "",
+      "legacy_approved_count": "3",
+      "new_count": "3",
+      "expected_pending_count": "0",
+      "expected_pending_products": "",
+      "unexpected_added_count": "0",
+      "unexpected_removed_count": "0",
+      "comparison_status": "exact"
+    },
+    {
+      "scent_identity_id": "scent:orpheon",
+      "scent_identity_type": "SignatureFragrance",
+      "canonical_name": "奥费恩",
+      "aliases": "",
+      "legacy_approved_count": "9",
+      "new_count": "9",
+      "expected_pending_count": "0",
+      "expected_pending_products": "",
+      "unexpected_added_count": "0",
+      "unexpected_removed_count": "0",
+      "comparison_status": "exact"
+    },
+    {
+      "scent_identity_id": "scent:signature:d3edd0766aea",
+      "scent_identity_type": "SignatureFragrance",
+      "canonical_name": "巴黎之水",
+      "aliases": "",
+      "legacy_approved_count": "3",
+      "new_count": "3",
+      "expected_pending_count": "0",
+      "expected_pending_products": "",
+      "unexpected_added_count": "0",
+      "unexpected_removed_count": "0",
+      "comparison_status": "exact"
+    },
+    {
+      "scent_identity_id": "scent:signature:5fff5f41e126",
+      "scent_identity_type": "SignatureFragrance",
+      "canonical_name": "希腊无花果",
+      "aliases": "",
+      "legacy_approved_count": "5",
+      "new_count": "5",
+      "expected_pending_count": "0",
+      "expected_pending_products": "",
+      "unexpected_added_count": "0",
+      "unexpected_removed_count": "0",
+      "comparison_status": "exact"
+    },
+    {
+      "scent_identity_id": "scent:signature:c4f4dbfc1457",
+      "scent_identity_type": "SignatureFragrance",
+      "canonical_name": "影中之水",
+      "aliases": "",
+      "legacy_approved_count": "4",
+      "new_count": "4",
+      "expected_pending_count": "0",
+      "expected_pending_products": "",
+      "unexpected_added_count": "0",
+      "unexpected_removed_count": "0",
+      "comparison_status": "exact"
+    },
+    {
+      "scent_identity_id": "scent:signature:023796ea560e",
+      "scent_identity_type": "SignatureFragrance",
+      "canonical_name": "感官之水",
+      "aliases": "",
+      "legacy_approved_count": "5",
+      "new_count": "5",
+      "expected_pending_count": "1",
+      "expected_pending_products": "感官之水淡香水（限量版）",
+      "unexpected_added_count": "0",
+      "unexpected_removed_count": "0",
+      "comparison_status": "exact_with_expected_pending_exclusion"
+    },
+    {
+      "scent_identity_id": "scent:do_son",
+      "scent_identity_type": "SignatureFragrance",
+      "canonical_name": "杜桑",
+      "aliases": "",
+      "legacy_approved_count": "9",
+      "new_count": "9",
+      "expected_pending_count": "0",
+      "expected_pending_products": "",
+      "unexpected_added_count": "0",
+      "unexpected_removed_count": "0",
+      "comparison_status": "exact"
+    },
+    {
+      "scent_identity_id": "scent:signature:7316c88abb34",
+      "scent_identity_type": "SignatureFragrance",
+      "canonical_name": "橙花香调",
+      "aliases": "",
+      "legacy_approved_count": "1",
+      "new_count": "1",
+      "expected_pending_count": "0",
+      "expected_pending_products": "",
+      "unexpected_added_count": "0",
+      "unexpected_removed_count": "0",
+      "comparison_status": "exact"
+    },
+    {
+      "scent_identity_id": "scent:signature:8e504c9b6b1f",
+      "scent_identity_type": "SignatureFragrance",
+      "canonical_name": "玫瑰香调",
+      "aliases": "玫瑰",
+      "legacy_approved_count": "9",
+      "new_count": "9",
+      "expected_pending_count": "0",
+      "expected_pending_products": "",
+      "unexpected_added_count": "0",
+      "unexpected_removed_count": "0",
+      "comparison_status": "exact"
+    },
+    {
+      "scent_identity_id": "scent:signature:a4b1e7540ff6",
+      "scent_identity_type": "SignatureFragrance",
+      "canonical_name": "纸上",
+      "aliases": "",
+      "legacy_approved_count": "3",
+      "new_count": "3",
+      "expected_pending_count": "0",
+      "expected_pending_products": "",
+      "unexpected_added_count": "0",
+      "unexpected_removed_count": "0",
+      "comparison_status": "exact"
+    },
+    {
+      "scent_identity_id": "scent:signature:6acc04e82ce4",
+      "scent_identity_type": "SignatureFragrance",
+      "canonical_name": "肌肤之花",
+      "aliases": "",
+      "legacy_approved_count": "9",
+      "new_count": "9",
+      "expected_pending_count": "0",
+      "expected_pending_products": "",
+      "unexpected_added_count": "0",
+      "unexpected_removed_count": "0",
+      "comparison_status": "exact"
+    },
+    {
+      "scent_identity_id": "scent:signature:c3f8d418bee3",
+      "scent_identity_type": "SignatureFragrance",
+      "canonical_name": "谭道",
+      "aliases": "",
+      "legacy_approved_count": "2",
+      "new_count": "2",
+      "expected_pending_count": "0",
+      "expected_pending_products": "",
+      "unexpected_added_count": "0",
+      "unexpected_removed_count": "0",
+      "comparison_status": "exact"
+    }
+  ],
+  "queryTerms": [
+    {
+      "queryTerm": "含羞草",
+      "resolution": "single_identity",
+      "groupCount": 1,
+      "totalDistinctProducts": 8,
+      "groups": [
+        {
+          "scentIdentityId": "scent:home:71ed7bd5bfc3",
+          "scentIdentityType": "HomeScent",
+          "canonicalName": "含羞草",
+          "matchKind": "canonical",
+          "productCount": 8,
+          "products": [
+            {
+              "productId": "product:HOMEHGFOCARB2N",
+              "productName": "含羞草 - 室内扩香摆件补充装"
+            },
+            {
+              "productId": "product:HOMERSP9",
+              "productName": "含羞草 - 扩香精"
+            },
+            {
+              "productId": "product:SOLIDPERFUME2",
+              "productName": "含羞草 - 扩香精补充瓶"
+            },
+            {
+              "productId": "product:HOMERSP3",
+              "productName": "含羞草室内喷雾"
+            },
+            {
+              "productId": "product:CAPSULES7",
+              "productName": "含羞草扩香器香氛补充包"
+            },
+            {
+              "productId": "product:HOMECARDIF5",
+              "productName": "含羞草车载扩香器香氛套装"
+            },
+            {
+              "productId": "product:CANDLEMI:5d50d29e1e",
+              "productName": "迷你香氛蜡烛-含羞草"
+            },
+            {
+              "productId": "product:CANDLEMI:0fc9a46126",
+              "productName": "香氛蜡烛-含羞草"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "queryTerm": "圣日尔曼大道34号",
+      "resolution": "typed_groups",
+      "groupCount": 2,
+      "totalDistinctProducts": 14,
+      "groups": [
+        {
+          "scentIdentityId": "scent:home:d1bf12d71e9b",
+          "scentIdentityType": "HomeScent",
+          "canonicalName": "圣日尔曼大道34号",
+          "matchKind": "canonical",
+          "productCount": 11,
+          "products": [
+            {
+              "productId": "product:CANDLE34B300",
+              "productName": "中号香氛蜡烛-圣日尔曼大道34号"
+            },
+            {
+              "productId": "product:HOMERSP1",
+              "productName": "圣日尔曼大道34号室内喷雾"
+            },
+            {
+              "productId": "product:HOMEREEDREFILL2L3",
+              "productName": "圣日尔曼大道34号室内扩香摆件补充瓶"
+            },
+            {
+              "productId": "product:HOMEREEDREFILL200A",
+              "productName": "圣日尔曼大道34号室内扩香摆件补充装"
+            },
+            {
+              "productId": "product:HOMESCO1",
+              "productName": "圣日尔曼大道34号室内香氛蜡"
+            },
+            {
+              "productId": "product:CAPSULES1",
+              "productName": "圣日尔曼大道34号扩香器香氛补充包"
+            },
+            {
+              "productId": "product:HOMEHGFOCARB2A",
+              "productName": "圣日尔曼大道34号扩香精"
+            },
+            {
+              "productId": "product:HOMEHGFOCARB2I",
+              "productName": "圣日尔曼大道34号扩香精补充瓶"
+            },
+            {
+              "productId": "product:HOMECARDIF1",
+              "productName": "圣日尔曼大道34号车载扩香器香氛套装"
+            },
+            {
+              "productId": "product:CANDLE34B600",
+              "productName": "大号香氛蜡烛-圣日尔曼大道34号"
+            },
+            {
+              "productId": "product:CANDLE34B1500",
+              "productName": "超大号香氛蜡烛-圣日尔曼大道34号"
+            }
+          ]
+        },
+        {
+          "scentIdentityId": "scent:signature:e64ef421b4b7",
+          "scentIdentityType": "SignatureFragrance",
+          "canonicalName": "圣日尔曼大道34号",
+          "matchKind": "canonical",
+          "productCount": 3,
+          "products": [
+            {
+              "productId": "product:HOMEHGFOCARB2G",
+              "productName": "圣日尔曼大道34号 - 香氛皂"
+            },
+            {
+              "productId": "product:EDT34B",
+              "productName": "圣日尔曼大道34号淡香水"
+            },
+            {
+              "productId": "product:EDP34BEDP75",
+              "productName": "圣日尔曼大道34号淡香精"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "queryTerm": "奥费恩",
+      "resolution": "single_identity",
+      "groupCount": 1,
+      "totalDistinctProducts": 9,
+      "groups": [
+        {
+          "scentIdentityId": "scent:orpheon",
+          "scentIdentityType": "SignatureFragrance",
+          "canonicalName": "奥费恩",
+          "matchKind": "canonical",
+          "productCount": 9,
+          "products": [
+            {
+              "productId": "product:DIPXM25LARGEEDPOR",
+              "productName": "典藏版奥费恩淡香精"
+            },
+            {
+              "productId": "product:HOMERSP6",
+              "productName": "奥费恩 - 固体香膏"
+            },
+            {
+              "productId": "product:HAIRORPHHMIST",
+              "productName": "奥费恩发香喷雾"
+            },
+            {
+              "productId": "product:BODYGEL2",
+              "productName": "奥费恩洁肤露"
+            },
+            {
+              "productId": "product:EDTORPHEDT100",
+              "productName": "奥费恩淡香水"
+            },
+            {
+              "productId": "product:ORPHEON2022",
+              "productName": "奥费恩淡香精"
+            },
+            {
+              "productId": "product:HANDORPHHCREAM",
+              "productName": "奥费恩香氛护手霜"
+            },
+            {
+              "productId": "product:SOLIDPERFUME7",
+              "productName": "奥费恩香膏补充装"
+            },
+            {
+              "productId": "product:BODYORPHBLOTION",
+              "productName": "奥费恩香调润肤乳"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "queryTerm": "巴黎之水",
+      "resolution": "single_identity",
+      "groupCount": 1,
+      "totalDistinctProducts": 3,
+      "groups": [
+        {
+          "scentIdentityId": "scent:signature:d3edd0766aea",
+          "scentIdentityType": "SignatureFragrance",
+          "canonicalName": "巴黎之水",
+          "matchKind": "canonical",
+          "productCount": 3,
+          "products": [
+            {
+              "productId": "product:HAIRMIST1",
+              "productName": "巴黎之水发香喷雾"
+            },
+            {
+              "productId": "product:HANDCRE3",
+              "productName": "巴黎之水护手霜"
+            },
+            {
+              "productId": "product:EDPCAPITAP75C",
+              "productName": "巴黎之水淡香精"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "queryTerm": "希腊无花果",
+      "resolution": "single_identity",
+      "groupCount": 1,
+      "totalDistinctProducts": 5,
+      "groups": [
+        {
+          "scentIdentityId": "scent:signature:5fff5f41e126",
+          "scentIdentityType": "SignatureFragrance",
+          "canonicalName": "希腊无花果",
+          "matchKind": "canonical",
+          "productCount": 5,
+          "products": [
+            {
+              "productId": "product:CAPSULES9",
+              "productName": "希腊无花果香调 - 润肤乳"
+            },
+            {
+              "productId": "product:HAIRMIST7",
+              "productName": "希腊无花果香调发香喷雾"
+            },
+            {
+              "productId": "product:BODYGEL1",
+              "productName": "希腊无花果香调洁肤露"
+            },
+            {
+              "productId": "product:EDTPHILO",
+              "productName": "希腊无花果香调淡香水"
+            },
+            {
+              "productId": "product:EDPPHILOP75C",
+              "productName": "希腊无花果香调淡香精"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "queryTerm": "影中之水",
+      "resolution": "single_identity",
+      "groupCount": 1,
+      "totalDistinctProducts": 4,
+      "groups": [
+        {
+          "scentIdentityId": "scent:signature:c4f4dbfc1457",
+          "scentIdentityType": "SignatureFragrance",
+          "canonicalName": "影中之水",
+          "matchKind": "canonical",
+          "productCount": 4,
+          "products": [
+            {
+              "productId": "product:EDTOMBRE",
+              "productName": "影中之水 - 淡香水"
+            },
+            {
+              "productId": "product:EDPOMBREP75C",
+              "productName": "影中之水 - 淡香精"
+            },
+            {
+              "productId": "product:BODYOMBBGEL",
+              "productName": "影中之水香氛洁肤露"
+            },
+            {
+              "productId": "product:BODYOMBBLOTION",
+              "productName": "影中之水香氛润肤乳"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "queryTerm": "感官之水",
+      "resolution": "single_identity",
+      "groupCount": 1,
+      "totalDistinctProducts": 5,
+      "groups": [
+        {
+          "scentIdentityId": "scent:signature:023796ea560e",
+          "scentIdentityType": "SignatureFragrance",
+          "canonicalName": "感官之水",
+          "matchKind": "canonical",
+          "productCount": 5,
+          "products": [
+            {
+              "productId": "product:HOMEHGFOCARB2H",
+              "productName": "感官之水 - 香氛皂"
+            },
+            {
+              "productId": "product:HAIRMIST2",
+              "productName": "感官之水发香喷雾"
+            },
+            {
+              "productId": "product:EDTSENS",
+              "productName": "感官之水淡香水"
+            },
+            {
+              "productId": "product:BODYSENSHCREAM",
+              "productName": "感官之水香氛护手霜"
+            },
+            {
+              "productId": "product:BODYSENSBLOT",
+              "productName": "感官之水香氛润肤乳"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "queryTerm": "无花果",
+      "resolution": "single_identity",
+      "groupCount": 1,
+      "totalDistinctProducts": 12,
+      "groups": [
+        {
+          "scentIdentityId": "scent:home:a0feff139222",
+          "scentIdentityType": "HomeScent",
+          "canonicalName": "无花果",
+          "matchKind": "canonical",
+          "productCount": 12,
+          "products": [
+            {
+              "productId": "product:CANDLEFIV2",
+              "productName": "中号香氛蜡烛-无花果"
+            },
+            {
+              "productId": "product:CANDLEFI600",
+              "productName": "大号香氛蜡烛-无花果"
+            },
+            {
+              "productId": "product:HOMESCO3",
+              "productName": "希腊无花果室内香氛蜡"
+            },
+            {
+              "productId": "product:CAPSULES6",
+              "productName": "希腊无花果扩香器香氛补充包"
+            },
+            {
+              "productId": "product:HOMEHGFOCARB2D",
+              "productName": "希腊无花果扩香精"
+            },
+            {
+              "productId": "product:HOMEHGFOCARB2K",
+              "productName": "希腊无花果扩香精补充瓶"
+            },
+            {
+              "productId": "product:HOMERSP:f85707c2ba",
+              "productName": "无花果 - 室内喷雾"
+            },
+            {
+              "productId": "product:HOMEREEDREFILL200F",
+              "productName": "无花果室内扩香摆件补充装"
+            },
+            {
+              "productId": "product:HOMECARDIF3",
+              "productName": "无花果车载扩香器香氛套装"
+            },
+            {
+              "productId": "product:CANDLEFI15001",
+              "productName": "超大号香氛蜡烛-无花果"
+            },
+            {
+              "productId": "product:CANDLEFI:fd30144c70",
+              "productName": "迷你香氛蜡烛-无花果"
+            },
+            {
+              "productId": "product:CANDLEFI:fd8c0feb6e",
+              "productName": "香氛蜡烛-无花果"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "queryTerm": "晚香玉",
+      "resolution": "single_identity",
+      "groupCount": 1,
+      "totalDistinctProducts": 10,
+      "groups": [
+        {
+          "scentIdentityId": "scent:home:e0b852b0c207",
+          "scentIdentityType": "HomeScent",
+          "canonicalName": "晚香玉",
+          "matchKind": "canonical",
+          "productCount": 10,
+          "products": [
+            {
+              "productId": "product:CANDLETBR2",
+              "productName": "中号香氛蜡烛-晚香玉"
+            },
+            {
+              "productId": "product:HOMETB600",
+              "productName": "大号香氛蜡烛-晚香玉"
+            },
+            {
+              "productId": "product:BODYLOTIONS2",
+              "productName": "晚香玉 - 室内喷雾"
+            },
+            {
+              "productId": "product:SOLIDPERFUME3",
+              "productName": "晚香玉 - 室内扩香摆件补充装"
+            },
+            {
+              "productId": "product:CAPSULES5",
+              "productName": "晚香玉扩香器香氛补充包"
+            },
+            {
+              "productId": "product:HOMEHGFOCARB2B",
+              "productName": "晚香玉扩香精"
+            },
+            {
+              "productId": "product:HOMEHGFOCARB2J",
+              "productName": "晚香玉扩香精补充瓶"
+            },
+            {
+              "productId": "product:CANDLETB1500",
+              "productName": "超大号香氛蜡烛-晚香玉"
+            },
+            {
+              "productId": "product:CANDLETB:efb9671b52",
+              "productName": "迷你香氛蜡烛-晚香玉"
+            },
+            {
+              "productId": "product:CANDLETB:0203981f64",
+              "productName": "香氛蜡烛-晚香玉"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "queryTerm": "杜桑",
+      "resolution": "single_identity",
+      "groupCount": 1,
+      "totalDistinctProducts": 9,
+      "groups": [
+        {
+          "scentIdentityId": "scent:do_son",
+          "scentIdentityType": "SignatureFragrance",
+          "canonicalName": "杜桑",
+          "matchKind": "canonical",
+          "productCount": 9,
+          "products": [
+            {
+              "productId": "product:HOMERSP5",
+              "productName": "杜桑 - 固体香膏"
+            },
+            {
+              "productId": "product:HOMEHGFOCARB2P",
+              "productName": "杜桑 - 香氛皂"
+            },
+            {
+              "productId": "product:HAIRMIST4",
+              "productName": "杜桑发香喷雾"
+            },
+            {
+              "productId": "product:HANDCRE2",
+              "productName": "杜桑护手霜"
+            },
+            {
+              "productId": "product:BODYOIL",
+              "productName": "杜桑柔肤沐浴油"
+            },
+            {
+              "productId": "product:EDTDOSON",
+              "productName": "杜桑淡香水"
+            },
+            {
+              "productId": "product:EDPDOSONP75C",
+              "productName": "杜桑淡香精"
+            },
+            {
+              "productId": "product:BODYLOTIONS1",
+              "productName": "杜桑香氛润肤乳"
+            },
+            {
+              "productId": "product:SOLIDPERFUME6",
+              "productName": "杜桑香膏补充装"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "queryTerm": "橙花",
+      "resolution": "single_identity",
+      "groupCount": 1,
+      "totalDistinctProducts": 8,
+      "groups": [
+        {
+          "scentIdentityId": "scent:home:9cb3a4c80b60",
+          "scentIdentityType": "HomeScent",
+          "canonicalName": "橙花",
+          "matchKind": "canonical",
+          "productCount": 8,
+          "products": [
+            {
+              "productId": "product:BODYLOTIONS3",
+              "productName": "橙花 - 室内喷雾"
+            },
+            {
+              "productId": "product:SOLIDPERFUME4",
+              "productName": "橙花 - 室内扩香摆件补充装"
+            },
+            {
+              "productId": "product:CAPSULES8",
+              "productName": "橙花 - 车载扩香器香氛套装"
+            },
+            {
+              "productId": "product:HOMEHGFOCARB2E",
+              "productName": "橙花扩香精"
+            },
+            {
+              "productId": "product:HOMEHGFOCARB2M",
+              "productName": "橙花扩香精补充瓶"
+            },
+            {
+              "productId": "product:HOMELDDRGDISHSOAP1",
+              "productName": "橙花餐具清洁液"
+            },
+            {
+              "productId": "product:HOMELDDRGDISHSOAP2",
+              "productName": "橙花餐具清洁液补充装"
+            },
+            {
+              "productId": "product:CANDLECY1",
+              "productName": "香氛蜡烛-墨西哥橙花"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "queryTerm": "橙花香调",
+      "resolution": "single_identity",
+      "groupCount": 1,
+      "totalDistinctProducts": 1,
+      "groups": [
+        {
+          "scentIdentityId": "scent:signature:7316c88abb34",
+          "scentIdentityType": "SignatureFragrance",
+          "canonicalName": "橙花香调",
+          "matchKind": "canonical",
+          "productCount": 1,
+          "products": [
+            {
+              "productId": "product:EDTNERO100V1",
+              "productName": "橙花香调淡香水"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "queryTerm": "浆果香",
+      "resolution": "single_identity",
+      "groupCount": 1,
+      "totalDistinctProducts": 15,
+      "groups": [
+        {
+          "scentIdentityId": "scent:baies",
+          "scentIdentityType": "HomeScent",
+          "canonicalName": "浆果香",
+          "matchKind": "canonical",
+          "productCount": 15,
+          "products": [
+            {
+              "productId": "product:CANDLEBAIESBN2",
+              "productName": "中号香氛蜡烛-浆果香"
+            },
+            {
+              "productId": "product:CANDLEBAIESB600",
+              "productName": "大号香氛蜡烛-浆果香"
+            },
+            {
+              "productId": "product:HOMERSP:cfa5122c10",
+              "productName": "浆果香 - 室内喷雾"
+            },
+            {
+              "productId": "product:HOMEHGFOCARB2O",
+              "productName": "浆果香 - 室内扩香摆件补充装"
+            },
+            {
+              "productId": "product:HOMERSP8",
+              "productName": "浆果香 - 扩香精"
+            },
+            {
+              "productId": "product:HOMECULBUTOB",
+              "productName": "浆果香 - 摇摆扩香器"
+            },
+            {
+              "productId": "product:HOMEREEDREFILL200E",
+              "productName": "浆果香 - 摇摆扩香器补充装"
+            },
+            {
+              "productId": "product:HOMEREEDREFILL2L2",
+              "productName": "浆果香室内扩香摆件补充瓶"
+            },
+            {
+              "productId": "product:HOMESCO2",
+              "productName": "浆果香室内香氛蜡"
+            },
+            {
+              "productId": "product:CAPSULES2",
+              "productName": "浆果香扩香器香氛补充包"
+            },
+            {
+              "productId": "product:CANDLETAPCDLB1A",
+              "productName": "浆果香烛台香氛蜡烛"
+            },
+            {
+              "productId": "product:HOMECARDIF2",
+              "productName": "浆果香车载扩香器香氛套装"
+            },
+            {
+              "productId": "product:CANDLEBAIESB1500",
+              "productName": "超大号香氛蜡烛-浆果香"
+            },
+            {
+              "productId": "product:CANDLEBAIES:b2ed34b132",
+              "productName": "迷你香氛蜡烛-浆果香"
+            },
+            {
+              "productId": "product:CANDLEBAIES:39be5d15d8",
+              "productName": "香氛蜡烛-浆果香"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "queryTerm": "炭木香",
+      "resolution": "single_identity",
+      "groupCount": 1,
+      "totalDistinctProducts": 5,
+      "groups": [
+        {
+          "scentIdentityId": "scent:home:9f839def5f16",
+          "scentIdentityType": "HomeScent",
+          "canonicalName": "炭木香",
+          "matchKind": "canonical",
+          "productCount": 5,
+          "products": [
+            {
+              "productId": "product:CANDLEFBG2",
+              "productName": "中号香氛蜡烛-炭木香"
+            },
+            {
+              "productId": "product:CANDLEFB600",
+              "productName": "大号香氛蜡烛-炭木香"
+            },
+            {
+              "productId": "product:CANDLEFB15001",
+              "productName": "超大号香氛蜡烛-炭木香"
+            },
+            {
+              "productId": "product:CANDLEFB:5a86bfcf83",
+              "productName": "迷你香氛蜡烛-炭木香"
+            },
+            {
+              "productId": "product:CANDLEFB:07c43182a6",
+              "productName": "香氛蜡烛-炭木香"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "queryTerm": "玫瑰",
+      "resolution": "typed_groups",
+      "groupCount": 2,
+      "totalDistinctProducts": 20,
+      "groups": [
+        {
+          "scentIdentityId": "scent:home:7e29b8c11693",
+          "scentIdentityType": "HomeScent",
+          "canonicalName": "玫瑰",
+          "matchKind": "canonical",
+          "productCount": 11,
+          "products": [
+            {
+              "productId": "product:CANDLERO300",
+              "productName": "中号香氛蜡烛-玫瑰"
+            },
+            {
+              "productId": "product:CANDLEROSE600",
+              "productName": "大号香氛蜡烛-玫瑰"
+            },
+            {
+              "productId": "product:HOMECARDIF6",
+              "productName": "玫瑰 - 室内喷雾"
+            },
+            {
+              "productId": "product:HOMEREEDDIFRO",
+              "productName": "玫瑰室内扩香摆件补充装"
+            },
+            {
+              "productId": "product:HOMESCO4",
+              "productName": "玫瑰室内香氛蜡"
+            },
+            {
+              "productId": "product:CAPSULES4",
+              "productName": "玫瑰扩香器香氛补充包"
+            },
+            {
+              "productId": "product:HOMEHGFOCARB2C",
+              "productName": "玫瑰扩香精"
+            },
+            {
+              "productId": "product:HOMEHGFOCARB2L",
+              "productName": "玫瑰扩香精补充瓶"
+            },
+            {
+              "productId": "product:HOMECARDIF4",
+              "productName": "玫瑰车载扩香器香氛套装"
+            },
+            {
+              "productId": "product:CANDLEROSE:001020198d",
+              "productName": "迷你香氛蜡烛-玫瑰"
+            },
+            {
+              "productId": "product:CANDLEROSE:49733fda0f",
+              "productName": "香氛蜡烛-玫瑰"
+            }
+          ]
+        },
+        {
+          "scentIdentityId": "scent:signature:8e504c9b6b1f",
+          "scentIdentityType": "SignatureFragrance",
+          "canonicalName": "玫瑰香调",
+          "matchKind": "typed_alias",
+          "productCount": 9,
+          "products": [
+            {
+              "productId": "product:BODYGEL5",
+              "productName": "玫瑰香氛洁肤露"
+            },
+            {
+              "productId": "product:HOMERSP4",
+              "productName": "玫瑰香调 - 固体香膏"
+            },
+            {
+              "productId": "product:BODYLOTIONS",
+              "productName": "玫瑰香调 - 润肤乳"
+            },
+            {
+              "productId": "product:HOMEREEDREFILL200H",
+              "productName": "玫瑰香调 - 香氛皂"
+            },
+            {
+              "productId": "product:HAIRMIST3",
+              "productName": "玫瑰香调发香喷雾"
+            },
+            {
+              "productId": "product:HANDCRE1",
+              "productName": "玫瑰香调护手霜"
+            },
+            {
+              "productId": "product:EDTROSE",
+              "productName": "玫瑰香调淡香水"
+            },
+            {
+              "productId": "product:EDPROSEP75C",
+              "productName": "玫瑰香调淡香精"
+            },
+            {
+              "productId": "product:SOLIDPERFUME5",
+              "productName": "玫瑰香调香膏补充装"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "queryTerm": "玫瑰天竺葵",
+      "resolution": "single_identity",
+      "groupCount": 1,
+      "totalDistinctProducts": 1,
+      "groups": [
+        {
+          "scentIdentityId": "scent:home:60272c1fa58a",
+          "scentIdentityType": "HomeScent",
+          "canonicalName": "玫瑰天竺葵",
+          "matchKind": "canonical",
+          "productCount": 1,
+          "products": [
+            {
+              "productId": "product:CANDLEGR1",
+              "productName": "香氛蜡烛-玫瑰天竺葵"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "queryTerm": "玫瑰香调",
+      "resolution": "single_identity",
+      "groupCount": 1,
+      "totalDistinctProducts": 9,
+      "groups": [
+        {
+          "scentIdentityId": "scent:signature:8e504c9b6b1f",
+          "scentIdentityType": "SignatureFragrance",
+          "canonicalName": "玫瑰香调",
+          "matchKind": "canonical",
+          "productCount": 9,
+          "products": [
+            {
+              "productId": "product:BODYGEL5",
+              "productName": "玫瑰香氛洁肤露"
+            },
+            {
+              "productId": "product:HOMERSP4",
+              "productName": "玫瑰香调 - 固体香膏"
+            },
+            {
+              "productId": "product:BODYLOTIONS",
+              "productName": "玫瑰香调 - 润肤乳"
+            },
+            {
+              "productId": "product:HOMEREEDREFILL200H",
+              "productName": "玫瑰香调 - 香氛皂"
+            },
+            {
+              "productId": "product:HAIRMIST3",
+              "productName": "玫瑰香调发香喷雾"
+            },
+            {
+              "productId": "product:HANDCRE1",
+              "productName": "玫瑰香调护手霜"
+            },
+            {
+              "productId": "product:EDTROSE",
+              "productName": "玫瑰香调淡香水"
+            },
+            {
+              "productId": "product:EDPROSEP75C",
+              "productName": "玫瑰香调淡香精"
+            },
+            {
+              "productId": "product:SOLIDPERFUME5",
+              "productName": "玫瑰香调香膏补充装"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "queryTerm": "琥珀",
+      "resolution": "single_identity",
+      "groupCount": 1,
+      "totalDistinctProducts": 8,
+      "groups": [
+        {
+          "scentIdentityId": "scent:home:8804ae0c4c63",
+          "scentIdentityType": "HomeScent",
+          "canonicalName": "琥珀",
+          "matchKind": "canonical",
+          "productCount": 8,
+          "products": [
+            {
+              "productId": "product:CANDLEABA2",
+              "productName": "中号香氛蜡烛-琥珀"
+            },
+            {
+              "productId": "product:HOMERSP:281d331eae",
+              "productName": "琥珀 - 室内喷雾"
+            },
+            {
+              "productId": "product:CAPSULES:e008d5a6d3",
+              "productName": "琥珀 - 电子扩香器香氛补充包"
+            },
+            {
+              "productId": "product:HOMEREEDREFILL2L1",
+              "productName": "琥珀室内扩香摆件补充瓶"
+            },
+            {
+              "productId": "product:CANDLETAPCDLB1B",
+              "productName": "琥珀烛台香氛蜡烛"
+            },
+            {
+              "productId": "product:CANDLEAMB1500",
+              "productName": "超大号香氛蜡烛-琥珀"
+            },
+            {
+              "productId": "product:CANDLEAB:3c4b09a157",
+              "productName": "迷你香氛蜡烛-琥珀"
+            },
+            {
+              "productId": "product:CANDLEAB:e63b4600f1",
+              "productName": "香氛蜡烛-琥珀"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "queryTerm": "生姜",
+      "resolution": "single_identity",
+      "groupCount": 1,
+      "totalDistinctProducts": 4,
+      "groups": [
+        {
+          "scentIdentityId": "scent:home:75c3136d0e43",
+          "scentIdentityType": "HomeScent",
+          "canonicalName": "生姜",
+          "matchKind": "canonical",
+          "productCount": 4,
+          "products": [
+            {
+              "productId": "product:HOMERSP7",
+              "productName": "生姜 - 扩香精补充瓶"
+            },
+            {
+              "productId": "product:HOMERSP2",
+              "productName": "生姜室内喷雾"
+            },
+            {
+              "productId": "product:CAPSULES3",
+              "productName": "生姜扩香器香氛补充包"
+            },
+            {
+              "productId": "product:HOMEHGFOCARB2F",
+              "productName": "生姜扩香精"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "queryTerm": "纸上",
+      "resolution": "single_identity",
+      "groupCount": 1,
+      "totalDistinctProducts": 3,
+      "groups": [
+        {
+          "scentIdentityId": "scent:signature:a4b1e7540ff6",
+          "scentIdentityType": "SignatureFragrance",
+          "canonicalName": "纸上",
+          "matchKind": "canonical",
+          "productCount": 3,
+          "products": [
+            {
+              "productId": "product:HAIRMIST6",
+              "productName": "纸上发香喷雾"
+            },
+            {
+              "productId": "product:BODYGEL4",
+              "productName": "纸上洁肤露"
+            },
+            {
+              "productId": "product:EDTPAPIER",
+              "productName": "纸上淡香水"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "queryTerm": "肌肤之花",
+      "resolution": "single_identity",
+      "groupCount": 1,
+      "totalDistinctProducts": 9,
+      "groups": [
+        {
+          "scentIdentityId": "scent:signature:6acc04e82ce4",
+          "scentIdentityType": "SignatureFragrance",
+          "canonicalName": "肌肤之花",
+          "matchKind": "canonical",
+          "productCount": 9,
+          "products": [
+            {
+              "productId": "product:DIPXM25LARGEEDPFL",
+              "productName": "典藏版肌肤之花淡香精"
+            },
+            {
+              "productId": "product:HAIRMIST",
+              "productName": "肌肤之花发香喷雾"
+            },
+            {
+              "productId": "product:HANDCRE4",
+              "productName": "肌肤之花护手霜"
+            },
+            {
+              "productId": "product:BODYGEL3",
+              "productName": "肌肤之花洁肤露"
+            },
+            {
+              "productId": "product:BODYSOA1",
+              "productName": "肌肤之花润肤乳"
+            },
+            {
+              "productId": "product:EDTFLEUR",
+              "productName": "肌肤之花淡香水"
+            },
+            {
+              "productId": "product:EDPFLEURP75C",
+              "productName": "肌肤之花淡香精"
+            },
+            {
+              "productId": "product:SOLIDPERFUME1",
+              "productName": "肌肤之花香膏"
+            },
+            {
+              "productId": "product:SOLIDPERFUME8",
+              "productName": "肌肤之花香膏补充装"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "queryTerm": "谭道",
+      "resolution": "single_identity",
+      "groupCount": 1,
+      "totalDistinctProducts": 2,
+      "groups": [
+        {
+          "scentIdentityId": "scent:signature:c3f8d418bee3",
+          "scentIdentityType": "SignatureFragrance",
+          "canonicalName": "谭道",
+          "matchKind": "canonical",
+          "productCount": 2,
+          "products": [
+            {
+              "productId": "product:EDTTAMDAO",
+              "productName": "谭道淡香水"
+            },
+            {
+              "productId": "product:EDPTAMDAOP75C",
+              "productName": "谭道淡香精"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "expectedDifferences": {
+    "pendingProducts": [
+      {
+        "productConceptKey": "EDTSUM26SENS100::感官之水淡香水（限量版）",
+        "productName": "感官之水淡香水（限量版）"
+      },
+      {
+        "productConceptKey": "CAPSULES::橙花电子扩香器香氛补充包",
+        "productName": "橙花 - 电子扩香器香氛补充包"
+      },
+      {
+        "productConceptKey": "concept::家居香氛::烛台香氛蜡烛::炭木香烛台香氛蜡烛",
+        "productName": "炭木香烛台香氛蜡烛"
+      },
+      {
+        "productConceptKey": "CANDLERO1500::超大号香氛蜡烛玫瑰",
+        "productName": "超大号香氛蜡烛-玫瑰"
+      }
+    ],
+    "collectionUmbrellaProducts": [
+      {
+        "productConceptId": "product:EDPCORAIL100",
+        "productConceptKey": "EDPCORAIL100::暗影珊瑚淡香精",
+        "productName": "暗影珊瑚淡香精",
+        "collectionName": "大千之蕴",
+        "reason": "Category umbrella is not a reusable ScentIdentity; product requires its own identity review or ProductSet modeling."
+      },
+      {
+        "productConceptId": "product:EDPCOFPARFPMINI",
+        "productConceptKey": "EDPCOFPARFPMINI::大千之蕴淡香精系列体验套装",
+        "productName": "大千之蕴淡香精系列体验套装",
+        "collectionName": "大千之蕴",
+        "reason": "Category umbrella is not a reusable ScentIdentity; product requires its own identity review or ProductSet modeling."
+      },
+      {
+        "productConceptId": "product:EDPPREM06100",
+        "productConceptKey": "EDPPREM06100::宝石之眼淡香精",
+        "productName": "宝石之眼淡香精",
+        "collectionName": "大千之蕴",
+        "reason": "Category umbrella is not a reusable ScentIdentity; product requires its own identity review or ProductSet modeling."
+      },
+      {
+        "productConceptId": "product:EDPROSEROC100",
+        "productConceptKey": "EDPROSEROC100::沙漠玫瑰淡香精",
+        "productName": "沙漠玫瑰淡香精",
+        "collectionName": "大千之蕴",
+        "reason": "Category umbrella is not a reusable ScentIdentity; product requires its own identity review or ProductSet modeling."
+      },
+      {
+        "productConceptId": "product:EDPBOISCOR100",
+        "productConceptKey": "EDPBOISCOR100::暖木之息淡香精",
+        "productName": "暖木之息淡香精",
+        "collectionName": "大千之蕴",
+        "reason": "Category umbrella is not a reusable ScentIdentity; product requires its own identity review or ProductSet modeling."
+      },
+      {
+        "productConceptId": "product:EDPLUNAMAR100",
+        "productConceptKey": "EDPLUNAMAR100::潮汐月影淡香精",
+        "productName": "潮汐月影淡香精",
+        "collectionName": "大千之蕴",
+        "reason": "Category umbrella is not a reusable ScentIdentity; product requires its own identity review or ProductSet modeling."
+      },
+      {
+        "productConceptId": "product:EDPLILYPHEA100",
+        "productConceptKey": "EDPLILYPHEA100::睡莲悠悠淡香精",
+        "productName": "睡莲悠悠淡香精",
+        "collectionName": "大千之蕴",
+        "reason": "Category umbrella is not a reusable ScentIdentity; product requires its own identity review or ProductSet modeling."
+      }
+    ]
+  },
+  "gate": {
+    "identityCount": 23,
+    "queryTermCount": 22,
+    "ambiguousTypedQueryCount": 2,
+    "newProductFactCount": 155,
+    "legacyApprovedFactCount": 155,
+    "expectedPendingExclusionCount": 4,
+    "collectionUmbrellaExclusionCount": 7,
+    "unexpectedIdentityRegressionCount": 0,
+    "unexpectedIdentityRegressions": []
+  },
+  "publicationEffect": {
+    "legacyGraphChanged": 0,
+    "frontendRecordsChanged": 0
+  }
+}

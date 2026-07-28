@@ -1,0 +1,117 @@
+﻿legacy_node_id,legacy_node_type,legacy_name,action,target_ids,target_types,reason,review_status
+collection:含羞草,CollectionOrScent,含羞草,replace_with_scent_identity,scent:home:71ed7bd5bfc3,ScentIdentity,Legacy collection label resolves to one approved typed ScentIdentity.,approved
+collection:圣日尔曼大道34号,CollectionOrScent,圣日尔曼大道34号,split_by_product_family,scent:home:d1bf12d71e9b|scent:signature:e64ef421b4b7,ScentIdentity,Legacy label collapsed multiple typed ScentIdentity entities.,approved
+collection:大千之蕴,CollectionOrScent,大千之蕴,retire_to_collection_review,,,Legacy category umbrella is not a ScentIdentity.,approved
+collection:奥费恩,CollectionOrScent,奥费恩,replace_with_scent_identity,scent:orpheon,ScentIdentity,Legacy collection label resolves to one approved typed ScentIdentity.,approved
+collection:巴黎之水,CollectionOrScent,巴黎之水,replace_with_scent_identity,scent:signature:d3edd0766aea,ScentIdentity,Legacy collection label resolves to one approved typed ScentIdentity.,approved
+collection:希腊无花果,CollectionOrScent,希腊无花果,replace_with_scent_identity,scent:signature:5fff5f41e126,ScentIdentity,Legacy collection label resolves to one approved typed ScentIdentity.,approved
+collection:影中之水,CollectionOrScent,影中之水,replace_with_scent_identity,scent:signature:c4f4dbfc1457,ScentIdentity,Legacy collection label resolves to one approved typed ScentIdentity.,approved
+collection:感官之水,CollectionOrScent,感官之水,replace_with_scent_identity,scent:signature:023796ea560e,ScentIdentity,Legacy collection label resolves to one approved typed ScentIdentity.,approved
+collection:无花果,CollectionOrScent,无花果,replace_with_scent_identity,scent:home:a0feff139222,ScentIdentity,Legacy collection label resolves to one approved typed ScentIdentity.,approved
+collection:晚香玉,CollectionOrScent,晚香玉,replace_with_scent_identity,scent:home:e0b852b0c207,ScentIdentity,Legacy collection label resolves to one approved typed ScentIdentity.,approved
+collection:杜桑,CollectionOrScent,杜桑,replace_with_scent_identity,scent:do_son,ScentIdentity,Legacy collection label resolves to one approved typed ScentIdentity.,approved
+collection:橙花,CollectionOrScent,橙花,replace_with_scent_identity,scent:home:9cb3a4c80b60,ScentIdentity,Legacy collection label resolves to one approved typed ScentIdentity.,approved
+collection:浆果香,CollectionOrScent,浆果香,replace_with_scent_identity,scent:baies,ScentIdentity,Legacy collection label resolves to one approved typed ScentIdentity.,approved
+collection:炭木香,CollectionOrScent,炭木香,replace_with_scent_identity,scent:home:9f839def5f16,ScentIdentity,Legacy collection label resolves to one approved typed ScentIdentity.,approved
+collection:玫瑰,CollectionOrScent,玫瑰,split_by_product_family,scent:home:7e29b8c11693|scent:signature:8e504c9b6b1f,ScentIdentity,Legacy label collapsed multiple typed ScentIdentity entities.,approved
+collection:玫瑰天竺葵,CollectionOrScent,玫瑰天竺葵,replace_with_scent_identity,scent:home:60272c1fa58a,ScentIdentity,Legacy collection label resolves to one approved typed ScentIdentity.,approved
+collection:玫瑰香调,CollectionOrScent,玫瑰香调,replace_with_scent_identity,scent:signature:8e504c9b6b1f,ScentIdentity,Legacy collection label resolves to one approved typed ScentIdentity.,approved
+collection:琥珀,CollectionOrScent,琥珀,replace_with_scent_identity,scent:home:8804ae0c4c63,ScentIdentity,Legacy collection label resolves to one approved typed ScentIdentity.,approved
+collection:生姜,CollectionOrScent,生姜,replace_with_scent_identity,scent:home:75c3136d0e43,ScentIdentity,Legacy collection label resolves to one approved typed ScentIdentity.,approved
+collection:纸上,CollectionOrScent,纸上,replace_with_scent_identity,scent:signature:a4b1e7540ff6,ScentIdentity,Legacy collection label resolves to one approved typed ScentIdentity.,approved
+collection:肌肤之花,CollectionOrScent,肌肤之花,replace_with_scent_identity,scent:signature:6acc04e82ce4,ScentIdentity,Legacy collection label resolves to one approved typed ScentIdentity.,approved
+collection:谭道,CollectionOrScent,谭道,replace_with_scent_identity,scent:signature:c3f8d418bee3,ScentIdentity,Legacy collection label resolves to one approved typed ScentIdentity.,approved
+scent_concept:丁香,ScentConcept,丁香,replace_with_note_ingredient,note:丁香,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:乳香,ScentConcept,乳香,replace_with_note_ingredient,note:乳香,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:仙客来,ScentConcept,仙客来,replace_with_note_ingredient,note:仙客来,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:佛手柑,ScentConcept,佛手柑,replace_with_note_ingredient,note:佛手柑,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:依兰,ScentConcept,依兰,replace_with_note_ingredient,note:依兰,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:含羞草,ScentConcept,含羞草,split_by_relation_context,note:含羞草|scent:home:71ed7bd5bfc3,ScentIdentity|NoteIngredient,Legacy pivot conflated ScentIdentity and NoteIngredient meanings.,approved
+scent_concept:天竺葵,ScentConcept,天竺葵,replace_with_note_ingredient,note:天竺葵,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:安息香,ScentConcept,安息香,replace_with_note_ingredient,note:安息香,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:小茴香,ScentConcept,小茴香,replace_with_note_ingredient,note:小茴香,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:小豆蔻,ScentConcept,小豆蔻,replace_with_note_ingredient,note:小豆蔻,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:岩蔷薇,ScentConcept,岩蔷薇,replace_with_note_ingredient,note:岩蔷薇,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:广藿香,ScentConcept,广藿香,replace_with_note_ingredient,note:广藿香,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:康乃馨,ScentConcept,康乃馨,replace_with_note_ingredient,note:康乃馨,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:当归根,ScentConcept,当归根,replace_with_note_ingredient,note:当归根,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:愈创木,ScentConcept,愈创木,replace_with_note_ingredient,note:愈创木,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:抹茶,ScentConcept,抹茶,quarantine_untyped_scent_concept,,,Concept is neither an approved ScentIdentity nor a typed NoteIngredient.,pending_review
+scent_concept:无花果,ScentConcept,无花果,replace_with_scent_identity,scent:home:a0feff139222,ScentIdentity,Legacy ScentConcept resolves only to approved ScentIdentity context.,approved
+scent_concept:晚香玉,ScentConcept,晚香玉,split_by_relation_context,note:晚香玉|scent:home:e0b852b0c207,ScentIdentity|NoteIngredient,Legacy pivot conflated ScentIdentity and NoteIngredient meanings.,approved
+scent_concept:杜松子,ScentConcept,杜松子,replace_with_note_ingredient,note:杜松子,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:柏树,ScentConcept,柏树,replace_with_note_ingredient,note:柏树,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:柚子,ScentConcept,柚子,replace_with_note_ingredient,note:柚子,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:柠檬,ScentConcept,柠檬,replace_with_note_ingredient,note:柠檬,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:柠檬桉,ScentConcept,柠檬桉,replace_with_note_ingredient,note:柠檬桉,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:柠檬草,ScentConcept,柠檬草,replace_with_note_ingredient,note:柠檬草,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:橙花,ScentConcept,橙花,split_by_relation_context,note:橙花|scent:home:9cb3a4c80b60,ScentIdentity|NoteIngredient,Legacy pivot conflated ScentIdentity and NoteIngredient meanings.,approved
+scent_concept:檀香,ScentConcept,檀香,replace_with_note_ingredient,note:檀香,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:水仙,ScentConcept,水仙,replace_with_note_ingredient,note:水仙,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:永生花,ScentConcept,永生花,replace_with_note_ingredient,note:永生花,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:没药,ScentConcept,没药,replace_with_note_ingredient,note:没药,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:洋甘菊,ScentConcept,洋甘菊,replace_with_note_ingredient,note:洋甘菊,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:洋蓟,ScentConcept,洋蓟,replace_with_note_ingredient,note:洋蓟,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:海洋矿物,ScentConcept,海洋矿物,quarantine_untyped_scent_concept,,,Concept is neither an approved ScentIdentity nor a typed NoteIngredient.,pending_review
+scent_concept:焚香,ScentConcept,焚香,replace_with_note_ingredient,note:焚香,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:焦土,ScentConcept,焦土,quarantine_untyped_scent_concept,,,Concept is neither an approved ScentIdentity nor a typed NoteIngredient.,pending_review
+scent_concept:玉兰,ScentConcept,玉兰,replace_with_note_ingredient,note:玉兰,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:玫瑰,ScentConcept,玫瑰,split_by_relation_context,note:玫瑰|scent:home:7e29b8c11693|scent:signature:8e504c9b6b1f,ScentIdentity|NoteIngredient,Legacy pivot conflated ScentIdentity and NoteIngredient meanings.,approved
+scent_concept:玫瑰天竺葵,ScentConcept,玫瑰天竺葵,replace_with_scent_identity,scent:home:60272c1fa58a,ScentIdentity,Legacy ScentConcept resolves only to approved ScentIdentity context.,approved
+scent_concept:玫瑰浆果,ScentConcept,玫瑰浆果,replace_with_note_ingredient,note:玫瑰浆果,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:琥珀,ScentConcept,琥珀,split_by_relation_context,note:琥珀|scent:home:8804ae0c4c63,ScentIdentity|NoteIngredient,Legacy pivot conflated ScentIdentity and NoteIngredient meanings.,approved
+scent_concept:琥珀木质香,ScentConcept,琥珀木质香,replace_with_note_ingredient,note:琥珀木质香,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:生姜,ScentConcept,生姜,split_by_relation_context,note:生姜|scent:home:75c3136d0e43,ScentIdentity|NoteIngredient,Legacy pivot conflated ScentIdentity and NoteIngredient meanings.,approved
+scent_concept:白小苍兰,ScentConcept,白小苍兰,replace_with_note_ingredient,note:白小苍兰,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:白松香,ScentConcept,白松香,replace_with_note_ingredient,note:白松香,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:白茶,ScentConcept,白茶,quarantine_untyped_scent_concept,,,Concept is neither an approved ScentIdentity nor a typed NoteIngredient.,pending_review
+scent_concept:白陶土,ScentConcept,白陶土,quarantine_untyped_scent_concept,,,Concept is neither an approved ScentIdentity nor a typed NoteIngredient.,pending_review
+scent_concept:百里香,ScentConcept,百里香,replace_with_note_ingredient,note:百里香,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:皮革,ScentConcept,皮革,replace_with_note_ingredient,note:皮革,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:秘鲁香脂,ScentConcept,秘鲁香脂,replace_with_note_ingredient,note:秘鲁香脂,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:粉红胡椒,ScentConcept,粉红胡椒,replace_with_note_ingredient,note:粉红胡椒,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:紫檀木,ScentConcept,紫檀木,replace_with_note_ingredient,note:紫檀木,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:紫罗兰叶,ScentConcept,紫罗兰叶,replace_with_note_ingredient,note:紫罗兰叶,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:紫藤,ScentConcept,紫藤,replace_with_note_ingredient,note:紫藤,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:红柑,ScentConcept,红柑,replace_with_note_ingredient,note:红柑,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:红没药,ScentConcept,红没药,replace_with_note_ingredient,note:红没药,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:肉桂,ScentConcept,肉桂,replace_with_note_ingredient,note:肉桂,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:肉豆蔻,ScentConcept,肉豆蔻,replace_with_note_ingredient,note:肉豆蔻,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:苔藓,ScentConcept,苔藓,quarantine_untyped_scent_concept,,,Concept is neither an approved ScentIdentity nor a typed NoteIngredient.,pending_review
+scent_concept:苦橙,ScentConcept,苦橙,replace_with_note_ingredient,note:苦橙,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:苦橙叶,ScentConcept,苦橙叶,replace_with_note_ingredient,note:苦橙叶,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:茉莉,ScentConcept,茉莉,replace_with_note_ingredient,note:茉莉,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:荔枝,ScentConcept,荔枝,replace_with_note_ingredient,note:荔枝,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:莎草,ScentConcept,莎草,quarantine_untyped_scent_concept,,,Concept is neither an approved ScentIdentity nor a typed NoteIngredient.,pending_review
+scent_concept:菖蒲,ScentConcept,菖蒲,replace_with_note_ingredient,note:菖蒲,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:葡萄柚,ScentConcept,葡萄柚,replace_with_note_ingredient,note:葡萄柚,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:蒸稻米,ScentConcept,蒸稻米,quarantine_untyped_scent_concept,,,Concept is neither an approved ScentIdentity nor a typed NoteIngredient.,pending_review
+scent_concept:薄荷,ScentConcept,薄荷,replace_with_note_ingredient,note:薄荷,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:蜂蜜,ScentConcept,蜂蜜,replace_with_note_ingredient,note:蜂蜜,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:蜂蜡,ScentConcept,蜂蜡,replace_with_note_ingredient,note:蜂蜡,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:覆盆子,ScentConcept,覆盆子,replace_with_note_ingredient,note:覆盆子,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:迷迭香,ScentConcept,迷迭香,replace_with_note_ingredient,note:迷迭香,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:金银花,ScentConcept,金银花,replace_with_note_ingredient,note:金银花,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:金黄木质,ScentConcept,金黄木质,quarantine_untyped_scent_concept,,,Concept is neither an approved ScentIdentity nor a typed NoteIngredient.,pending_review
+scent_concept:阿拉比卡咖啡,ScentConcept,阿拉比卡咖啡,replace_with_note_ingredient,note:阿拉比卡咖啡,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:雪松,ScentConcept,雪松,replace_with_note_ingredient,note:雪松,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:零陵香豆,ScentConcept,零陵香豆,replace_with_note_ingredient,note:零陵香豆,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:青柑,ScentConcept,青柑,replace_with_note_ingredient,note:青柑,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:青橘,ScentConcept,青橘,replace_with_note_ingredient,note:青橘,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:香根草,ScentConcept,香根草,replace_with_note_ingredient,note:香根草,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:香桃木,ScentConcept,香桃木,replace_with_note_ingredient,note:香桃木,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:香芹籽,ScentConcept,香芹籽,replace_with_note_ingredient,note:香芹籽,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:香草,ScentConcept,香草,replace_with_note_ingredient,note:香草,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:香菜,ScentConcept,香菜,replace_with_note_ingredient,note:香菜,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:香豆,ScentConcept,香豆,replace_with_note_ingredient,note:香豆,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:马黛茶,ScentConcept,马黛茶,replace_with_note_ingredient,note:马黛茶,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:鸢尾,ScentConcept,鸢尾,replace_with_note_ingredient,note:鸢尾,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:麝香,ScentConcept,麝香,replace_with_note_ingredient,note:麝香,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:麦麸,ScentConcept,麦麸,quarantine_untyped_scent_concept,,,Concept is neither an approved ScentIdentity nor a typed NoteIngredient.,pending_review
+scent_concept:黄葵,ScentConcept,黄葵,replace_with_note_ingredient,note:黄葵,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:黄葵籽,ScentConcept,黄葵籽,replace_with_note_ingredient,note:黄葵籽,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:黑胡椒,ScentConcept,黑胡椒,replace_with_note_ingredient,note:黑胡椒,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:黑醋栗叶,ScentConcept,黑醋栗叶,replace_with_note_ingredient,note:黑醋栗叶,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:黑醋栗花蕾,ScentConcept,黑醋栗花蕾,replace_with_note_ingredient,note:黑醋栗花蕾,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:鼠尾草,ScentConcept,鼠尾草,replace_with_note_ingredient,note:鼠尾草,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved
+scent_concept:龙涎香,ScentConcept,龙涎香,replace_with_note_ingredient,note:龙涎香,NoteIngredient,"Legacy ScentConcept is an olfactory note, not a reusable scent identity.",approved

@@ -1,0 +1,2028 @@
+{
+  "schemaVersion": "1.0.0",
+  "migrationId": "scent-identity-name-review-v1",
+  "migrationStatus": "ready_for_import_not_published",
+  "sourceSnapshot": {
+    "path": "C:\\Users\\potato\\Desktop\\diptyque-project-workspace\\diptyque-product-kb-demo\\data-pipeline\\diptyque_products.csv",
+    "rowCount": 370,
+    "sha256": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365"
+  },
+  "reviewInput": {
+    "path": "C:\\Users\\potato\\Desktop\\diptyque-project-workspace\\diptyque-product-kb-demo\\data-pipeline\\diptyque_scent_identity_name_review_v1.csv",
+    "approvedCount": 38,
+    "pendingCount": 4
+  },
+  "entities": [
+    {
+      "id": "product:BODYGEL3",
+      "entityType": "ProductConcept",
+      "name": "肌肤之花洁肤露",
+      "properties": {
+        "productConceptKey": "BODYGEL3::肌肤之花洁肤露",
+        "spu": "BODYGEL3",
+        "coreFamily": "身体护理",
+        "productForm": "洁肤露",
+        "skuCodes": [
+          "FLEURBGEL200"
+        ]
+      }
+    },
+    {
+      "id": "product:BODYGEL5",
+      "entityType": "ProductConcept",
+      "name": "玫瑰香氛洁肤露",
+      "properties": {
+        "productConceptKey": "BODYGEL5::玫瑰香氛洁肤露",
+        "spu": "BODYGEL5",
+        "coreFamily": "身体护理",
+        "productForm": "洁肤露",
+        "skuCodes": [
+          "ROSBGEL"
+        ]
+      }
+    },
+    {
+      "id": "product:BODYLOTIONS1",
+      "entityType": "ProductConcept",
+      "name": "杜桑香氛润肤乳",
+      "properties": {
+        "productConceptKey": "BODYLOTIONS1::杜桑香氛润肤乳",
+        "spu": "BODYLOTIONS1",
+        "coreFamily": "身体护理",
+        "productForm": "润肤乳",
+        "skuCodes": [
+          "DOSBLOT"
+        ]
+      }
+    },
+    {
+      "id": "product:BODYOMBBGEL",
+      "entityType": "ProductConcept",
+      "name": "影中之水香氛洁肤露",
+      "properties": {
+        "productConceptKey": "BODYOMBBGEL::影中之水香氛洁肤露",
+        "spu": "BODYOMBBGEL",
+        "coreFamily": "身体护理",
+        "productForm": "洁肤露",
+        "skuCodes": [
+          "OMBBGEL"
+        ]
+      }
+    },
+    {
+      "id": "product:BODYOMBBLOTION",
+      "entityType": "ProductConcept",
+      "name": "影中之水香氛润肤乳",
+      "properties": {
+        "productConceptKey": "BODYOMBBLOTION::影中之水香氛润肤乳",
+        "spu": "BODYOMBBLOTION",
+        "coreFamily": "身体护理",
+        "productForm": "润肤乳",
+        "skuCodes": [
+          "OMBBLOTION"
+        ]
+      }
+    },
+    {
+      "id": "product:BODYSENSBLOT",
+      "entityType": "ProductConcept",
+      "name": "感官之水香氛润肤乳",
+      "properties": {
+        "productConceptKey": "BODYSENSBLOT::感官之水香氛润肤乳",
+        "spu": "BODYSENSBLOT",
+        "coreFamily": "身体护理",
+        "productForm": "润肤乳",
+        "skuCodes": [
+          "SENSBLOT"
+        ]
+      }
+    },
+    {
+      "id": "product:BODYSENSHCREAM",
+      "entityType": "ProductConcept",
+      "name": "感官之水香氛护手霜",
+      "properties": {
+        "productConceptKey": "BODYSENSHCREAM::感官之水香氛护手霜",
+        "spu": "BODYSENSHCREAM",
+        "coreFamily": "身体护理",
+        "productForm": "护手霜",
+        "skuCodes": [
+          "SENSHCREAM"
+        ]
+      }
+    },
+    {
+      "id": "product:BODYSOA1",
+      "entityType": "ProductConcept",
+      "name": "肌肤之花润肤乳",
+      "properties": {
+        "productConceptKey": "concept::身体护理::润肤乳::肌肤之花润肤乳",
+        "spu": "BODYSOA1",
+        "coreFamily": "身体护理",
+        "productForm": "润肤乳",
+        "skuCodes": [
+          "FLEURBLOTION",
+          "FLEURBLOTV1"
+        ]
+      }
+    },
+    {
+      "id": "product:CANDLEAMB1500",
+      "entityType": "ProductConcept",
+      "name": "超大号香氛蜡烛-琥珀",
+      "properties": {
+        "productConceptKey": "CANDLEAMB1500::超大号香氛蜡烛琥珀",
+        "spu": "CANDLEAMB1500",
+        "coreFamily": "家居香氛",
+        "productForm": "超大号香氛蜡烛",
+        "skuCodes": [
+          "AMB1500"
+        ]
+      }
+    },
+    {
+      "id": "product:CANDLEFI600",
+      "entityType": "ProductConcept",
+      "name": "大号香氛蜡烛-无花果",
+      "properties": {
+        "productConceptKey": "CANDLEFI600::大号香氛蜡烛无花果",
+        "spu": "CANDLEFI600",
+        "coreFamily": "家居香氛",
+        "productForm": "大号香氛蜡烛",
+        "skuCodes": [
+          "FI600"
+        ]
+      }
+    },
+    {
+      "id": "product:CANDLEGR1",
+      "entityType": "ProductConcept",
+      "name": "香氛蜡烛-玫瑰天竺葵",
+      "properties": {
+        "productConceptKey": "CANDLEGR1::香氛蜡烛玫瑰天竺葵",
+        "spu": "CANDLEGR1",
+        "coreFamily": "家居香氛",
+        "productForm": "经典香氛蜡烛",
+        "skuCodes": [
+          "GR2"
+        ]
+      }
+    },
+    {
+      "id": "product:CANDLERO300",
+      "entityType": "ProductConcept",
+      "name": "中号香氛蜡烛-玫瑰",
+      "properties": {
+        "productConceptKey": "CANDLERO300::中号香氛蜡烛玫瑰",
+        "spu": "CANDLERO300",
+        "coreFamily": "家居香氛",
+        "productForm": "中号香氛蜡烛",
+        "skuCodes": [
+          "RO300"
+        ]
+      }
+    },
+    {
+      "id": "product:CANDLETAPCDLB1A",
+      "entityType": "ProductConcept",
+      "name": "浆果香烛台香氛蜡烛",
+      "properties": {
+        "productConceptKey": "concept::家居香氛::烛台香氛蜡烛::浆果香烛台香氛蜡烛",
+        "spu": "CANDLETAPCDLB1A",
+        "coreFamily": "家居香氛",
+        "productForm": "烛台香氛蜡烛",
+        "skuCodes": [
+          "TAPCDLB1",
+          "XM23TAPCDLA"
+        ]
+      }
+    },
+    {
+      "id": "product:CANDLETAPCDLB1B",
+      "entityType": "ProductConcept",
+      "name": "琥珀烛台香氛蜡烛",
+      "properties": {
+        "productConceptKey": "CANDLETAPCDLB1B::琥珀烛台香氛蜡烛",
+        "spu": "CANDLETAPCDLB1B",
+        "coreFamily": "家居香氛",
+        "productForm": "烛台香氛蜡烛",
+        "skuCodes": [
+          "TAPCDLAB"
+        ]
+      }
+    },
+    {
+      "id": "product:CAPSULES3",
+      "entityType": "ProductConcept",
+      "name": "生姜扩香器香氛补充包",
+      "properties": {
+        "productConceptKey": "CAPSULES3::生姜扩香器香氛补充包",
+        "spu": "CAPSULES3",
+        "coreFamily": "家居香氛",
+        "productForm": "电子扩香器",
+        "skuCodes": [
+          "CAPSGG"
+        ]
+      }
+    },
+    {
+      "id": "product:CAPSULES6",
+      "entityType": "ProductConcept",
+      "name": "希腊无花果扩香器香氛补充包",
+      "properties": {
+        "productConceptKey": "CAPSULES6::希腊无花果扩香器香氛补充包",
+        "spu": "CAPSULES6",
+        "coreFamily": "家居香氛",
+        "productForm": "电子扩香器",
+        "skuCodes": [
+          "CAPSFI1"
+        ]
+      }
+    },
+    {
+      "id": "product:DIPXM25LARGEEDPFL",
+      "entityType": "ProductConcept",
+      "name": "典藏版肌肤之花淡香精",
+      "properties": {
+        "productConceptKey": "DIPXM25LARGEEDPFL::典藏版肌肤之花淡香精",
+        "spu": "DIPXM25LARGEEDPFL",
+        "coreFamily": "个人香氛",
+        "productForm": "淡香精",
+        "skuCodes": [
+          "LARGEEDPFL"
+        ]
+      }
+    },
+    {
+      "id": "product:EDPFLEURP75C",
+      "entityType": "ProductConcept",
+      "name": "肌肤之花淡香精",
+      "properties": {
+        "productConceptKey": "EDPFLEURP75C::肌肤之花淡香精",
+        "spu": "EDPFLEURP75C",
+        "coreFamily": "个人香氛",
+        "productForm": "淡香精",
+        "skuCodes": [
+          "FLEURP75CV1"
+        ]
+      }
+    },
+    {
+      "id": "product:EDTFLEUR",
+      "entityType": "ProductConcept",
+      "name": "肌肤之花淡香水",
+      "properties": {
+        "productConceptKey": "EDTFLEUR::肌肤之花淡香水",
+        "spu": "EDTFLEUR",
+        "coreFamily": "个人香氛",
+        "productForm": "淡香水",
+        "skuCodes": [
+          "FLEUR100",
+          "FLEUR50"
+        ]
+      }
+    },
+    {
+      "id": "product:EDTNERO100V1",
+      "entityType": "ProductConcept",
+      "name": "橙花香调淡香水",
+      "properties": {
+        "productConceptKey": "EDTNERO100V1::橙花香调淡香水",
+        "spu": "EDTNERO100V1",
+        "coreFamily": "个人香氛",
+        "productForm": "淡香水",
+        "skuCodes": [
+          "NERO100V2"
+        ]
+      }
+    },
+    {
+      "id": "product:HAIRMIST",
+      "entityType": "ProductConcept",
+      "name": "肌肤之花发香喷雾",
+      "properties": {
+        "productConceptKey": "HAIRMIST::肌肤之花发香喷雾",
+        "spu": "HAIRMIST",
+        "coreFamily": "个人香氛",
+        "productForm": "发香喷雾",
+        "skuCodes": [
+          "FLEURHMIST"
+        ]
+      }
+    },
+    {
+      "id": "product:HANDCRE4",
+      "entityType": "ProductConcept",
+      "name": "肌肤之花护手霜",
+      "properties": {
+        "productConceptKey": "HANDCRE4::肌肤之花护手霜",
+        "spu": "HANDCRE4",
+        "coreFamily": "身体护理",
+        "productForm": "护手霜",
+        "skuCodes": [
+          "FLEURHCREAMV1"
+        ]
+      }
+    },
+    {
+      "id": "product:HANDORPHHCREAM",
+      "entityType": "ProductConcept",
+      "name": "奥费恩香氛护手霜",
+      "properties": {
+        "productConceptKey": "HANDORPHHCREAM::奥费恩香氛护手霜",
+        "spu": "HANDORPHHCREAM",
+        "coreFamily": "身体护理",
+        "productForm": "护手霜",
+        "skuCodes": [
+          "ORPHHCREAM"
+        ]
+      }
+    },
+    {
+      "id": "product:HOMEHGFOCARB2D",
+      "entityType": "ProductConcept",
+      "name": "希腊无花果扩香精",
+      "properties": {
+        "productConceptKey": "HOMEHGFOCARB2D::希腊无花果扩香精",
+        "spu": "HOMEHGFOCARB2D",
+        "coreFamily": "家居香氛",
+        "productForm": "扩香精",
+        "skuCodes": [
+          "HGFICARB3"
+        ]
+      }
+    },
+    {
+      "id": "product:HOMEHGFOCARB2F",
+      "entityType": "ProductConcept",
+      "name": "生姜扩香精",
+      "properties": {
+        "productConceptKey": "HOMEHGFOCARB2F::生姜扩香精",
+        "spu": "HOMEHGFOCARB2F",
+        "coreFamily": "家居香氛",
+        "productForm": "扩香精",
+        "skuCodes": [
+          "HGGGCARB3"
+        ]
+      }
+    },
+    {
+      "id": "product:HOMEHGFOCARB2K",
+      "entityType": "ProductConcept",
+      "name": "希腊无花果扩香精补充瓶",
+      "properties": {
+        "productConceptKey": "HOMEHGFOCARB2K::希腊无花果扩香精补充瓶",
+        "spu": "HOMEHGFOCARB2K",
+        "coreFamily": "家居香氛",
+        "productForm": "扩香精",
+        "skuCodes": [
+          "HGFIRCARB3"
+        ]
+      }
+    },
+    {
+      "id": "product:HOMEHGFOCARB2M",
+      "entityType": "ProductConcept",
+      "name": "橙花扩香精补充瓶",
+      "properties": {
+        "productConceptKey": "HOMEHGFOCARB2M::橙花扩香精补充瓶",
+        "spu": "HOMEHGFOCARB2M",
+        "coreFamily": "家居香氛",
+        "productForm": "扩香精",
+        "skuCodes": [
+          "HGFORCARB3"
+        ]
+      }
+    },
+    {
+      "id": "product:HOMELDDRGDISHSOAP1",
+      "entityType": "ProductConcept",
+      "name": "橙花餐具清洁液",
+      "properties": {
+        "productConceptKey": "HOMELDDRGDISHSOAP1::橙花餐具清洁液",
+        "spu": "HOMELDDRGDISHSOAP1",
+        "coreFamily": "家居香氛",
+        "productForm": "餐具清洁液",
+        "skuCodes": [
+          "DRGDISHSOAP"
+        ]
+      }
+    },
+    {
+      "id": "product:HOMELDDRGDISHSOAP2",
+      "entityType": "ProductConcept",
+      "name": "橙花餐具清洁液补充装",
+      "properties": {
+        "productConceptKey": "HOMELDDRGDISHSOAP2::橙花餐具清洁液补充装",
+        "spu": "HOMELDDRGDISHSOAP2",
+        "coreFamily": "家居香氛",
+        "productForm": "餐具清洁液",
+        "skuCodes": [
+          "RDRGDISHSOAP"
+        ]
+      }
+    },
+    {
+      "id": "product:HOMEREEDREFILL2L1",
+      "entityType": "ProductConcept",
+      "name": "琥珀室内扩香摆件补充瓶",
+      "properties": {
+        "productConceptKey": "concept::家居香氛::室内扩香摆件::琥珀室内扩香摆件补充瓶",
+        "spu": "HOMEREEDREFILL2L1",
+        "coreFamily": "家居香氛",
+        "productForm": "室内扩香摆件",
+        "skuCodes": [
+          "REFREEDAB2L",
+          "REFREEDAMB"
+        ]
+      }
+    },
+    {
+      "id": "product:HOMEREEDREFILL2L2",
+      "entityType": "ProductConcept",
+      "name": "浆果香室内扩香摆件补充瓶",
+      "properties": {
+        "productConceptKey": "HOMEREEDREFILL2L2::浆果香室内扩香摆件补充瓶",
+        "spu": "HOMEREEDREFILL2L2",
+        "coreFamily": "家居香氛",
+        "productForm": "室内扩香摆件",
+        "skuCodes": [
+          "REFREEDB2L"
+        ]
+      }
+    },
+    {
+      "id": "product:HOMEREEDREFILL2L3",
+      "entityType": "ProductConcept",
+      "name": "圣日尔曼大道34号室内扩香摆件补充瓶",
+      "properties": {
+        "productConceptKey": "HOMEREEDREFILL2L3::圣日尔曼大道34号室内扩香摆件补充瓶",
+        "spu": "HOMEREEDREFILL2L3",
+        "coreFamily": "家居香氛",
+        "productForm": "室内扩香摆件",
+        "skuCodes": [
+          "REFREED34B2L"
+        ]
+      }
+    },
+    {
+      "id": "product:HOMERSP2",
+      "entityType": "ProductConcept",
+      "name": "生姜室内喷雾",
+      "properties": {
+        "productConceptKey": "HOMERSP2::生姜室内喷雾",
+        "spu": "HOMERSP2",
+        "coreFamily": "家居香氛",
+        "productForm": "室内喷雾",
+        "skuCodes": [
+          "VGGV1"
+        ]
+      }
+    },
+    {
+      "id": "product:HOMERSP7",
+      "entityType": "ProductConcept",
+      "name": "生姜 - 扩香精补充瓶",
+      "properties": {
+        "productConceptKey": "HOMERSP7::生姜扩香精补充瓶",
+        "spu": "HOMERSP7",
+        "coreFamily": "家居香氛",
+        "productForm": "扩香精",
+        "skuCodes": [
+          "HGGGRCARB2"
+        ]
+      }
+    },
+    {
+      "id": "product:HOMESCO3",
+      "entityType": "ProductConcept",
+      "name": "希腊无花果室内香氛蜡",
+      "properties": {
+        "productConceptKey": "HOMESCO3::希腊无花果室内香氛蜡",
+        "spu": "HOMESCO3",
+        "coreFamily": "家居香氛",
+        "productForm": "室内香氛蜡",
+        "skuCodes": [
+          "PFI"
+        ]
+      }
+    },
+    {
+      "id": "product:SOLIDPERFUME1",
+      "entityType": "ProductConcept",
+      "name": "肌肤之花香膏",
+      "properties": {
+        "productConceptKey": "SOLIDPERFUME1::肌肤之花香膏",
+        "spu": "SOLIDPERFUME1",
+        "coreFamily": "个人香氛",
+        "productForm": "香膏",
+        "skuCodes": [
+          "SOLIDFLEUR"
+        ]
+      }
+    },
+    {
+      "id": "product:SOLIDPERFUME4",
+      "entityType": "ProductConcept",
+      "name": "橙花 - 室内扩香摆件补充装",
+      "properties": {
+        "productConceptKey": "SOLIDPERFUME4::橙花室内扩香摆件补充装",
+        "spu": "SOLIDPERFUME4",
+        "coreFamily": "家居香氛",
+        "productForm": "室内扩香摆件",
+        "skuCodes": [
+          "REFREEDFO"
+        ]
+      }
+    },
+    {
+      "id": "product:SOLIDPERFUME8",
+      "entityType": "ProductConcept",
+      "name": "肌肤之花香膏补充装",
+      "properties": {
+        "productConceptKey": "SOLIDPERFUME8::肌肤之花香膏补充装",
+        "spu": "SOLIDPERFUME8",
+        "coreFamily": "个人香氛",
+        "productForm": "香膏",
+        "skuCodes": [
+          "RSOLIDEFDP"
+        ]
+      }
+    },
+    {
+      "id": "scent:baies",
+      "entityType": "ScentIdentity",
+      "name": "浆果香",
+      "properties": {
+        "officialName": "浆果香",
+        "localizedName": "浆果香",
+        "aliases": [],
+        "scentIdentityType": "HomeScent",
+        "vocabularyStatus": "approved"
+      }
+    },
+    {
+      "id": "scent:do_son",
+      "entityType": "ScentIdentity",
+      "name": "杜桑",
+      "properties": {
+        "officialName": "杜桑",
+        "localizedName": "杜桑",
+        "aliases": [],
+        "scentIdentityType": "SignatureFragrance",
+        "vocabularyStatus": "approved"
+      }
+    },
+    {
+      "id": "scent:home:60272c1fa58a",
+      "entityType": "ScentIdentity",
+      "name": "玫瑰天竺葵",
+      "properties": {
+        "officialName": "玫瑰天竺葵",
+        "localizedName": "玫瑰天竺葵",
+        "aliases": [],
+        "scentIdentityType": "HomeScent",
+        "vocabularyStatus": "approved"
+      }
+    },
+    {
+      "id": "scent:home:75c3136d0e43",
+      "entityType": "ScentIdentity",
+      "name": "生姜",
+      "properties": {
+        "officialName": "生姜",
+        "localizedName": "生姜",
+        "aliases": [],
+        "scentIdentityType": "HomeScent",
+        "vocabularyStatus": "approved"
+      }
+    },
+    {
+      "id": "scent:home:7e29b8c11693",
+      "entityType": "ScentIdentity",
+      "name": "玫瑰",
+      "properties": {
+        "officialName": "玫瑰",
+        "localizedName": "玫瑰",
+        "aliases": [],
+        "scentIdentityType": "HomeScent",
+        "vocabularyStatus": "approved"
+      }
+    },
+    {
+      "id": "scent:home:8804ae0c4c63",
+      "entityType": "ScentIdentity",
+      "name": "琥珀",
+      "properties": {
+        "officialName": "琥珀",
+        "localizedName": "琥珀",
+        "aliases": [],
+        "scentIdentityType": "HomeScent",
+        "vocabularyStatus": "approved"
+      }
+    },
+    {
+      "id": "scent:home:9cb3a4c80b60",
+      "entityType": "ScentIdentity",
+      "name": "橙花",
+      "properties": {
+        "officialName": "橙花",
+        "localizedName": "橙花",
+        "aliases": [],
+        "scentIdentityType": "HomeScent",
+        "vocabularyStatus": "approved"
+      }
+    },
+    {
+      "id": "scent:home:a0feff139222",
+      "entityType": "ScentIdentity",
+      "name": "无花果",
+      "properties": {
+        "officialName": "无花果",
+        "localizedName": "无花果",
+        "aliases": [],
+        "scentIdentityType": "HomeScent",
+        "vocabularyStatus": "approved"
+      }
+    },
+    {
+      "id": "scent:home:d1bf12d71e9b",
+      "entityType": "ScentIdentity",
+      "name": "圣日尔曼大道34号",
+      "properties": {
+        "officialName": "圣日尔曼大道34号",
+        "localizedName": "圣日尔曼大道34号",
+        "aliases": [],
+        "scentIdentityType": "HomeScent",
+        "vocabularyStatus": "approved"
+      }
+    },
+    {
+      "id": "scent:orpheon",
+      "entityType": "ScentIdentity",
+      "name": "奥费恩",
+      "properties": {
+        "officialName": "奥费恩",
+        "localizedName": "奥费恩",
+        "aliases": [],
+        "scentIdentityType": "SignatureFragrance",
+        "vocabularyStatus": "approved"
+      }
+    },
+    {
+      "id": "scent:signature:023796ea560e",
+      "entityType": "ScentIdentity",
+      "name": "感官之水",
+      "properties": {
+        "officialName": "感官之水",
+        "localizedName": "感官之水",
+        "aliases": [],
+        "scentIdentityType": "SignatureFragrance",
+        "vocabularyStatus": "approved"
+      }
+    },
+    {
+      "id": "scent:signature:6acc04e82ce4",
+      "entityType": "ScentIdentity",
+      "name": "肌肤之花",
+      "properties": {
+        "officialName": "肌肤之花",
+        "localizedName": "肌肤之花",
+        "aliases": [],
+        "scentIdentityType": "SignatureFragrance",
+        "vocabularyStatus": "approved"
+      }
+    },
+    {
+      "id": "scent:signature:7280ec9e7052",
+      "entityType": "ScentIdentity",
+      "name": "玫瑰",
+      "properties": {
+        "officialName": "玫瑰",
+        "localizedName": "玫瑰",
+        "aliases": [],
+        "scentIdentityType": "SignatureFragrance",
+        "vocabularyStatus": "approved"
+      }
+    },
+    {
+      "id": "scent:signature:7316c88abb34",
+      "entityType": "ScentIdentity",
+      "name": "橙花香调",
+      "properties": {
+        "officialName": "橙花香调",
+        "localizedName": "橙花香调",
+        "aliases": [],
+        "scentIdentityType": "SignatureFragrance",
+        "vocabularyStatus": "approved"
+      }
+    },
+    {
+      "id": "scent:signature:c4f4dbfc1457",
+      "entityType": "ScentIdentity",
+      "name": "影中之水",
+      "properties": {
+        "officialName": "影中之水",
+        "localizedName": "影中之水",
+        "aliases": [],
+        "scentIdentityType": "SignatureFragrance",
+        "vocabularyStatus": "approved"
+      }
+    }
+  ],
+  "assertions": [
+    {
+      "id": "assertion:has_scent:0294af5630cebfe9",
+      "subjectId": "product:BODYOMBBLOTION",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:signature:c4f4dbfc1457",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "SignatureFragrance",
+        "evidenceStrength": "explicit_official_copy"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:028d8825164296d4"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official product copy explicitly connects the product with this scent identity."
+    },
+    {
+      "id": "assertion:has_scent:086baa7a4a1e2ca5",
+      "subjectId": "product:HANDORPHHCREAM",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:orpheon",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "SignatureFragrance",
+        "evidenceStrength": "structured_field"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:76caa7b70d23c547"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official fragrance field exactly supports the scent identity."
+    },
+    {
+      "id": "assertion:has_scent:0f4a382e221b7631",
+      "subjectId": "product:HOMEREEDREFILL2L3",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:home:d1bf12d71e9b",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "HomeScent",
+        "evidenceStrength": "structured_field"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:9b106c3e1f2eefd0"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official fragrance field exactly supports the scent identity."
+    },
+    {
+      "id": "assertion:has_scent:1746f65ead1395bd",
+      "subjectId": "product:CANDLEFI600",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:home:a0feff139222",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "HomeScent",
+        "evidenceStrength": "explicit_official_copy"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:f9108ff8db50989c"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official product copy explicitly connects the product with this scent identity."
+    },
+    {
+      "id": "assertion:has_scent:18ffaea6ceece250",
+      "subjectId": "product:EDTFLEUR",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:signature:6acc04e82ce4",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "SignatureFragrance",
+        "evidenceStrength": "explicit_official_copy"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:da0ca63f8b0800d7"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official product copy explicitly connects the product with this scent identity."
+    },
+    {
+      "id": "assertion:has_scent:295ad803ae8bd769",
+      "subjectId": "product:HOMEHGFOCARB2D",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:home:a0feff139222",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "HomeScent",
+        "evidenceStrength": "structured_field"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:5a39e20bd865352d"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official fragrance field exactly supports the scent identity."
+    },
+    {
+      "id": "assertion:has_scent:301115b51911b396",
+      "subjectId": "product:BODYOMBBGEL",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:signature:c4f4dbfc1457",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "SignatureFragrance",
+        "evidenceStrength": "explicit_official_copy"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:dc7c2653b231aa13"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official product copy explicitly connects the product with this scent identity."
+    },
+    {
+      "id": "assertion:has_scent:34b8f2ee2151d592",
+      "subjectId": "product:CANDLETAPCDLB1A",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:baies",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "HomeScent",
+        "evidenceStrength": "explicit_official_copy"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:cd44c362f30e945c"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official product copy explicitly connects the product with this scent identity."
+    },
+    {
+      "id": "assertion:has_scent:38b44b314e420ecc",
+      "subjectId": "product:HOMESCO3",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:home:a0feff139222",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "HomeScent",
+        "evidenceStrength": "structured_field"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:ab86b6882fc01da7"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official fragrance field exactly supports the scent identity."
+    },
+    {
+      "id": "assertion:has_scent:3d5648a4dab6b773",
+      "subjectId": "product:HOMERSP2",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:home:75c3136d0e43",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "HomeScent",
+        "evidenceStrength": "structured_field"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:691a999a03d424a7"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official fragrance field exactly supports the scent identity."
+    },
+    {
+      "id": "assertion:has_scent:43aecc933a3111e7",
+      "subjectId": "product:HOMEREEDREFILL2L1",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:home:8804ae0c4c63",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "HomeScent",
+        "evidenceStrength": "structured_field"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:f9f950b7606f3699"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official fragrance field exactly supports the scent identity."
+    },
+    {
+      "id": "assertion:has_scent:4c2ff8222a5454f6",
+      "subjectId": "product:EDPFLEURP75C",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:signature:6acc04e82ce4",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "SignatureFragrance",
+        "evidenceStrength": "explicit_official_copy"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:916144bcdac13634"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official product copy explicitly connects the product with this scent identity."
+    },
+    {
+      "id": "assertion:has_scent:51fc8e7aadc8a891",
+      "subjectId": "product:HOMEREEDREFILL2L2",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:baies",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "HomeScent",
+        "evidenceStrength": "structured_field"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:08ed7be805b24b9a"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official fragrance field exactly supports the scent identity."
+    },
+    {
+      "id": "assertion:has_scent:52cc77a483c1c9ca",
+      "subjectId": "product:CANDLERO300",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:home:7e29b8c11693",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "HomeScent",
+        "evidenceStrength": "explicit_official_copy"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:4ee98e17f8603785"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official product copy explicitly connects the product with this scent identity."
+    },
+    {
+      "id": "assertion:has_scent:5aae98975cdcc3b4",
+      "subjectId": "product:HOMEHGFOCARB2K",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:home:a0feff139222",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "HomeScent",
+        "evidenceStrength": "structured_field"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:4f6d6ddddf30aa1a"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official fragrance field exactly supports the scent identity."
+    },
+    {
+      "id": "assertion:has_scent:63dc782650bebb5e",
+      "subjectId": "product:CANDLEGR1",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:home:60272c1fa58a",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "HomeScent",
+        "evidenceStrength": "explicit_official_copy"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:be996fd2cbaa202f"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official product copy explicitly connects the product with this scent identity."
+    },
+    {
+      "id": "assertion:has_scent:68b0b40205a0a9fa",
+      "subjectId": "product:BODYSENSHCREAM",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:signature:023796ea560e",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "SignatureFragrance",
+        "evidenceStrength": "explicit_official_copy"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:827a4f564a445b3e"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official product copy explicitly connects the product with this scent identity."
+    },
+    {
+      "id": "assertion:has_scent:68c6fd76944eaebf",
+      "subjectId": "product:HOMELDDRGDISHSOAP2",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:home:9cb3a4c80b60",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "HomeScent",
+        "evidenceStrength": "explicit_official_copy"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:85b9b6a437fe1e19"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official product copy explicitly connects the product with this scent identity."
+    },
+    {
+      "id": "assertion:has_scent:69fcd029aa2267de",
+      "subjectId": "product:HOMERSP7",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:home:75c3136d0e43",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "HomeScent",
+        "evidenceStrength": "explicit_official_copy"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:a09705df21bc95c5"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official product copy explicitly connects the product with this scent identity."
+    },
+    {
+      "id": "assertion:has_scent:6b389e82d5bcd8ff",
+      "subjectId": "product:HOMEHGFOCARB2F",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:home:75c3136d0e43",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "HomeScent",
+        "evidenceStrength": "structured_field"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:e96cd64cb34b0879"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official fragrance field exactly supports the scent identity."
+    },
+    {
+      "id": "assertion:has_scent:71d62c6e4ce9c2e1",
+      "subjectId": "product:BODYGEL3",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:signature:6acc04e82ce4",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "SignatureFragrance",
+        "evidenceStrength": "structured_field"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:aa100a3e40d3b9fd"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official fragrance field exactly supports the scent identity."
+    },
+    {
+      "id": "assertion:has_scent:7b5c33b4165be66e",
+      "subjectId": "product:SOLIDPERFUME4",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:home:9cb3a4c80b60",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "HomeScent",
+        "evidenceStrength": "explicit_official_copy"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:e7fbe8fe55c23404"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official product copy explicitly connects the product with this scent identity."
+    },
+    {
+      "id": "assertion:has_scent:843f97c140f62f2f",
+      "subjectId": "product:HOMEHGFOCARB2M",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:home:9cb3a4c80b60",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "HomeScent",
+        "evidenceStrength": "structured_field"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:d4ca365149ad4d9e"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official fragrance field exactly supports the scent identity."
+    },
+    {
+      "id": "assertion:has_scent:96c4136bcebb0f5e",
+      "subjectId": "product:CAPSULES6",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:home:a0feff139222",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "HomeScent",
+        "evidenceStrength": "structured_field"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:1b07f08c0d48126d"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official fragrance field exactly supports the scent identity."
+    },
+    {
+      "id": "assertion:has_scent:ade402821204bc01",
+      "subjectId": "product:DIPXM25LARGEEDPFL",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:signature:6acc04e82ce4",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "SignatureFragrance",
+        "evidenceStrength": "explicit_official_copy"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:18fed0bd53c8e64e"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official product copy explicitly connects the product with this scent identity."
+    },
+    {
+      "id": "assertion:has_scent:af7f77cff6beba67",
+      "subjectId": "product:HOMELDDRGDISHSOAP1",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:home:9cb3a4c80b60",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "HomeScent",
+        "evidenceStrength": "explicit_official_copy"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:a172b07f5acfdcae"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official product copy explicitly connects the product with this scent identity."
+    },
+    {
+      "id": "assertion:has_scent:b081ac6bee2483a2",
+      "subjectId": "product:SOLIDPERFUME1",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:signature:6acc04e82ce4",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "SignatureFragrance",
+        "evidenceStrength": "structured_field"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:75cf74d4d6168a98"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official fragrance field exactly supports the scent identity."
+    },
+    {
+      "id": "assertion:has_scent:b0acddd5befc0beb",
+      "subjectId": "product:BODYGEL5",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:signature:7280ec9e7052",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "SignatureFragrance",
+        "evidenceStrength": "structured_field"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:07a22ef811a4e901"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official fragrance field exactly supports the scent identity."
+    },
+    {
+      "id": "assertion:has_scent:bb0c064a992b401d",
+      "subjectId": "product:EDTNERO100V1",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:signature:7316c88abb34",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "SignatureFragrance",
+        "evidenceStrength": "explicit_official_copy"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:e321a76f22377399"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official product copy explicitly connects the product with this scent identity."
+    },
+    {
+      "id": "assertion:has_scent:c7c4c5eae3bcb343",
+      "subjectId": "product:SOLIDPERFUME8",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:signature:6acc04e82ce4",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "SignatureFragrance",
+        "evidenceStrength": "structured_field"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:76676d8e11c63073"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official fragrance field exactly supports the scent identity."
+    },
+    {
+      "id": "assertion:has_scent:de832326b96fc1c8",
+      "subjectId": "product:HANDCRE4",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:signature:6acc04e82ce4",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "SignatureFragrance",
+        "evidenceStrength": "structured_field"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:10374cb6c17ca1fb"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official fragrance field exactly supports the scent identity."
+    },
+    {
+      "id": "assertion:has_scent:e3efbe2b03b3c00f",
+      "subjectId": "product:BODYLOTIONS1",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:do_son",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "SignatureFragrance",
+        "evidenceStrength": "structured_field"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:ec4cb5df707c25c4"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official fragrance field exactly supports the scent identity."
+    },
+    {
+      "id": "assertion:has_scent:ea3ea762d836488a",
+      "subjectId": "product:CANDLEAMB1500",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:home:8804ae0c4c63",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "HomeScent",
+        "evidenceStrength": "explicit_official_copy"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:ea9389da701f9ae4"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official product copy explicitly connects the product with this scent identity."
+    },
+    {
+      "id": "assertion:has_scent:f1918caffee38e69",
+      "subjectId": "product:CAPSULES3",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:home:75c3136d0e43",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "HomeScent",
+        "evidenceStrength": "structured_field"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:63e450a8decc223f"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official fragrance field exactly supports the scent identity."
+    },
+    {
+      "id": "assertion:has_scent:f8262343d283d468",
+      "subjectId": "product:BODYSOA1",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:signature:6acc04e82ce4",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "SignatureFragrance",
+        "evidenceStrength": "structured_field"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:ca63712b0daf0449"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official fragrance field exactly supports the scent identity."
+    },
+    {
+      "id": "assertion:has_scent:fa1ff38c2114e72b",
+      "subjectId": "product:CANDLETAPCDLB1B",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:home:8804ae0c4c63",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "HomeScent",
+        "evidenceStrength": "explicit_official_copy"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:6b7764e4d37a36a9"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official product copy explicitly connects the product with this scent identity."
+    },
+    {
+      "id": "assertion:has_scent:fc0ee1934d73dc60",
+      "subjectId": "product:HAIRMIST",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:signature:6acc04e82ce4",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "SignatureFragrance",
+        "evidenceStrength": "structured_field"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:11958b64720db31f"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official fragrance field exactly supports the scent identity."
+    },
+    {
+      "id": "assertion:has_scent:ff93f62eb9f2228d",
+      "subjectId": "product:BODYSENSBLOT",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:signature:023796ea560e",
+      "objectValue": null,
+      "qualifiers": {
+        "scentIdentityType": "SignatureFragrance",
+        "evidenceStrength": "explicit_official_copy"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "evidence:has_scent:e913417529506572"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1.0,
+      "reviewStatus": "approved",
+      "reviewer": "codex_source_audit",
+      "decisionReason": "Official product copy explicitly connects the product with this scent identity."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "evidence:has_scent:028d8825164296d4",
+      "sourceType": "official_product_page",
+      "pageName": "影中之水香氛润肤乳",
+      "url": "https://www.diptyque-cn.com/p/ombb-lotion-200ml.html",
+      "sourceField": "description_text",
+      "excerpt": "香材氤氲成香，香气有形如触。 香氛之艺自品牌香氛历史汲取灵感，质地经过重新演绎重塑用香之道。无形化为感官，飘渺变得可触。每件香品均依照配方，精心调配浓度，呈献别具一格最精致的嗅觉表达。依心情与时刻，可单独使用，亦可层叠搭配。 影中之水呈现于绿意与花间层层铺展的画中景致，黑醋栗叶片的浓浓绿意、叶芽的酸涩调性与馥郁的玫瑰花香，一同勾勒出倒映于水面的自然轻梦，在光影之间，轻轻呼吸。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:07a22ef811a4e901",
+      "sourceType": "official_product_page",
+      "pageName": "玫瑰香氛洁肤露",
+      "url": "https://www.diptyque-cn.com/p/rose-cleansing-hand-and-body-gel-1.html",
+      "sourceField": "fragrance",
+      "excerpt": "玫瑰",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:08ed7be805b24b9a",
+      "sourceType": "official_product_page",
+      "pageName": "浆果香室内扩香摆件补充瓶",
+      "url": "https://www.diptyque-cn.com/p/refreedb2l-home-fragrance-diffuser-refill.html",
+      "sourceField": "fragrance",
+      "excerpt": "浆果香2L",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:10374cb6c17ca1fb",
+      "sourceType": "official_product_page",
+      "pageName": "肌肤之花护手霜",
+      "url": "https://www.diptyque-cn.com/p/fleur-de-peau-hand-cream-45-ml-1.html",
+      "sourceField": "fragrance",
+      "excerpt": "肌肤之花",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:11958b64720db31f",
+      "sourceType": "official_product_page",
+      "pageName": "肌肤之花发香喷雾",
+      "url": "https://www.diptyque-cn.com/p/fleur-de-peau-hair-mist.html",
+      "sourceField": "fragrance",
+      "excerpt": "肌肤之花",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:18fed0bd53c8e64e",
+      "sourceType": "official_product_page",
+      "pageName": "典藏版肌肤之花淡香精",
+      "url": "https://www.diptyque-cn.com/p/fleur-de-peau-eau-de-parfum-200ml-holiday.html",
+      "sourceField": "pdp_long_description",
+      "excerpt": "绵软轻盈，温和柔润。在肌肤之花淡香精中，麝香映衬着鸢尾花和黄葵籽的香气，呈现出令人沉醉的感官世界。是年末礼赠的理想之选。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:1b07f08c0d48126d",
+      "sourceType": "official_product_page",
+      "pageName": "希腊无花果扩香器香氛补充包",
+      "url": "https://www.diptyque-cn.com/p/cartouche-figuier-1.html",
+      "sourceField": "fragrance",
+      "excerpt": "希腊无花果",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:4ee98e17f8603785",
+      "sourceType": "official_product_page",
+      "pageName": "中号香氛蜡烛-玫瑰",
+      "url": "https://www.diptyque-cn.com/p/bougie-ro-300g.html",
+      "sourceField": "pdp_short_description",
+      "excerpt": "五月的清晨，初绽的玫瑰以不同姿态沐浴着露珠。花瓣上还带着夜的凉意，悄然透出沁人香气。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:4f6d6ddddf30aa1a",
+      "sourceType": "official_product_page",
+      "pageName": "希腊无花果扩香精补充瓶",
+      "url": "https://www.diptyque-cn.com/p/figuier-fig-tree-hourglass-diffuser-refill-2-1.html",
+      "sourceField": "fragrance",
+      "excerpt": "希腊无花果",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:5a39e20bd865352d",
+      "sourceType": "official_product_page",
+      "pageName": "希腊无花果扩香精",
+      "url": "https://www.diptyque-cn.com/p/sablier-figuier-2-1.html",
+      "sourceField": "fragrance",
+      "excerpt": "希腊无花果",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:63e450a8decc223f",
+      "sourceType": "official_product_page",
+      "pageName": "生姜扩香器香氛补充包",
+      "url": "https://www.diptyque-cn.com/p/gingembre-ginger-insert.html",
+      "sourceField": "fragrance",
+      "excerpt": "生姜",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:691a999a03d424a7",
+      "sourceType": "official_product_page",
+      "pageName": "生姜室内喷雾",
+      "url": "https://www.diptyque-cn.com/p/gingembre-ginger-room-spray.html",
+      "sourceField": "fragrance",
+      "excerpt": "生姜",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:6b7764e4d37a36a9",
+      "sourceType": "official_product_page",
+      "pageName": "琥珀烛台香氛蜡烛",
+      "url": "https://www.diptyque-cn.com/p/ambre-amber-scented-dinner-candle-75g.html",
+      "sourceField": "pdp_short_description",
+      "excerpt": "琥珀香丸置身古老宝盒之中，充分吸收了宝盒珍稀木质的馥郁芳香，并含有香脂及香料气息。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:75cf74d4d6168a98",
+      "sourceType": "official_product_page",
+      "pageName": "肌肤之花香膏",
+      "url": "https://www.diptyque-cn.com/p/solidfleur-refillable-solid-perfume.html",
+      "sourceField": "fragrance",
+      "excerpt": "肌肤之花",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:76676d8e11c63073",
+      "sourceType": "official_product_page",
+      "pageName": "肌肤之花香膏补充装",
+      "url": "https://www.diptyque-cn.com/p/rsolidefdp-refillable-solid-perfume.html",
+      "sourceField": "fragrance",
+      "excerpt": "肌肤之花",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:76caa7b70d23c547",
+      "sourceType": "official_product_page",
+      "pageName": "奥费恩香氛护手霜",
+      "url": "https://www.diptyque-cn.com/p/orphhcream-hand-cream-1.html",
+      "sourceField": "fragrance",
+      "excerpt": "奥费恩香调",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:827a4f564a445b3e",
+      "sourceType": "official_product_page",
+      "pageName": "感官之水香氛护手霜",
+      "url": "https://www.diptyque-cn.com/p/home-senshcream-1.html",
+      "sourceField": "pdp_short_description",
+      "excerpt": "将感官之水的香气融入丰润护手霜之中，层层铺展的清新香气向苦橙树致敬。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:85b9b6a437fe1e19",
+      "sourceType": "official_product_page",
+      "pageName": "橙花餐具清洁液补充装",
+      "url": "https://www.diptyque-cn.com/p/refill-dishwashing-liquid-with-orange-blossom-500ml.html",
+      "sourceField": "pdp_short_description",
+      "excerpt": "可轻松实现洁净去污功效，带来橙花、柑橘及罗勒的愉悦香气，仿佛夏日的气息始终环绕左右。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:916144bcdac13634",
+      "sourceType": "official_product_page",
+      "pageName": "肌肤之花淡香精",
+      "url": "https://www.diptyque-cn.com/p/fleur-de-peau-eau-de-parfum-1.html",
+      "sourceField": "pdp_long_description",
+      "excerpt": "麝香是肌肤之花淡香精的基调，绵软而又轻盈，温和而又柔润。映衬着鸢尾花和黄葵籽的香气，呈现出令人沉醉的感官世界。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:9b106c3e1f2eefd0",
+      "sourceType": "official_product_page",
+      "pageName": "圣日尔曼大道34号室内扩香摆件补充瓶",
+      "url": "https://www.diptyque-cn.com/p/refreed34b2l-home-fragrance-diffuser-refill.html",
+      "sourceField": "fragrance",
+      "excerpt": "圣日尔曼大道34号2L",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:a09705df21bc95c5",
+      "sourceType": "official_product_page",
+      "pageName": "生姜 - 扩香精补充瓶",
+      "url": "https://www.diptyque-cn.com/p/gingembre-ginger-hourglass-diffuser-refill-2-1.html",
+      "sourceField": "pdp_short_description",
+      "excerpt": "释放生姜的活泼辛辣香调。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:a172b07f5acfdcae",
+      "sourceType": "official_product_page",
+      "pageName": "橙花餐具清洁液",
+      "url": "https://www.diptyque-cn.com/p/dishwashing-liquid-with-orange-blossom-500ml.html",
+      "sourceField": "pdp_short_description",
+      "excerpt": "可轻松实现洁净去污功效，带来橙花、柑橘及罗勒的愉悦香气，仿佛夏日的气息始终环绕左右。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:aa100a3e40d3b9fd",
+      "sourceType": "official_product_page",
+      "pageName": "肌肤之花洁肤露",
+      "url": "https://www.diptyque-cn.com/p/fleur-de-peau-cleansing-hand-and-body-gel.html",
+      "sourceField": "fragrance",
+      "excerpt": "肌肤之花",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:ab86b6882fc01da7",
+      "sourceType": "official_product_page",
+      "pageName": "希腊无花果室内香氛蜡",
+      "url": "https://www.diptyque-cn.com/p/figuier-fig-tree-scented-oval.html",
+      "sourceField": "fragrance",
+      "excerpt": "希腊无花果",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:be996fd2cbaa202f",
+      "sourceType": "official_product_page",
+      "pageName": "香氛蜡烛-玫瑰天竺葵",
+      "url": "https://www.diptyque-cn.com/p/rose-geranium-candle-remavp.html",
+      "sourceField": "pdp_long_description",
+      "excerpt": "玫瑰天竺葵香氛蜡烛突显两种花朵的相似气息。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:ca63712b0daf0449",
+      "sourceType": "official_product_page",
+      "pageName": "肌肤之花润肤乳",
+      "url": "https://www.diptyque-cn.com/p/fleur-de-peau-hand-and-body-lotion.html",
+      "sourceField": "fragrance",
+      "excerpt": "肌肤之花",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:cd44c362f30e945c",
+      "sourceType": "official_product_page",
+      "pageName": "浆果香烛台香氛蜡烛",
+      "url": "https://www.diptyque-cn.com/p/baies-berries-scented-dinner-candle-75g.html",
+      "sourceField": "pdp_long_description",
+      "excerpt": "浆果香氛蜡烛诉说着花朵与果实融合的和谐篇章。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:d4ca365149ad4d9e",
+      "sourceType": "official_product_page",
+      "pageName": "橙花扩香精补充瓶",
+      "url": "https://www.diptyque-cn.com/p/fleur-d-oranger-orange-blossom-hourglass-diffuser-refill-2-1.html",
+      "sourceField": "fragrance",
+      "excerpt": "橙花",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:da0ca63f8b0800d7",
+      "sourceType": "official_product_page",
+      "pageName": "肌肤之花淡香水",
+      "url": "https://www.diptyque-cn.com/p/fleur-de-peau-eau-de-toilette-100ml-1.html",
+      "sourceField": "pdp_short_description",
+      "excerpt": "肌肤之花淡香水刚中带柔，重新演绎普赛克与厄洛斯对永恒爱恋的不懈追寻。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:dc7c2653b231aa13",
+      "sourceType": "official_product_page",
+      "pageName": "影中之水香氛洁肤露",
+      "url": "https://www.diptyque-cn.com/p/ombb-gel-200ml.html",
+      "sourceField": "description_text",
+      "excerpt": "香材氤氲成香，香气有形如触。 香氛之艺自品牌香氛历史汲取灵感，质地经过重新演绎重塑用香之道。无形化为感官，飘渺变得可触。每件香品均依照配方，精心调配浓度，呈献别具一格最精致的嗅觉表达。依心情与时刻，可单独使用，亦可层叠搭配。 影中之水呈现于绿意与花间层层铺展的画中景致，黑醋栗叶片的浓浓绿意、叶芽的酸涩调性与馥郁的玫瑰花香，一同勾勒出倒映于水面的自然轻梦，在光影之间，轻轻呼吸。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:e321a76f22377399",
+      "sourceType": "official_product_page",
+      "pageName": "橙花香调淡香水",
+      "url": "https://www.diptyque-cn.com/p/eau-de-toilette-eau-de-neroli-1.html",
+      "sourceField": "pdp_short_description",
+      "excerpt": "在意大利卡拉布里亚的橙花收获季，空气中四处弥漫着优美的柑橘香气。而不远处的佛手柑也飘来阵阵花粉与绿叶的动人气息。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:e7fbe8fe55c23404",
+      "sourceType": "official_product_page",
+      "pageName": "橙花 - 室内扩香摆件补充装",
+      "url": "https://www.diptyque-cn.com/p/orange-blossom-home-fragrance-diffuser-refill.html",
+      "sourceField": "pdp_long_description",
+      "excerpt": "室内扩香摆件在带来香气的同时，亦是一件精美的家居装饰艺术品。天然藤条扩香棒吸收扩香精油后，将橙花的气息扩散开来。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:e913417529506572",
+      "sourceType": "official_product_page",
+      "pageName": "感官之水香氛润肤乳",
+      "url": "https://www.diptyque-cn.com/p/ssensblot-gwp-1.html",
+      "sourceField": "pdp_short_description",
+      "excerpt": "感官之水的标志性香气化作轻盈乳液，苦橙树所有维度的香气轻柔包裹肌肤。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:e96cd64cb34b0879",
+      "sourceType": "official_product_page",
+      "pageName": "生姜扩香精",
+      "url": "https://www.diptyque-cn.com/p/gingembre-ginger-hourglass-diffuser-2-1.html",
+      "sourceField": "fragrance",
+      "excerpt": "生姜",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:ea9389da701f9ae4",
+      "sourceType": "official_product_page",
+      "pageName": "超大号香氛蜡烛-琥珀",
+      "url": "https://www.diptyque-cn.com/p/ambre-amber-extralarge-candle.html",
+      "sourceField": "pdp_short_description",
+      "excerpt": "每颗蜡烛都有5条烛芯。同时点燃，琥珀的木质香气温暖且带有皮革香气，令人难以忘怀。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:ec4cb5df707c25c4",
+      "sourceType": "official_product_page",
+      "pageName": "杜桑香氛润肤乳",
+      "url": "https://www.diptyque-cn.com/p/doson-hand-and-body-lotion-1.html",
+      "sourceField": "fragrance",
+      "excerpt": "杜桑",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:f9108ff8db50989c",
+      "sourceType": "official_product_page",
+      "pageName": "大号香氛蜡烛-无花果",
+      "url": "https://www.diptyque-cn.com/p/home-fi600-600g.html",
+      "sourceField": "pdp_short_description",
+      "excerpt": "将无花果的标志性香气，注入深绿色手工陶瓷容器之中。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "evidence:has_scent:f9f950b7606f3699",
+      "sourceType": "official_product_page",
+      "pageName": "琥珀室内扩香摆件补充瓶",
+      "url": "https://www.diptyque-cn.com/p/refreedab2l-home-fragrance-diffuser-refill.html",
+      "sourceField": "fragrance",
+      "excerpt": "琥珀2L",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    }
+  ],
+  "excludedPending": [
+    {
+      "productConceptKey": "CANDLERO1500::超大号香氛蜡烛玫瑰",
+      "productName": "超大号香氛蜡烛-玫瑰",
+      "candidateScentName": "玫瑰",
+      "reason": "No independent source field corroborates the name-derived scent identity."
+    },
+    {
+      "productConceptKey": "CAPSULES::橙花电子扩香器香氛补充包",
+      "productName": "橙花 - 电子扩香器香氛补充包",
+      "candidateScentName": "橙花",
+      "reason": "Only weak title, subtitle, or metadata evidence is available; it cannot independently publish HAS_SCENT."
+    },
+    {
+      "productConceptKey": "EDTSUM26SENS100::感官之水淡香水（限量版）",
+      "productName": "感官之水淡香水（限量版）",
+      "candidateScentName": "感官之水",
+      "reason": "Only weak title, subtitle, or metadata evidence is available; it cannot independently publish HAS_SCENT."
+    },
+    {
+      "productConceptKey": "concept::家居香氛::烛台香氛蜡烛::炭木香烛台香氛蜡烛",
+      "productName": "炭木香烛台香氛蜡烛",
+      "candidateScentName": "炭木香",
+      "reason": "No independent source field corroborates the name-derived scent identity."
+    }
+  ],
+  "publicationEffect": {
+    "graphEdgesAdded": 0,
+    "frontendRecordsChanged": 0
+  },
+  "identityReuse": {
+    "pilotScentIds": {
+      "SignatureFragrance|杜桑": "scent:do_son",
+      "SignatureFragrance|奥费恩": "scent:orpheon",
+      "HomeScent|浆果香": "scent:baies"
+    }
+  }
+}

@@ -34,6 +34,11 @@
     "typecheck": "tsc --noEmit",
     "check": "npm run audit:queries && npm run audit:catalog && npm run audit:recommendations && npm run lint && npm run typecheck && npm run build",
     "data:rebuild": "python data-pipeline/rebuild.py",
+    "data:build-semantic-facts": "python data-pipeline/build_semantic_fact_dataset_v1.py",
+    "data:build-frontend-schema-v1-candidate": "python data-pipeline/build_frontend_schema_v1_candidate.py",
+    "data:review-relations": "python data-pipeline/review_diptyque_relation_candidates.py",
+    "data:adjudicate-relations": "python data-pipeline/adjudicate_diptyque_relation_reviews.py",
+    "data:publish-reviewed-relations": "python data-pipeline/adjudicate_diptyque_relation_reviews.py --publish",
     "audit:queries": "node --no-warnings --experimental-strip-types scripts/audit-diptyque-query-catalog.mjs",
     "audit:catalog": "node --no-warnings --experimental-strip-types scripts/audit-diptyque-product-catalog.mjs",
     "audit:recommendations": "node --no-warnings --experimental-strip-types scripts/audit-diptyque-recommendations.mjs"

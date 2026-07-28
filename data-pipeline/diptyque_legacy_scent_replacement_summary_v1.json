@@ -1,0 +1,65 @@
+{
+  "result": "PASS",
+  "isolatedDataset": {
+    "productConceptCount": 155,
+    "scentIdentityCount": 23,
+    "hasScentCount": 155
+  },
+  "aliasAdjudications": [
+    {
+      "scentIdentityType": "SignatureFragrance",
+      "alias": "玫瑰",
+      "canonicalName": "玫瑰香调",
+      "canonicalId": "scent:signature:8e504c9b6b1f",
+      "scopeRule": "Alias resolution requires SignatureFragrance context; HomeScent 玫瑰 remains distinct.",
+      "evidenceProduct": "玫瑰香氛洁肤露",
+      "evidenceFields": [
+        "fragrance",
+        "pdp_short_description",
+        "subtitle"
+      ],
+      "evidenceExcerpt": "fragrance=玫瑰；玫瑰香调洁肤露遇水幻化为丝滑的绵密泡沫；大马士革玫瑰、千叶玫瑰、荔枝香调、龙涎香",
+      "reviewStatus": "approved"
+    }
+  ],
+  "nodeMapping": {
+    "total": 116,
+    "expected": 116,
+    "actions": {
+      "replace_with_scent_identity": 21,
+      "split_by_product_family": 2,
+      "retire_to_collection_review": 1,
+      "replace_with_note_ingredient": 76,
+      "split_by_relation_context": 6,
+      "quarantine_untyped_scent_concept": 10
+    },
+    "unmapped": 0,
+    "collectionNoteTargetsRemoved": 6,
+    "collectionTargetsContainOnlyScentIdentity": true,
+    "splitCollectionTargetCountValid": true
+  },
+  "edgeMapping": {
+    "total": 1428,
+    "expected": 1428,
+    "actions": {
+      "retain_navigation_only": 126,
+      "replace_and_reverse": 155,
+      "retire_collection_umbrella_edge": 7,
+      "quarantine_pending_identity": 4,
+      "retire_direct_semantic_product_edge": 895,
+      "retire_legacy_family_pivot": 112,
+      "retire_legacy_pivot_edge": 129
+    },
+    "collectionProductDisposition": {
+      "replace": 155,
+      "pending": 4,
+      "collectionUmbrella": 7,
+      "unmatched": 0
+    }
+  },
+  "blockingFailures": [],
+  "publicationEffect": {
+    "legacyGraphChanged": 0,
+    "frontendRecordsChanged": 0
+  }
+}

@@ -58,6 +58,15 @@ type DraggedNode = {
 };
 
 const VIEWBOX_PADDING = 28;
+const semanticRelationLabels: Record<string, string> = {
+  HAS_CARE_INSTRUCTION: "保养",
+  HAS_CRAFT: "工艺",
+  HAS_FUNCTION: "功能",
+  HAS_MATERIAL: "材质",
+  HAS_SCENE: "场景",
+  HAS_USAGE_INSTRUCTION: "使用",
+  SERVES_NEED: "需求",
+};
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -373,6 +382,8 @@ export function DiptyqueKnowledgeBase() {
   const lastSimulationTimeRef = useRef<number | null>(null);
   const simNodesRef = useRef<Map<string, SimNode>>(new Map());
   const simEdgesRef = useRef<SimEdge[]>([]);
+  const graphDatasetRef = useRef<GraphDataset | null>(null);
+  const structuralCoreIdsRef = useRef<Set<string>>(new Set());
   const draggedNodeRef = useRef<DraggedNode | null>(null);
   const suppressNodeClickRef = useRef(false);
 
@@ -380,6 +391,7 @@ export function DiptyqueKnowledgeBase() {
     () => getGraphDataset(graphMode.focusLabel, graphMode.filterNodeIds, graphMode.recommendationProductNames ?? []),
     [graphMode.filterNodeIds, graphMode.focusLabel, graphMode.recommendationProductNames]
   );
+  graphDatasetRef.current = graphDataset;
   const filterTrail = useMemo(() => getFilterTrail(graphMode.filterNodeIds), [graphMode.filterNodeIds]);
   const focusedEdgeIds = useMemo(() => new Set(graphMode.focusEdgeIds), [graphMode.focusEdgeIds]);
   const orderedRenderLines = useMemo(
@@ -390,20 +402,33 @@ export function DiptyqueKnowledgeBase() {
     const result = new Set<string>();
     if (graphDataset.modeLabel === "分类概览") {
       renderNodes
-        .filter((node) => ["CoreFamily", "OntologyDomain"].includes(node.nodeType))
+        .filter((node) => ["CoreFamily", "OntologyDomain", "SemanticDomain"].includes(node.nodeType))
         .forEach((node) => result.add(node.id));
       return result;
     }
 
-    const explicitCoreTypes = ["CoreFamily", "OntologyDomain", "ProductForm", "NoteFamily"];
+    const explicitCoreTypes = ["CoreFamily", "OntologyDomain", "SemanticDomain", "ProductForm", "NoteFamily", "ScentIdentity"];
     if (graphDataset.modeLabel === "推荐子图") explicitCoreTypes.push("Product");
     if (graphDataset.modeLabel.endsWith("本体")) {
-      explicitCoreTypes.push("ScentConcept", "NoteIngredient", "ScentProfile", "ScentAccord");
+      explicitCoreTypes.push("ScentConcept", "NoteIngredient", "ScentProfile", "ScentAccord", "Function", "UseScene", "UserNeed", "CareInstruction", "UsageInstruction", "Material", "CraftTechnique");
     }
     renderNodes
       .filter((node) => explicitCoreTypes.includes(node.nodeType))
       .forEach((node) => result.add(node.id));
-    renderLines.forEach((line) => result.add(line.sourceId));
+    const activeStructuralFilterNode = renderNodes.find((node) => node.id === graphMode.filterNodeIds.at(-1));
+    const productNodeIds = new Set(renderNodes.filter((node) => node.nodeType === "Product").map((node) => node.id));
+    const semanticCoreTypes = new Set(["Function", "UseScene", "UserNeed", "CareInstruction", "UsageInstruction", "Material", "CraftTechnique"]);
+    renderLines.forEach((line) => {
+      const targetNode = renderNodes.find((node) => node.id === line.targetId);
+      const isSemanticProductLeaf = graphDataset.modeLabel.endsWith("本体")
+        && productNodeIds.has(line.sourceId)
+        && semanticCoreTypes.has(targetNode?.nodeType ?? "");
+      if (line.edgeType === "HAS_SCENT") {
+        result.add(line.targetId);
+      } else if (!isSemanticProductLeaf && (activeStructuralFilterNode?.nodeType !== "ScentIdentity" || !productNodeIds.has(line.sourceId))) {
+        result.add(line.sourceId);
+      }
+    });
     renderLines
       .filter((line) => focusedEdgeIds.has(line.edgeId))
       .forEach((line) => {
@@ -413,7 +438,7 @@ export function DiptyqueKnowledgeBase() {
     graphMode.filterNodeIds.forEach((id) => result.add(id));
     const activeFilterId = graphMode.filterNodeIds.at(-1);
     const activeFilterNode = renderNodes.find((node) => node.id === activeFilterId);
-    const branchNodeTypes = new Set(["CoreFamily", "OntologyDomain", "NoteFamily"]);
+    const branchNodeTypes = new Set(["CoreFamily", "OntologyDomain", "SemanticDomain", "NoteFamily", "ScentIdentity"]);
     if (activeFilterNode && graphDataset.focusLabel === activeFilterId && !branchNodeTypes.has(activeFilterNode.nodeType)) {
       renderNodes
         .filter((node) => node.nodeType === "Product")
@@ -422,6 +447,8 @@ export function DiptyqueKnowledgeBase() {
     if (graphDataset.focusLabel) result.add(graphDataset.focusLabel);
     return result;
   }, [focusedEdgeIds, graphDataset.focusLabel, graphDataset.modeLabel, graphMode.filterNodeIds, renderLines, renderNodes]);
+
+  structuralCoreIdsRef.current = structuralCoreIds;
 
   const hoveredHighlightIds = useMemo(() => {
     const result = new Set<string>();
@@ -502,7 +529,7 @@ export function DiptyqueKnowledgeBase() {
   }
 
   function clampNodePosition(node: SimNode) {
-    const viewBox = graphDataset.viewBox.split(" ").map(Number);
+    const viewBox = (graphDatasetRef.current?.viewBox ?? "0 0 640 596").split(" ").map(Number);
     const width = viewBox[2] || 640;
     const height = viewBox[3] || 596;
     node.x = clamp(node.x, VIEWBOX_PADDING, width - VIEWBOX_PADDING);
@@ -525,12 +552,13 @@ export function DiptyqueKnowledgeBase() {
     nodes.forEach((node) => {
       if (dragged?.id === node.id) return;
       const force = forces.get(node.id)!;
-      const restSpring = 0.016;
+      const isOverview = graphDatasetRef.current?.modeLabel === "分类概览";
+      const restSpring = isOverview ? 0.0048 : 0.0052;
       const seed = nodeFloatSeed(node.id);
-      const driftXAmplitude = graphDataset.modeLabel === "分类概览" ? 5.2 : 3.6;
-      const driftYAmplitude = graphDataset.modeLabel === "分类概览" ? 4 : 2.8;
-      const driftX = Math.sin(timeSeconds * (0.28 + seed * 0.18) + seed * Math.PI * 2) * driftXAmplitude;
-      const driftY = Math.cos(timeSeconds * (0.24 + seed * 0.16) + seed * Math.PI * 1.4) * driftYAmplitude;
+      const driftXAmplitude = isOverview ? 21 : 14;
+      const driftYAmplitude = isOverview ? 16 : 10.5;
+      const driftX = Math.sin(timeSeconds * (0.24 + seed * 0.12) + seed * Math.PI * 2) * driftXAmplitude;
+      const driftY = Math.cos(timeSeconds * (0.2 + seed * 0.1) + seed * Math.PI * 1.4) * driftYAmplitude;
       force.x += (node.restX + driftX - node.x) * restSpring;
       force.y += (node.restY + driftY - node.y) * restSpring;
     });
@@ -542,9 +570,15 @@ export function DiptyqueKnowledgeBase() {
         const dx = b.x - a.x;
         const dy = b.y - a.y;
         const distance = Math.hypot(dx, dy) || 1;
-        const desired = a.r + b.r + 28;
-        if (distance >= desired) continue;
-        const push = (desired - distance) * 0.018;
+        const visibleCoreIds = structuralCoreIdsRef.current;
+        const visibleLabelCount = Number(visibleCoreIds.has(a.id)) + Number(visibleCoreIds.has(b.id));
+        const labelClearance = visibleLabelCount === 2 ? 36 : visibleLabelCount === 1 ? 22 : 10;
+        const desired = a.r + b.r + 34 + labelClearance;
+        const influenceDistance = desired + 42;
+        if (distance >= influenceDistance) continue;
+        const overlapPush = Math.max(0, desired - distance) * 0.026;
+        const spacingPush = Math.max(0, influenceDistance - distance) * 0.0024;
+        const push = overlapPush + spacingPush;
         const nx = dx / distance;
         const ny = dy / distance;
         const forceA = forces.get(a.id)!;
@@ -564,7 +598,7 @@ export function DiptyqueKnowledgeBase() {
       const dy = target.y - source.y;
       const distance = Math.hypot(dx, dy) || 1;
       const delta = distance - edge.restLength;
-      const spring = edge.dashed ? 0.012 : 0.018;
+      const spring = edge.dashed ? 0.0034 : 0.0048;
       const nx = dx / distance;
       const ny = dy / distance;
       const forceX = nx * delta * spring;
@@ -594,10 +628,10 @@ export function DiptyqueKnowledgeBase() {
       const force = forces.get(node.id)!;
       node.vx += force.x * dt;
       node.vy += force.y * dt;
-      node.vx *= 0.91;
-      node.vy *= 0.91;
-      node.x += node.vx * dt * 0.76;
-      node.y += node.vy * dt * 0.76;
+      node.vx *= 0.94;
+      node.vy *= 0.94;
+      node.x += node.vx * dt * 0.82;
+      node.y += node.vy * dt * 0.82;
       clampNodePosition(node);
     });
 
@@ -644,7 +678,7 @@ export function DiptyqueKnowledgeBase() {
     simNodesRef.current = nextNodes;
     simEdgesRef.current = graphDataset.lines.map((line) => ({
       ...line,
-      restLength: Math.hypot(line.x2 - line.x1, line.y2 - line.y1),
+      restLength: Math.max(92, Math.hypot(line.x2 - line.x1, line.y2 - line.y1) * 1.12),
     }));
     syncRenderFromSimulation();
     kickSimulationEffect();
@@ -1028,7 +1062,7 @@ export function DiptyqueKnowledgeBase() {
                 </defs>
                 <g>
                   {orderedRenderLines.map((line, index) => {
-                    const lineLabel = line.label || graphDataset.edgeLabels[index];
+                    const lineLabel = semanticRelationLabels[line.edgeType] || line.label || graphDataset.edgeLabels[index];
                     const labelPoint = lineMidpoint(line.x1, line.y1, line.x2, line.y2, index % 2 === 0 ? 0 : 2);
                     const isHoverLine = hoveredHighlightIds.has(line.sourceId) && hoveredHighlightIds.has(line.targetId);
                     const isProductRelation = line.relationLayer !== "fact" || ["REFILL_FOR", "ACCESSORY_FOR", "PAIRS_WITH", "LAYER_WITH", "EXTENDS_TO_HOME"].includes(line.edgeType);
@@ -1038,7 +1072,7 @@ export function DiptyqueKnowledgeBase() {
                     return (
                       <g
                         key={line.edgeId}
-                        className={"graph-edge " + (isSelectedEdge ? "selected-relation " : "") + (isAnswerEdge ? "answer-relation " : "") + (isDimmedEdge ? "dimmed-relation" : "")}
+                        className={"graph-edge " + (isHoverLine ? "hover-relation " : "") + (isSelectedEdge ? "selected-relation " : "") + (isAnswerEdge ? "answer-relation " : "") + (isDimmedEdge ? "dimmed-relation" : "")}
                         onClick={(event) => {
                           event.stopPropagation();
                           setSelectedEdge(line);
@@ -1060,11 +1094,11 @@ export function DiptyqueKnowledgeBase() {
                           x2={line.x2}
                           y2={line.y2}
                           stroke={isSelectedEdge || isAnswerEdge ? "#7f0019" : "#d2cbc0"}
-                          opacity={isSelectedEdge ? 0.96 : isAnswerEdge ? 0.86 : isDimmedEdge ? 0.08 : isHoverLine ? 0.82 : 0.24}
+                          opacity={isSelectedEdge ? 0.96 : isAnswerEdge ? 0.86 : isDimmedEdge ? 0.02 : isHoverLine ? 0.76 : 0.055}
                           strokeDasharray={line.dashed ? "5 3" : undefined}
                           markerEnd={line.dashed ? "url(#arrowhead)" : undefined}
                         />
-                        {lineLabel ? <text className={"graph-link-label " + (isProductRelation ? "product-relation-label" : "")} x={labelPoint.x} y={labelPoint.y} fill={isAnswerEdge || isSelectedEdge ? "#7f0019" : "#8c857d"} opacity={isSelectedEdge || isAnswerEdge ? 1 : isDimmedEdge ? 0 : isHoverLine || isProductRelation ? 0.9 : 0}>{lineLabel}</text> : null}
+                        {lineLabel ? <text className={"graph-link-label " + (isProductRelation ? "product-relation-label" : "")} x={labelPoint.x} y={labelPoint.y} fill={isAnswerEdge || isSelectedEdge ? "#7f0019" : "#8c857d"} opacity={isSelectedEdge || isAnswerEdge ? 1 : isDimmedEdge ? 0 : isHoverLine ? 0.9 : 0}>{lineLabel}</text> : null}
                       </g>
                     );
                   })}

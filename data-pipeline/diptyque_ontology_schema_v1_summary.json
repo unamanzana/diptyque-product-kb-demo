@@ -1,0 +1,179 @@
+{
+  "schema_version": "v1",
+  "audit_mode": "read_only_coverage",
+  "source_rows": 370,
+  "product_concepts": 350,
+  "sku_count": 370,
+  "coverage": {
+    "scent_identity": {
+      "direct": 124,
+      "candidate": 42,
+      "none": 184,
+      "direct_rate": "35.4%"
+    },
+    "note": {
+      "direct": 97,
+      "candidate": 0,
+      "none": 253,
+      "direct_rate": "27.7%"
+    },
+    "scent_profile": {
+      "direct": 145,
+      "candidate": 0,
+      "none": 205,
+      "direct_rate": "41.4%"
+    },
+    "function": {
+      "direct": 72,
+      "candidate": 259,
+      "none": 19,
+      "direct_rate": "20.6%"
+    },
+    "scene": {
+      "direct": 47,
+      "candidate": 0,
+      "none": 303,
+      "direct_rate": "13.4%"
+    },
+    "user_need": {
+      "direct": 18,
+      "candidate": 0,
+      "none": 332,
+      "direct_rate": "5.1%"
+    },
+    "care": {
+      "direct": 161,
+      "candidate": 0,
+      "none": 189,
+      "direct_rate": "46.0%"
+    },
+    "inspiration": {
+      "direct": 94,
+      "candidate": 0,
+      "none": 256,
+      "direct_rate": "26.9%"
+    },
+    "material": {
+      "direct": 57,
+      "candidate": 17,
+      "none": 276,
+      "direct_rate": "16.3%"
+    },
+    "craft": {
+      "direct": 48,
+      "candidate": 2,
+      "none": 300,
+      "direct_rate": "13.7%"
+    },
+    "compatibility": {
+      "direct": 34,
+      "candidate": 0,
+      "none": 316,
+      "direct_rate": "9.7%"
+    }
+  },
+  "families": {
+    "个人香氛": {
+      "products": 70,
+      "sku_count": 82,
+      "direct_coverage": {
+        "scent_identity": 38,
+        "note": 64,
+        "scent_profile": 7,
+        "function": 7,
+        "scene": 4,
+        "user_need": 3,
+        "care": 0,
+        "inspiration": 41,
+        "material": 0,
+        "craft": 0,
+        "compatibility": 0
+      }
+    },
+    "家居香氛": {
+      "products": 168,
+      "sku_count": 171,
+      "direct_coverage": {
+        "scent_identity": 72,
+        "note": 10,
+        "scent_profile": 135,
+        "function": 52,
+        "scene": 38,
+        "user_need": 6,
+        "care": 108,
+        "inspiration": 36,
+        "material": 0,
+        "craft": 10,
+        "compatibility": 0
+      }
+    },
+    "文创": {
+      "products": 9,
+      "sku_count": 9,
+      "direct_coverage": {
+        "scent_identity": 0,
+        "note": 0,
+        "scent_profile": 0,
+        "function": 0,
+        "scene": 0,
+        "user_need": 0,
+        "care": 0,
+        "inspiration": 0,
+        "material": 9,
+        "craft": 0,
+        "compatibility": 0
+      }
+    },
+    "艺术家居": {
+      "products": 65,
+      "sku_count": 69,
+      "direct_coverage": {
+        "scent_identity": 0,
+        "note": 0,
+        "scent_profile": 0,
+        "function": 2,
+        "scene": 3,
+        "user_need": 9,
+        "care": 52,
+        "inspiration": 11,
+        "material": 48,
+        "craft": 38,
+        "compatibility": 34
+      }
+    },
+    "身体护理": {
+      "products": 38,
+      "sku_count": 39,
+      "direct_coverage": {
+        "scent_identity": 14,
+        "note": 23,
+        "scent_profile": 3,
+        "function": 11,
+        "scene": 2,
+        "user_need": 0,
+        "care": 1,
+        "inspiration": 6,
+        "material": 0,
+        "craft": 0,
+        "compatibility": 0
+      }
+    }
+  },
+  "manual_review_flags": {
+    "care_instruction_not_product_function": 97,
+    "usage_text_requires_instruction_review": 91,
+    "long_description_semantics_untyped": 82,
+    "scent_identity_name_only": 42,
+    "formula_present_without_note_evidence": 22,
+    "craft_copy_outside_physical_family": 2,
+    "cross_family_duplicate_craft_copy": 1
+  },
+  "approved_compatibility_relations": {
+    "ACCESSORY_FOR_SPEC": 37
+  },
+  "publication_effect": {
+    "graph_edges_added": 0,
+    "frontend_records_changed": 0,
+    "facts_auto_approved": 0
+  }
+}

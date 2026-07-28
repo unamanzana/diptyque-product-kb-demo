@@ -1,0 +1,24 @@
+﻿scent_identity_id,scent_identity_type,canonical_name,aliases,legacy_approved_count,new_count,expected_pending_count,expected_pending_products,unexpected_added_count,unexpected_removed_count,comparison_status
+scent:home:71ed7bd5bfc3,HomeScent,含羞草,,8,8,0,,0,0,exact
+scent:home:d1bf12d71e9b,HomeScent,圣日尔曼大道34号,,11,11,0,,0,0,exact
+scent:home:a0feff139222,HomeScent,无花果,,12,12,0,,0,0,exact
+scent:home:e0b852b0c207,HomeScent,晚香玉,,10,10,0,,0,0,exact
+scent:home:9cb3a4c80b60,HomeScent,橙花,,8,8,1,橙花 - 电子扩香器香氛补充包,0,0,exact_with_expected_pending_exclusion
+scent:baies,HomeScent,浆果香,,15,15,0,,0,0,exact
+scent:home:9f839def5f16,HomeScent,炭木香,,5,5,1,炭木香烛台香氛蜡烛,0,0,exact_with_expected_pending_exclusion
+scent:home:7e29b8c11693,HomeScent,玫瑰,,11,11,1,超大号香氛蜡烛-玫瑰,0,0,exact_with_expected_pending_exclusion
+scent:home:60272c1fa58a,HomeScent,玫瑰天竺葵,,1,1,0,,0,0,exact
+scent:home:8804ae0c4c63,HomeScent,琥珀,,8,8,0,,0,0,exact
+scent:home:75c3136d0e43,HomeScent,生姜,,4,4,0,,0,0,exact
+scent:signature:e64ef421b4b7,SignatureFragrance,圣日尔曼大道34号,,3,3,0,,0,0,exact
+scent:orpheon,SignatureFragrance,奥费恩,,9,9,0,,0,0,exact
+scent:signature:d3edd0766aea,SignatureFragrance,巴黎之水,,3,3,0,,0,0,exact
+scent:signature:5fff5f41e126,SignatureFragrance,希腊无花果,,5,5,0,,0,0,exact
+scent:signature:c4f4dbfc1457,SignatureFragrance,影中之水,,4,4,0,,0,0,exact
+scent:signature:023796ea560e,SignatureFragrance,感官之水,,5,5,1,感官之水淡香水（限量版）,0,0,exact_with_expected_pending_exclusion
+scent:do_son,SignatureFragrance,杜桑,,9,9,0,,0,0,exact
+scent:signature:7316c88abb34,SignatureFragrance,橙花香调,,1,1,0,,0,0,exact
+scent:signature:8e504c9b6b1f,SignatureFragrance,玫瑰香调,玫瑰,9,9,0,,0,0,exact
+scent:signature:a4b1e7540ff6,SignatureFragrance,纸上,,3,3,0,,0,0,exact
+scent:signature:6acc04e82ce4,SignatureFragrance,肌肤之花,,9,9,0,,0,0,exact
+scent:signature:c3f8d418bee3,SignatureFragrance,谭道,,2,2,0,,0,0,exact

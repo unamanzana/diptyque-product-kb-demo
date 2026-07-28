@@ -63,5 +63,11 @@ data-pipeline/diptyque_scent_concept_audit.csv
 data-pipeline/diptyque_*_candidates.csv
 data-pipeline/diptyque_relationship_coverage_*.csv
 data-pipeline/diptyque_relationship_coverage_*.json
+data-pipeline/diptyque_relation_coverage_audit.csv
+data-pipeline/diptyque_relation_coverage_summary.json
+data-pipeline/diptyque_relation_published_edges.csv
+data-pipeline/diptyque_relation_model_reviews.csv
+data-pipeline/diptyque_relation_model_review_summary.json
+data-pipeline/diptyque_relation_review_queue.csv
 data-pipeline/diptyque_relation_evidence_audit.csv
 data-pipeline/diptyque_pairing_model_batch.json

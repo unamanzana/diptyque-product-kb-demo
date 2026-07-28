@@ -1,0 +1,25 @@
+{
+  "result": "PASS",
+  "checks": {
+    "approved_assertion_count": 38,
+    "dedicated_evidence_count": 38,
+    "product_concept_count": 38,
+    "scent_identity_count": 15,
+    "pending_excluded_count": 4,
+    "max_scent_targets_per_product": 1,
+    "recommendation_assertion_count": 0,
+    "same_label_cross_type": {
+      "玫瑰": {
+        "HomeScent": "scent:home:7e29b8c11693",
+        "SignatureFragrance": "scent:signature:7280ec9e7052"
+      }
+    },
+    "retrieved_at_missing_count": 38,
+    "pilot_scent_id_reuse": {
+      "SignatureFragrance|杜桑": "scent:do_son",
+      "SignatureFragrance|奥费恩": "scent:orpheon",
+      "HomeScent|浆果香": "scent:baies"
+    }
+  },
+  "failures": []
+}

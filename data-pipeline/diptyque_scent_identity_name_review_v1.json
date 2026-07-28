@@ -1,0 +1,40 @@
+{
+  "source_candidate_count": 42,
+  "decision_counts": {
+    "pending_review": 4,
+    "approved": 38
+  },
+  "evidence_field_counts": {
+    "meta_description": 2,
+    "product_name": 2,
+    "fragrance": 20,
+    "pdp_short_description": 11,
+    "pdp_long_description": 5,
+    "description_text": 2
+  },
+  "scent_identity_type_counts": {
+    "HomeScent": 24,
+    "SignatureFragrance": 18
+  },
+  "same_label_cross_type": {
+    "玫瑰": [
+      "HomeScent",
+      "SignatureFragrance"
+    ]
+  },
+  "canonical_name_overrides": {
+    "EDTNERO100V1::橙花香调淡香水": "橙花香调",
+    "HOMESCO3::希腊无花果室内香氛蜡": "无花果",
+    "CAPSULES6::希腊无花果扩香器香氛补充包": "无花果",
+    "HOMEHGFOCARB2D::希腊无花果扩香精": "无花果",
+    "HOMEHGFOCARB2K::希腊无花果扩香精补充瓶": "无花果"
+  },
+  "prohibited_typed_identities": [
+    "HomeScent|希腊无花果"
+  ],
+  "publication_effect": {
+    "graph_edges_added": 0,
+    "frontend_records_changed": 0,
+    "approved_rows_published": 0
+  }
+}

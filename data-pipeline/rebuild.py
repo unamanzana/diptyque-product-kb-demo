@@ -23,6 +23,7 @@ def main() -> None:
     run(PIPELINE_ROOT / "clean_diptyque_products_v2.py", cwd=PIPELINE_ROOT)
     run(PIPELINE_ROOT / "export_diptyque_graph.py", cwd=PIPELINE_ROOT)
     run(PIPELINE_ROOT / "audit_diptyque_scent_concepts.py", cwd=PIPELINE_ROOT)
+    run(PIPELINE_ROOT / "build_diptyque_relationship_coverage_audit.py", cwd=PIPELINE_ROOT)
     run(REPO_ROOT / "scripts" / "build_diptyque_frontend_data.py", cwd=REPO_ROOT)
 
     print("\nDiptyque data pipeline rebuild completed.")

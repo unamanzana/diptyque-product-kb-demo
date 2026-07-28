@@ -10,6 +10,7 @@ const payload = JSON.parse(
   readFileSync(new URL("../src/data/diptyque-frontend-data.json", import.meta.url), "utf8")
 );
 const products = payload.products;
+const graphEdges = payload.graph.edges;
 const failures = [];
 
 function assertNames(label, actual, expected) {
@@ -150,9 +151,59 @@ for (const query of negativeGiftQueries) {
   if (isGiftRecommendationQuery(query)) failures.push({ label: "gift_intent_false_positive", query });
 }
 
+const productById = new Map(products.map((product) => [product.id, product]));
+const reviewedRecommendationEdges = graphEdges.filter((edge) =>
+  edge.evidenceType.includes("model_review")
+);
+if (reviewedRecommendationEdges.length !== 107) {
+  failures.push({
+    label: "reviewed_relation_count",
+    actual: reviewedRecommendationEdges.length,
+    expected: 107,
+  });
+}
+for (const edge of reviewedRecommendationEdges) {
+  if (edge.reviewStatus !== "approved") {
+    failures.push({ label: "reviewed_relation_not_approved", edge });
+  }
+  if (
+    edge.edgeType === "PAIRS_WITH"
+    && (edge.sourceName.includes("餐具清洁液") || edge.targetName.includes("餐具清洁液"))
+  ) {
+    failures.push({ label: "dishwashing_pairing_leak", edge });
+  }
+  if (
+    edge.edgeType === "PAIRS_WITH"
+    && (edge.sourceName.includes("玫瑰天竺葵") || edge.targetName.includes("玫瑰天竺葵"))
+  ) {
+    failures.push({ label: "rose_geranium_pairing_leak", edge });
+  }
+}
+
+function homeScentModality(form) {
+  if (form.includes("室内香氛蜡")) return "scented_wax";
+  if (form.includes("蜡烛")) return "candle";
+  if (form.includes("喷雾")) return "room_spray";
+  if (form.includes("扩香")) return "diffuser";
+  if (form.includes("线香")) return "incense";
+  return "";
+}
+
+for (const edge of reviewedRecommendationEdges.filter((item) => item.edgeType === "PAIRS_WITH")) {
+  const source = productById.get(edge.source);
+  const target = productById.get(edge.target);
+  if (source?.coreFamily !== "家居香氛" || target?.coreFamily !== "家居香氛") continue;
+  const sourceModality = homeScentModality(source.productForm);
+  const targetModality = homeScentModality(target.productForm);
+  if (!sourceModality || !targetModality || sourceModality === targetModality) {
+    failures.push({ label: "invalid_home_scent_pairing_modalities", edge });
+  }
+}
+
 console.log(`Gift intent cases: ${positiveGiftQueries.length + negativeGiftQueries.length}`);
 console.log(`Perfume candidates: ${perfumeCandidates.length}`);
 console.log(`Recommendation selection cases: 7`);
+console.log(`Reviewed recommendation edges: ${reviewedRecommendationEdges.length}`);
 console.log(`Audit failures: ${failures.length}`);
 
 if (failures.length) {

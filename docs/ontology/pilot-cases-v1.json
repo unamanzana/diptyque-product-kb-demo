@@ -1,0 +1,1759 @@
+{
+  "schemaVersion": "1.0.0-pilot",
+  "sourceSnapshot": {
+    "path": "C:\\Users\\potato\\Desktop\\diptyque-project-workspace\\diptyque_products.csv",
+    "rowCount": 370,
+    "sha256": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365"
+  },
+  "caseIds": [
+    "product:BODYLOTIONS1",
+    "product:CANDLEBAIESBN2",
+    "product:HOMERSP6",
+    "product:DECO00846"
+  ],
+  "caseSupportIds": [
+    "product:EDTDOSON"
+  ],
+  "caseSubstitution": {
+    "requested": "影中之水香氛蜡烛",
+    "result": "not_found_in_source",
+    "replacement": "product:CANDLEBAIESBN2",
+    "reason": "Use a real HomeScent candle instead of fabricating a product"
+  },
+  "entities": [
+    {
+      "id": "family:body_care",
+      "entityType": "CoreFamily",
+      "name": "身体护理",
+      "properties": {}
+    },
+    {
+      "id": "family:home_fragrance",
+      "entityType": "CoreFamily",
+      "name": "家居香氛",
+      "properties": {}
+    },
+    {
+      "id": "family:personal_fragrance",
+      "entityType": "CoreFamily",
+      "name": "个人香氛",
+      "properties": {}
+    },
+    {
+      "id": "family:art_home",
+      "entityType": "CoreFamily",
+      "name": "艺术家居",
+      "properties": {}
+    },
+    {
+      "id": "form:body_lotion",
+      "entityType": "ProductForm",
+      "name": "润肤乳",
+      "properties": {}
+    },
+    {
+      "id": "form:eau_de_toilette",
+      "entityType": "ProductForm",
+      "name": "淡香水",
+      "properties": {}
+    },
+    {
+      "id": "form:medium_candle",
+      "entityType": "ProductForm",
+      "name": "中号香氛蜡烛",
+      "properties": {}
+    },
+    {
+      "id": "form:solid_perfume",
+      "entityType": "ProductForm",
+      "name": "固体香膏",
+      "properties": {}
+    },
+    {
+      "id": "form:solid_perfume_refill",
+      "entityType": "ProductForm",
+      "name": "香膏补充装",
+      "properties": {}
+    },
+    {
+      "id": "form:candle_lid",
+      "entityType": "ProductForm",
+      "name": "烛盖和灭烛罩",
+      "properties": {}
+    },
+    {
+      "id": "product:BODYLOTIONS1",
+      "entityType": "ProductConcept",
+      "name": "杜桑香氛润肤乳",
+      "properties": {
+        "spu": "BODYLOTIONS1"
+      }
+    },
+    {
+      "id": "product:EDTDOSON",
+      "entityType": "ProductConcept",
+      "name": "杜桑淡香水",
+      "properties": {
+        "spu": "EDTDOSON"
+      }
+    },
+    {
+      "id": "product:CANDLEBAIESBN2",
+      "entityType": "ProductConcept",
+      "name": "中号香氛蜡烛-浆果香",
+      "properties": {
+        "spu": "CANDLEBAIESBN2"
+      }
+    },
+    {
+      "id": "product:HOMERSP6",
+      "entityType": "ProductConcept",
+      "name": "奥费恩 - 固体香膏",
+      "properties": {
+        "spu": "HOMERSP6"
+      }
+    },
+    {
+      "id": "product:SOLIDPERFUME7",
+      "entityType": "ProductConcept",
+      "name": "奥费恩香膏补充装",
+      "properties": {
+        "spu": "SOLIDPERFUME7"
+      }
+    },
+    {
+      "id": "product:DECO00846",
+      "entityType": "ProductConcept",
+      "name": "水墨画陶瓷烛盖 M",
+      "properties": {
+        "spu": "DECO00846"
+      }
+    },
+    {
+      "id": "sku:DOSBLOT",
+      "entityType": "SKU",
+      "name": "杜桑香氛润肤乳 200ML",
+      "properties": {
+        "skuCode": "DOSBLOT",
+        "capacity": 200,
+        "capacityUnit": "ML",
+        "specification": "200ML",
+        "packaging": null
+      }
+    },
+    {
+      "id": "sku:DOSON50V2",
+      "entityType": "SKU",
+      "name": "杜桑淡香水 50ML",
+      "properties": {
+        "skuCode": "DOSON50V2",
+        "capacity": 50,
+        "capacityUnit": "ML",
+        "specification": "50ML",
+        "packaging": null
+      }
+    },
+    {
+      "id": "sku:DOSON100V2",
+      "entityType": "SKU",
+      "name": "杜桑淡香水 100ML",
+      "properties": {
+        "skuCode": "DOSON100V2",
+        "capacity": 100,
+        "capacityUnit": "ML",
+        "specification": "100ML",
+        "packaging": null
+      }
+    },
+    {
+      "id": "sku:BN3",
+      "entityType": "SKU",
+      "name": "中号香氛蜡烛-浆果香 300G",
+      "properties": {
+        "skuCode": "BN3",
+        "capacity": 300,
+        "capacityUnit": "G",
+        "specification": "300G",
+        "packaging": null
+      }
+    },
+    {
+      "id": "sku:SOLIDEORPH",
+      "entityType": "SKU",
+      "name": "奥费恩固体香膏 3G",
+      "properties": {
+        "skuCode": "SOLIDEORPH",
+        "capacity": 3,
+        "capacityUnit": "G",
+        "specification": "3G",
+        "packaging": "可补充香膏盒"
+      }
+    },
+    {
+      "id": "sku:RSOLIDEORPH",
+      "entityType": "SKU",
+      "name": "奥费恩香膏补充装",
+      "properties": {
+        "skuCode": "RSOLIDEORPH",
+        "capacity": null,
+        "capacityUnit": null,
+        "specification": "两枚补充装",
+        "packaging": "替换内芯"
+      }
+    },
+    {
+      "id": "sku:DECO00846",
+      "entityType": "SKU",
+      "name": "水墨画陶瓷烛盖 M",
+      "properties": {
+        "skuCode": "DECO00846",
+        "capacity": null,
+        "capacityUnit": null,
+        "specification": "直径9cm / 高4cm",
+        "packaging": null
+      }
+    },
+    {
+      "id": "scent:do_son",
+      "entityType": "ScentIdentity",
+      "name": "杜桑",
+      "properties": {
+        "officialName": "杜桑",
+        "localizedName": "杜桑",
+        "aliases": [
+          "Do Son"
+        ],
+        "scentIdentityType": "SignatureFragrance"
+      }
+    },
+    {
+      "id": "scent:baies",
+      "entityType": "ScentIdentity",
+      "name": "浆果香",
+      "properties": {
+        "officialName": "浆果香",
+        "localizedName": "浆果香",
+        "aliases": [
+          "Baies",
+          "Berries"
+        ],
+        "scentIdentityType": "HomeScent"
+      }
+    },
+    {
+      "id": "scent:orpheon",
+      "entityType": "ScentIdentity",
+      "name": "奥费恩",
+      "properties": {
+        "officialName": "奥费恩",
+        "localizedName": "奥费恩",
+        "aliases": [
+          "Orpheon",
+          "Orphéon"
+        ],
+        "scentIdentityType": "SignatureFragrance"
+      }
+    },
+    {
+      "id": "note:tuberose",
+      "entityType": "NoteIngredient",
+      "name": "晚香玉",
+      "properties": {}
+    },
+    {
+      "id": "note:orange_blossom",
+      "entityType": "NoteIngredient",
+      "name": "橙花",
+      "properties": {}
+    },
+    {
+      "id": "note:jasmine",
+      "entityType": "NoteIngredient",
+      "name": "茉莉",
+      "properties": {}
+    },
+    {
+      "id": "note:blackcurrant_berry",
+      "entityType": "NoteIngredient",
+      "name": "黑醋栗浆果",
+      "properties": {}
+    },
+    {
+      "id": "note:rose",
+      "entityType": "NoteIngredient",
+      "name": "玫瑰",
+      "properties": {}
+    },
+    {
+      "id": "note:tonka_bean",
+      "entityType": "NoteIngredient",
+      "name": "零陵香豆",
+      "properties": {
+        "aliases": [
+          "香豆"
+        ]
+      }
+    },
+    {
+      "id": "note:cedar",
+      "entityType": "NoteIngredient",
+      "name": "雪松",
+      "properties": {}
+    },
+    {
+      "id": "note:juniper",
+      "entityType": "NoteIngredient",
+      "name": "杜松子",
+      "properties": {}
+    },
+    {
+      "id": "profile:fruity",
+      "entityType": "ScentProfile",
+      "name": "果香",
+      "properties": {
+        "canonicalName": "果香",
+        "aliases": [
+          "果香调"
+        ],
+        "definition": "官方文案明确归入果香调的香气感受",
+        "parentConcept": null,
+        "vocabularyStatus": "draft"
+      }
+    },
+    {
+      "id": "profile:green",
+      "entityType": "ScentProfile",
+      "name": "青绿",
+      "properties": {
+        "canonicalName": "青绿",
+        "aliases": [
+          "绿意芬芳"
+        ],
+        "definition": "官方文案明确描述叶片或青绿气息的香气感受",
+        "parentConcept": null,
+        "vocabularyStatus": "draft"
+      }
+    },
+    {
+      "id": "inspiration:do_son_vietnam_bay",
+      "entityType": "Inspiration",
+      "name": "夏日越南海湾",
+      "properties": {
+        "inspirationType": "place",
+        "description": "夏日里的越南海湾与潮湿热带气息中的晚香玉",
+        "placeName": "越南海湾",
+        "materialName": null
+      }
+    },
+    {
+      "id": "inspiration:orpheon_club",
+      "entityType": "Inspiration",
+      "name": "奥费恩俱乐部",
+      "properties": {
+        "inspirationType": "story",
+        "description": "三位创始人钟爱的聚会场所奥费恩俱乐部",
+        "placeName": "奥费恩俱乐部",
+        "materialName": null
+      }
+    },
+    {
+      "id": "function:moisturize",
+      "entityType": "Function",
+      "name": "润肤",
+      "properties": {
+        "canonicalName": "润肤",
+        "aliases": [],
+        "definition": "官方商品名称或文案明确表示的润肤功能",
+        "parentConcept": null,
+        "vocabularyStatus": "draft"
+      }
+    },
+    {
+      "id": "function:diffuse_scent",
+      "entityType": "Function",
+      "name": "扩香",
+      "properties": {
+        "canonicalName": "扩香",
+        "aliases": [],
+        "definition": "在空间中释放香气",
+        "parentConcept": null,
+        "vocabularyStatus": "draft"
+      }
+    },
+    {
+      "id": "scene:medium_large_room",
+      "entityType": "UseScene",
+      "name": "中型及大型房间",
+      "properties": {
+        "canonicalName": "中型及大型房间",
+        "aliases": [],
+        "definition": "官方特性明确声明适用的空间尺度",
+        "parentConcept": "室内空间",
+        "vocabularyStatus": "draft"
+      }
+    },
+    {
+      "id": "care:candle_first_burn",
+      "entityType": "CareInstruction",
+      "name": "首次燃烧2-3小时",
+      "properties": {
+        "instructionType": "first_burn",
+        "text": "第一次燃烧时持续燃烧2-3小时，使蜡烛表面完全液化"
+      }
+    },
+    {
+      "id": "care:candle_trim_wick",
+      "entityType": "CareInstruction",
+      "name": "修剪烛芯至3-5mm",
+      "properties": {
+        "instructionType": "trim_wick",
+        "text": "定期修剪烛芯至3-5mm"
+      }
+    },
+    {
+      "id": "care:candle_center_wick",
+      "entityType": "CareInstruction",
+      "name": "保持烛芯直立居中",
+      "properties": {
+        "instructionType": "center_wick",
+        "text": "每次使用后将烛芯调整至直立并处于中央"
+      }
+    },
+    {
+      "id": "care:candle_supervision",
+      "entityType": "CareInstruction",
+      "name": "燃烧时不得无人照看",
+      "properties": {
+        "instructionType": "safety",
+        "text": "请勿将燃烧中的蜡烛遗留在无人照看的场所"
+      }
+    },
+    {
+      "id": "care:lid_cleaning",
+      "entityType": "CareInstruction",
+      "name": "皂液与软布清洁",
+      "properties": {
+        "instructionType": "cleaning",
+        "text": "建议用皂液及软布清洁"
+      }
+    },
+    {
+      "id": "usage:orpheon_warm_points",
+      "entityType": "UsageInstruction",
+      "name": "涂抹身体温热处",
+      "properties": {
+        "text": "将香膏轻点在颈部、耳后、手腕等身体较为温热的位置"
+      }
+    },
+    {
+      "id": "material:colored_glass",
+      "entityType": "Material",
+      "name": "彩色玻璃",
+      "properties": {}
+    },
+    {
+      "id": "material:ceramic",
+      "entityType": "Material",
+      "name": "陶瓷",
+      "properties": {}
+    },
+    {
+      "id": "material:mixed_clay",
+      "entityType": "Material",
+      "name": "混合粘土",
+      "properties": {}
+    },
+    {
+      "id": "craft:hand_blown_glass",
+      "entityType": "CraftTechnique",
+      "name": "手工吹制玻璃",
+      "properties": {}
+    },
+    {
+      "id": "craft:ng_porcelanas",
+      "entityType": "CraftTechnique",
+      "name": "NG Porcelanas瓷器工艺",
+      "properties": {}
+    },
+    {
+      "id": "compat:candle_300g",
+      "entityType": "CompatibilitySpec",
+      "name": "300g蜡烛",
+      "properties": {
+        "specType": "candle_weight",
+        "value": 300,
+        "unit": "G"
+      }
+    }
+  ],
+  "assertions": [
+    {
+      "id": "a:family_personal_form_edt",
+      "subjectId": "family:personal_fragrance",
+      "predicate": "HAS_PRODUCT_FORM",
+      "objectId": "form:eau_de_toilette",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "catalog",
+      "evidenceIds": [
+        "e:doson_edt_50",
+        "e:doson_edt_100"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official category"
+    },
+    {
+      "id": "a:form_edt_product_doson",
+      "subjectId": "form:eau_de_toilette",
+      "predicate": "HAS_PRODUCT",
+      "objectId": "product:EDTDOSON",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "catalog",
+      "evidenceIds": [
+        "e:doson_edt_50",
+        "e:doson_edt_100"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Both SKU rows share the same SPU and product name"
+    },
+    {
+      "id": "a:doson_edt_sku_50",
+      "subjectId": "product:EDTDOSON",
+      "predicate": "HAS_SKU",
+      "objectId": "sku:DOSON50V2",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "catalog",
+      "evidenceIds": [
+        "e:doson_edt_50"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Explicit SPU, SKU, and size"
+    },
+    {
+      "id": "a:doson_edt_sku_100",
+      "subjectId": "product:EDTDOSON",
+      "predicate": "HAS_SKU",
+      "objectId": "sku:DOSON100V2",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "catalog",
+      "evidenceIds": [
+        "e:doson_edt_100"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Explicit SPU, SKU, and size"
+    },
+    {
+      "id": "a:doson_edt_scent",
+      "subjectId": "product:EDTDOSON",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:do_son",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:doson_edt_50",
+        "e:doson_edt_100"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official category identifies 杜桑 for both SKUs"
+    },
+    {
+      "id": "a:family_body_form_lotion",
+      "subjectId": "family:body_care",
+      "predicate": "HAS_PRODUCT_FORM",
+      "objectId": "form:body_lotion",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "catalog",
+      "evidenceIds": [
+        "e:doson_identity"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official category and product form"
+    },
+    {
+      "id": "a:form_lotion_product_doson",
+      "subjectId": "form:body_lotion",
+      "predicate": "HAS_PRODUCT",
+      "objectId": "product:BODYLOTIONS1",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "catalog",
+      "evidenceIds": [
+        "e:doson_identity"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official product name and category"
+    },
+    {
+      "id": "a:doson_product_sku",
+      "subjectId": "product:BODYLOTIONS1",
+      "predicate": "HAS_SKU",
+      "objectId": "sku:DOSBLOT",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "catalog",
+      "evidenceIds": [
+        "e:doson_identity"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Explicit SKU and size"
+    },
+    {
+      "id": "a:doson_product_scent",
+      "subjectId": "product:BODYLOTIONS1",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:do_son",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:doson_identity"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official fragrance field and product page identity agree"
+    },
+    {
+      "id": "a:doson_note_tuberose",
+      "subjectId": "scent:do_son",
+      "predicate": "HAS_NOTE",
+      "objectId": "note:tuberose",
+      "objectValue": null,
+      "qualifiers": {
+        "noteRole": "primary"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:doson_short"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official copy leads with tuberose"
+    },
+    {
+      "id": "a:doson_note_orange",
+      "subjectId": "scent:do_son",
+      "predicate": "HAS_NOTE",
+      "objectId": "note:orange_blossom",
+      "objectValue": null,
+      "qualifiers": {
+        "noteRole": "secondary"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:doson_short"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official copy describes orange blossom as accompanying"
+    },
+    {
+      "id": "a:doson_note_jasmine",
+      "subjectId": "scent:do_son",
+      "predicate": "HAS_NOTE",
+      "objectId": "note:jasmine",
+      "objectValue": null,
+      "qualifiers": {
+        "noteRole": "secondary"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:doson_short"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official copy describes jasmine as accompanying"
+    },
+    {
+      "id": "a:doson_inspiration",
+      "subjectId": "scent:do_son",
+      "predicate": "HAS_INSPIRATION",
+      "objectId": "inspiration:do_son_vietnam_bay",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:doson_long"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official long description names the inspiration setting"
+    },
+    {
+      "id": "a:doson_function",
+      "subjectId": "product:BODYLOTIONS1",
+      "predicate": "HAS_FUNCTION",
+      "objectId": "function:moisturize",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:doson_identity"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 0.95,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official Chinese product name explicitly identifies lotion function"
+    },
+    {
+      "id": "a:family_home_form_candle",
+      "subjectId": "family:home_fragrance",
+      "predicate": "HAS_PRODUCT_FORM",
+      "objectId": "form:medium_candle",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "catalog",
+      "evidenceIds": [
+        "e:baies_identity"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official category"
+    },
+    {
+      "id": "a:form_candle_product_baies",
+      "subjectId": "form:medium_candle",
+      "predicate": "HAS_PRODUCT",
+      "objectId": "product:CANDLEBAIESBN2",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "catalog",
+      "evidenceIds": [
+        "e:baies_identity"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official category and name"
+    },
+    {
+      "id": "a:baies_product_sku",
+      "subjectId": "product:CANDLEBAIESBN2",
+      "predicate": "HAS_SKU",
+      "objectId": "sku:BN3",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "catalog",
+      "evidenceIds": [
+        "e:baies_characteristics"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Explicit SKU and 300g size"
+    },
+    {
+      "id": "a:baies_product_scent",
+      "subjectId": "product:CANDLEBAIESBN2",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:baies",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:baies_identity"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official name and category identify the HomeScent"
+    },
+    {
+      "id": "a:baies_profile_fruity",
+      "subjectId": "scent:baies",
+      "predicate": "HAS_PROFILE",
+      "objectId": "profile:fruity",
+      "objectValue": null,
+      "qualifiers": {
+        "sourceValue": "果香调"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:baies_profile"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "controlled_vocabulary_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official subtitle is a scent profile, not an ingredient"
+    },
+    {
+      "id": "a:baies_note_blackcurrant",
+      "subjectId": "scent:baies",
+      "predicate": "HAS_NOTE",
+      "objectId": "note:blackcurrant_berry",
+      "objectValue": null,
+      "qualifiers": {
+        "noteRole": "unspecified"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:baies_short"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official copy explicitly mentions blackcurrant berries"
+    },
+    {
+      "id": "a:baies_profile_green",
+      "subjectId": "scent:baies",
+      "predicate": "HAS_PROFILE",
+      "objectId": "profile:green",
+      "objectValue": null,
+      "qualifiers": {
+        "sourceValue": "叶片的绿意芬芳"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:baies_short"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "controlled_vocabulary_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official copy describes a green scent impression without naming a specific leaf ingredient"
+    },
+    {
+      "id": "a:baies_note_rose",
+      "subjectId": "scent:baies",
+      "predicate": "HAS_NOTE",
+      "objectId": "note:rose",
+      "objectValue": null,
+      "qualifiers": {
+        "noteRole": "unspecified"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:baies_short"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official copy explicitly mentions rose"
+    },
+    {
+      "id": "a:baies_function",
+      "subjectId": "product:CANDLEBAIESBN2",
+      "predicate": "HAS_FUNCTION",
+      "objectId": "function:diffuse_scent",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:baies_characteristics"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official characteristics describe scent diffusion and timing"
+    },
+    {
+      "id": "a:baies_scene",
+      "subjectId": "product:CANDLEBAIESBN2",
+      "predicate": "HAS_SCENE",
+      "objectId": "scene:medium_large_room",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:baies_characteristics"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "controlled_vocabulary_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official characteristics explicitly state suitable room size"
+    },
+    {
+      "id": "a:baies_material",
+      "subjectId": "product:CANDLEBAIESBN2",
+      "predicate": "HAS_MATERIAL",
+      "objectId": "material:colored_glass",
+      "objectValue": null,
+      "qualifiers": {
+        "component": "烛杯"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:baies_long"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official copy describes colored glass candle vessel"
+    },
+    {
+      "id": "a:baies_craft",
+      "subjectId": "product:CANDLEBAIESBN2",
+      "predicate": "HAS_CRAFT",
+      "objectId": "craft:hand_blown_glass",
+      "objectValue": null,
+      "qualifiers": {
+        "component": "烛杯"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:baies_long"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official copy explicitly says hand-blown"
+    },
+    {
+      "id": "a:baies_care_first",
+      "subjectId": "product:CANDLEBAIESBN2",
+      "predicate": "HAS_CARE_INSTRUCTION",
+      "objectId": "care:candle_first_burn",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:baies_usage"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official usage instruction"
+    },
+    {
+      "id": "a:baies_care_trim",
+      "subjectId": "product:CANDLEBAIESBN2",
+      "predicate": "HAS_CARE_INSTRUCTION",
+      "objectId": "care:candle_trim_wick",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:baies_usage"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official usage instruction"
+    },
+    {
+      "id": "a:baies_care_center",
+      "subjectId": "product:CANDLEBAIESBN2",
+      "predicate": "HAS_CARE_INSTRUCTION",
+      "objectId": "care:candle_center_wick",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:baies_usage"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official usage instruction"
+    },
+    {
+      "id": "a:baies_care_safety",
+      "subjectId": "product:CANDLEBAIESBN2",
+      "predicate": "HAS_CARE_INSTRUCTION",
+      "objectId": "care:candle_supervision",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:baies_characteristics"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official safety characteristic"
+    },
+    {
+      "id": "a:family_personal_form_solid",
+      "subjectId": "family:personal_fragrance",
+      "predicate": "HAS_PRODUCT_FORM",
+      "objectId": "form:solid_perfume",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "catalog",
+      "evidenceIds": [
+        "e:orpheon_identity"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official category"
+    },
+    {
+      "id": "a:family_personal_form_refill",
+      "subjectId": "family:personal_fragrance",
+      "predicate": "HAS_PRODUCT_FORM",
+      "objectId": "form:solid_perfume_refill",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "catalog",
+      "evidenceIds": [
+        "e:orpheon_refill_identity"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Explicit refill product identity"
+    },
+    {
+      "id": "a:form_solid_product_orpheon",
+      "subjectId": "form:solid_perfume",
+      "predicate": "HAS_PRODUCT",
+      "objectId": "product:HOMERSP6",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "catalog",
+      "evidenceIds": [
+        "e:orpheon_identity"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official name and category"
+    },
+    {
+      "id": "a:form_refill_product_orpheon",
+      "subjectId": "form:solid_perfume_refill",
+      "predicate": "HAS_PRODUCT",
+      "objectId": "product:SOLIDPERFUME7",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "catalog",
+      "evidenceIds": [
+        "e:orpheon_refill_identity"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official name and refill usage"
+    },
+    {
+      "id": "a:orpheon_product_sku",
+      "subjectId": "product:HOMERSP6",
+      "predicate": "HAS_SKU",
+      "objectId": "sku:SOLIDEORPH",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "catalog",
+      "evidenceIds": [
+        "e:orpheon_identity"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Explicit SKU"
+    },
+    {
+      "id": "a:orpheon_refill_sku",
+      "subjectId": "product:SOLIDPERFUME7",
+      "predicate": "HAS_SKU",
+      "objectId": "sku:RSOLIDEORPH",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "catalog",
+      "evidenceIds": [
+        "e:orpheon_refill_identity"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Explicit refill SKU"
+    },
+    {
+      "id": "a:orpheon_product_scent",
+      "subjectId": "product:HOMERSP6",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:orpheon",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:orpheon_identity"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official name and category identify the scent"
+    },
+    {
+      "id": "a:orpheon_refill_scent",
+      "subjectId": "product:SOLIDPERFUME7",
+      "predicate": "HAS_SCENT",
+      "objectId": "scent:orpheon",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:orpheon_refill_identity"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official refill name and category identify the scent"
+    },
+    {
+      "id": "a:orpheon_note_tonka",
+      "subjectId": "scent:orpheon",
+      "predicate": "HAS_NOTE",
+      "objectId": "note:tonka_bean",
+      "objectValue": null,
+      "qualifiers": {
+        "noteRole": "unspecified"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:orpheon_long"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official copy"
+    },
+    {
+      "id": "a:orpheon_note_cedar",
+      "subjectId": "scent:orpheon",
+      "predicate": "HAS_NOTE",
+      "objectId": "note:cedar",
+      "objectValue": null,
+      "qualifiers": {
+        "noteRole": "unspecified"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:orpheon_long"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official copy"
+    },
+    {
+      "id": "a:orpheon_note_juniper",
+      "subjectId": "scent:orpheon",
+      "predicate": "HAS_NOTE",
+      "objectId": "note:juniper",
+      "objectValue": null,
+      "qualifiers": {
+        "noteRole": "unspecified"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:orpheon_long"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official copy"
+    },
+    {
+      "id": "a:orpheon_note_jasmine",
+      "subjectId": "scent:orpheon",
+      "predicate": "HAS_NOTE",
+      "objectId": "note:jasmine",
+      "objectValue": null,
+      "qualifiers": {
+        "noteRole": "unspecified"
+      },
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:orpheon_identity"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official subtitle"
+    },
+    {
+      "id": "a:orpheon_inspiration",
+      "subjectId": "scent:orpheon",
+      "predicate": "HAS_INSPIRATION",
+      "objectId": "inspiration:orpheon_club",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:orpheon_short"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official short description"
+    },
+    {
+      "id": "a:orpheon_usage",
+      "subjectId": "product:HOMERSP6",
+      "predicate": "HAS_USAGE_INSTRUCTION",
+      "objectId": "usage:orpheon_warm_points",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:orpheon_usage"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official usage instruction"
+    },
+    {
+      "id": "a:orpheon_refill_for",
+      "subjectId": "sku:RSOLIDEORPH",
+      "predicate": "REFILL_FOR",
+      "objectId": "sku:SOLIDEORPH",
+      "objectValue": null,
+      "qualifiers": {
+        "refillCount": 2
+      },
+      "relationLayer": "factual_compatibility",
+      "evidenceIds": [
+        "e:orpheon_usage",
+        "e:orpheon_refill_usage"
+      ],
+      "supportingAssertionIds": [
+        "a:orpheon_product_scent",
+        "a:orpheon_refill_scent"
+      ],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Both official product pages explicitly describe the refill relationship"
+    },
+    {
+      "id": "a:family_art_form_lid",
+      "subjectId": "family:art_home",
+      "predicate": "HAS_PRODUCT_FORM",
+      "objectId": "form:candle_lid",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "catalog",
+      "evidenceIds": [
+        "e:lid_identity"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official category"
+    },
+    {
+      "id": "a:form_lid_product",
+      "subjectId": "form:candle_lid",
+      "predicate": "HAS_PRODUCT",
+      "objectId": "product:DECO00846",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "catalog",
+      "evidenceIds": [
+        "e:lid_identity"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official name and category"
+    },
+    {
+      "id": "a:lid_product_sku",
+      "subjectId": "product:DECO00846",
+      "predicate": "HAS_SKU",
+      "objectId": "sku:DECO00846",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "catalog",
+      "evidenceIds": [
+        "e:lid_characteristics"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Explicit SKU and dimensions"
+    },
+    {
+      "id": "a:lid_material_ceramic",
+      "subjectId": "product:DECO00846",
+      "predicate": "HAS_MATERIAL",
+      "objectId": "material:ceramic",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:lid_long",
+        "e:lid_characteristics"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official description and characteristics"
+    },
+    {
+      "id": "a:lid_material_clay",
+      "subjectId": "product:DECO00846",
+      "predicate": "HAS_MATERIAL",
+      "objectId": "material:mixed_clay",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:lid_short"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official short description"
+    },
+    {
+      "id": "a:lid_craft",
+      "subjectId": "product:DECO00846",
+      "predicate": "HAS_CRAFT",
+      "objectId": "craft:ng_porcelanas",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:lid_craft"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official savoir-faire text"
+    },
+    {
+      "id": "a:lid_care",
+      "subjectId": "product:DECO00846",
+      "predicate": "HAS_CARE_INSTRUCTION",
+      "objectId": "care:lid_cleaning",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "fact",
+      "evidenceIds": [
+        "e:lid_usage"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official cleaning instruction"
+    },
+    {
+      "id": "a:lid_compat_spec",
+      "subjectId": "product:DECO00846",
+      "predicate": "ACCESSORY_FOR_SPEC",
+      "objectId": "compat:candle_300g",
+      "objectValue": null,
+      "qualifiers": {},
+      "relationLayer": "factual_compatibility",
+      "evidenceIds": [
+        "e:lid_characteristics"
+      ],
+      "supportingAssertionIds": [],
+      "generationMethod": "source_mapping",
+      "confidence": 1,
+      "reviewStatus": "approved",
+      "reviewer": "source_audit",
+      "decisionReason": "Official characteristics explicitly state 300g candle compatibility"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "e:doson_edt_50",
+      "sourceType": "official_product_page",
+      "pageName": "杜桑淡香水 50ML",
+      "url": "https://www.diptyque-cn.com/p/eau-de-toilette-do-son-50ml-2.html",
+      "sourceField": "name|spu|sku|sizes|category_names|subtitle",
+      "excerpt": "杜桑淡香水；EDTDOSON；DOSON50V2；50ML；个人香氛 | 杜桑 | 淡香水；晚香玉、橙花、茉莉、海洋香调",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "e:doson_edt_100",
+      "sourceType": "official_product_page",
+      "pageName": "杜桑淡香水 100ML",
+      "url": "https://www.diptyque-cn.com/p/do-son-eau-de-toilette-1.html",
+      "sourceField": "name|spu|sku|sizes|category_names|subtitle",
+      "excerpt": "杜桑淡香水；EDTDOSON；DOSON100V2；100ML；个人香氛 | 杜桑 | 淡香水；晚香玉、橙花、茉莉、海洋香调",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "e:doson_identity",
+      "sourceType": "official_product_page",
+      "pageName": "杜桑香氛润肤乳",
+      "url": "https://www.diptyque-cn.com/p/doson-hand-and-body-lotion-1.html",
+      "sourceField": "name|fragrance|category_names|sku|sizes",
+      "excerpt": "杜桑香氛润肤乳；fragrance=杜桑；身体护肤；DOSBLOT；200ML",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "e:doson_short",
+      "sourceType": "official_product_page",
+      "pageName": "杜桑香氛润肤乳",
+      "url": "https://www.diptyque-cn.com/p/doson-hand-and-body-lotion-1.html",
+      "sourceField": "pdp_short_description",
+      "excerpt": "晚香玉的芬芳令人联想起日落时分，洁白的花朵在暮色中摇曳生姿。搭配着茉莉和橙花的香气。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "e:doson_long",
+      "sourceType": "official_product_page",
+      "pageName": "杜桑香氛润肤乳",
+      "url": "https://www.diptyque-cn.com/p/doson-hand-and-body-lotion-1.html",
+      "sourceField": "pdp_long_description",
+      "excerpt": "仿佛置身于夏日里的越南海湾，朵朵浪花为潮湿的热带气息带去一丝清凉的同时，亦送上了新鲜迷人的晚香玉花香。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "e:baies_identity",
+      "sourceType": "official_product_page",
+      "pageName": "中号香氛蜡烛-浆果香",
+      "url": "https://www.diptyque-cn.com/p/bougie-baie-berries-remavp.html",
+      "sourceField": "name|category_names|sku|sizes",
+      "excerpt": "中号香氛蜡烛-浆果香；家居香氛 | 浆果香；BN3；300G",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "e:baies_profile",
+      "sourceType": "official_product_page",
+      "pageName": "中号香氛蜡烛-浆果香",
+      "url": "https://www.diptyque-cn.com/p/bougie-baie-berries-remavp.html",
+      "sourceField": "subtitle",
+      "excerpt": "果香调",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "e:baies_short",
+      "sourceType": "official_product_page",
+      "pageName": "中号香氛蜡烛-浆果香",
+      "url": "https://www.diptyque-cn.com/p/bougie-baie-berries-remavp.html",
+      "sourceField": "pdp_short_description",
+      "excerpt": "初摘下的黑醋栗浆果满含酸涩清新的气息。几串黑色浆果带着叶片的绿意芬芳，与玫瑰的动人花香融合。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "e:baies_long",
+      "sourceType": "official_product_page",
+      "pageName": "中号香氛蜡烛-浆果香",
+      "url": "https://www.diptyque-cn.com/p/bougie-baie-berries-remavp.html",
+      "sourceField": "pdp_long_description",
+      "excerpt": "手工吹制的彩色玻璃烛杯中，隐约透出微微烛光。浆果香氛蜡烛诉说着花朵与果实融合的和谐篇章。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "e:baies_usage",
+      "sourceType": "official_usage_guide",
+      "pageName": "中号香氛蜡烛-浆果香",
+      "url": "https://www.diptyque-cn.com/p/bougie-baie-berries-remavp.html",
+      "sourceField": "usage_tips_text",
+      "excerpt": "第一次燃烧蜡烛时，请确保持续燃烧2-3小时，使蜡烛表面完全液化。用烛芯修剪器定期修剪烛芯至3-5mm。每次使用后将烛芯调整至直立状态并处于中央位置。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "e:baies_characteristics",
+      "sourceType": "official_product_page",
+      "pageName": "中号香氛蜡烛-浆果香",
+      "url": "https://www.diptyque-cn.com/p/bougie-baie-berries-remavp.html",
+      "sourceField": "caracteristics_text",
+      "excerpt": "适合中型及大型房间；香气渐进而持久（约20分钟后达到理想效果）；请勿将燃烧中的蜡烛遗留在无人照看的场所；容量300g；燃烧时间约75小时。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "e:orpheon_identity",
+      "sourceType": "official_product_page",
+      "pageName": "奥费恩 - 固体香膏",
+      "url": "https://www.diptyque-cn.com/p/orpheon-refillable-solid-perfume.html",
+      "sourceField": "name|subtitle|category_names|sku|sizes",
+      "excerpt": "奥费恩 - 固体香膏；杜松子、雪松、零陵香豆、茉莉；个人香氛 | 奥费恩 | 香膏；SOLIDEORPH；3G",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "e:orpheon_short",
+      "sourceType": "official_scent_story",
+      "pageName": "奥费恩 - 固体香膏",
+      "url": "https://www.diptyque-cn.com/p/orpheon-refillable-solid-perfume.html",
+      "sourceField": "pdp_short_description",
+      "excerpt": "奥费恩香膏宛如时间胶囊，带领我们进入三位创始人钟爱的聚会场所奥费恩俱乐部。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "e:orpheon_long",
+      "sourceType": "official_product_page",
+      "pageName": "奥费恩 - 固体香膏",
+      "url": "https://www.diptyque-cn.com/p/orpheon-refillable-solid-perfume.html",
+      "sourceField": "pdp_long_description",
+      "excerpt": "用指尖将香膏涂抹在肌肤上，带出香豆的热情、雪松的深沉与杜松子的灵动。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "e:orpheon_usage",
+      "sourceType": "official_usage_guide",
+      "pageName": "奥费恩 - 固体香膏",
+      "url": "https://www.diptyque-cn.com/p/orpheon-refillable-solid-perfume.html",
+      "sourceField": "usage_tips_text",
+      "excerpt": "将香膏轻点在身体较为温热的几处：颈部、耳后、手腕的位置。每款香型均配有补充装。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "e:orpheon_refill_identity",
+      "sourceType": "official_product_page",
+      "pageName": "奥费恩香膏补充装",
+      "url": "https://www.diptyque-cn.com/p/orpheon-refills-for-solid-perfume.html",
+      "sourceField": "name|fragrance|sku|variant",
+      "excerpt": "奥费恩香膏补充装；fragrance=奥费恩；RSOLIDEORPH；补充装",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "e:orpheon_refill_usage",
+      "sourceType": "official_usage_guide",
+      "pageName": "奥费恩香膏补充装",
+      "url": "https://www.diptyque-cn.com/p/orpheon-refills-for-solid-perfume.html",
+      "sourceField": "usage_tips_text",
+      "excerpt": "内含两枚香膏补充装，可替换使用两次。将附赠工具对准外盒背部小圆孔，将香膏内芯推出并置入补充装。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "e:lid_identity",
+      "sourceType": "official_product_page",
+      "pageName": "水墨画陶瓷烛盖 M",
+      "url": "https://www.diptyque-cn.com/p/lanscape-lid-300g-candle-deco00846.html",
+      "sourceField": "name|category_names|sku",
+      "excerpt": "水墨画陶瓷烛盖 M；烛盖和灭烛罩 | 艺术家居 | 蜡烛配件；DECO00846",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "e:lid_short",
+      "sourceType": "official_product_page",
+      "pageName": "水墨画陶瓷烛盖 M",
+      "url": "https://www.diptyque-cn.com/p/lanscape-lid-300g-candle-deco00846.html",
+      "sourceField": "pdp_short_description",
+      "excerpt": "混合粘土制成，每一件都呈现独一无二的纹理。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "e:lid_long",
+      "sourceType": "official_product_page",
+      "pageName": "水墨画陶瓷烛盖 M",
+      "url": "https://www.diptyque-cn.com/p/lanscape-lid-300g-candle-deco00846.html",
+      "sourceField": "pdp_long_description",
+      "excerpt": "素面陶瓷作品由混合粘土烧造而成，纹理独特随机。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "e:lid_usage",
+      "sourceType": "official_usage_guide",
+      "pageName": "水墨画陶瓷烛盖 M",
+      "url": "https://www.diptyque-cn.com/p/lanscape-lid-300g-candle-deco00846.html",
+      "sourceField": "usage_tips_text",
+      "excerpt": "建议用皂液及软布清洁。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "e:lid_craft",
+      "sourceType": "official_product_page",
+      "pageName": "水墨画陶瓷烛盖 M",
+      "url": "https://www.diptyque-cn.com/p/lanscape-lid-300g-candle-deco00846.html",
+      "sourceField": "savoir_faire_text",
+      "excerpt": "NG Porcelanas工坊位于葡萄牙北部阿威罗，专注于欧洲优质瓷器作品的创作，并为Diptyque打造餐具及装饰作品。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    },
+    {
+      "id": "e:lid_characteristics",
+      "sourceType": "official_product_page",
+      "pageName": "水墨画陶瓷烛盖 M",
+      "url": "https://www.diptyque-cn.com/p/lanscape-lid-300g-candle-deco00846.html",
+      "sourceField": "caracteristics_text",
+      "excerpt": "搭配：300g蜡烛；材质：陶瓷；重量：70g；尺寸：直径9cm / 高4cm。",
+      "sourceHash": "C6FE953F463933EDADAEE16C84D8FB65D156570CAEAE116C792003D8256EC365",
+      "retrievedAt": null,
+      "validFrom": null,
+      "validTo": null
+    }
+  ]
+}

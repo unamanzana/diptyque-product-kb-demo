@@ -223,9 +223,21 @@ export function extractScentCatalogTerm(query: string, vocabulary: string[]) {
 }
 
 export function productMatchesScentCatalogTerm(
-  product: { noteFamilies: string[]; scentConcepts: string[] },
+  product: {
+    noteFamilies: string[];
+    scentConcepts: string[];
+    scentIdentities?: Array<{ aliases?: string[]; name: string }>;
+  },
   term: string
 ) {
+  if (product.scentIdentities?.length) {
+    const normalizedLiteralTerm = normalizeQueryText(term);
+    return product.scentIdentities.some((identity) =>
+      [identity.name, ...(identity.aliases ?? [])].some(
+        (value) => normalizeQueryText(value) === normalizedLiteralTerm
+      )
+    );
+  }
   const normalizedTerm = normalizeScentCatalogTerm(term);
   return [...product.scentConcepts, ...product.noteFamilies].some(
     (value) => normalizeScentCatalogTerm(value) === normalizedTerm

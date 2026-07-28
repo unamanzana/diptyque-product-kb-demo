@@ -1,4 +1,4 @@
-import frontendData from "@/data/diptyque-frontend-data.json";
+import frontendData from "@/data/diptyque-frontend-payload";
 import {
   extractProductCatalogScope,
   extractScentCatalogTerm,
@@ -29,6 +29,20 @@ type FrontendProduct = {
   productForm: string;
   scentAccords: string[];
   scentConcepts: string[];
+  scentIdentities?: Array<{
+    aliases?: string[];
+    id: string;
+    name: string;
+    scentIdentityType: string;
+  }>;
+  semanticFacts?: {
+    functions: string[];
+    scenes: string[];
+    userNeeds: string[];
+    careInstructions: string[];
+    semanticMaterials: string[];
+    craftTechniques: string[];
+  };
   scentProfiles: string[];
   skuCount: number;
   skus: FrontendSku[];
@@ -152,6 +166,8 @@ function productTerms(product: FrontendProduct) {
     ...product.scentProfiles,
     ...product.scentAccords,
     ...product.scentConcepts,
+    ...(product.scentIdentities ?? []).flatMap((identity) => [identity.name, ...(identity.aliases ?? [])]),
+    ...Object.values(product.semanticFacts ?? {}).flat(),
     ...product.noteFamilies,
     ...subtitleNotes(product),
   ]);
@@ -201,7 +217,11 @@ function sortProducts(query: string) {
 }
 
 const scentCatalogVocabulary = uniq(
-  products.flatMap((product) => [...product.scentConcepts, ...product.noteFamilies])
+  products.flatMap((product) =>
+    product.scentIdentities?.length
+      ? product.scentIdentities.flatMap((identity) => [identity.name, ...(identity.aliases ?? [])])
+      : [...product.scentConcepts, ...product.noteFamilies]
+  )
 );
 const productCatalogVocabulary = {
   coreFamilies: uniq(products.map((product) => product.coreFamily)),
@@ -293,6 +313,7 @@ function productSummary(product: FrontendProduct, includeNarrative = true) {
     `Scent profiles: ${product.scentProfiles.join(" / ") || "none"}`,
     `Scent accords: ${product.scentAccords.join(" / ") || "none"}`,
     `Scent concepts: ${product.scentConcepts.join(" / ") || "none"}`,
+    `Scent identities: ${(product.scentIdentities ?? []).map((identity) => `${identity.scentIdentityType}:${identity.name}`).join(" / ") || "none"}`,
     `Note families: ${product.noteFamilies.join(" / ") || "none"}`,
     `Subtitle notes: ${subtitleNotes(product).join(" / ") || "none"}`,
     `Sizes: ${product.sizes.join(" / ") || "none"}`,

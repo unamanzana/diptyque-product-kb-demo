@@ -362,10 +362,11 @@
 #graph-svg .graph-node.selected-filter .graph-node-label,
 #graph-svg .graph-node.dragging-node .graph-node-label { opacity: 1 !important; }
 #graph-svg .graph-link-label { opacity: 0 !important; }
-#graph-svg .graph-link-label.product-relation-label { opacity: 0.88 !important; font-weight: 600; paint-order: stroke; stroke: rgba(255, 255, 255, 0.94); stroke-width: 3px; }
+#graph-svg .graph-link-label.product-relation-label { font-weight: 600; paint-order: stroke; stroke: rgba(255, 255, 255, 0.94); stroke-width: 3px; }
 #graph-svg .graph-edge.dimmed-relation .graph-link-label { opacity: 0 !important; }
 #graph-svg .graph-edge.answer-relation .graph-link-label,
-#graph-svg .graph-edge.selected-relation .graph-link-label { opacity: 1 !important; }
+#graph-svg .graph-edge.selected-relation .graph-link-label,
+#graph-svg .graph-edge.hover-relation .graph-link-label { opacity: 1 !important; }
 #graph-svg .graph-edge.answer-relation .graph-link { stroke-width: 1.8px; }
 #graph-svg .graph-edge.dimmed-relation .graph-link { opacity: 0.08; }
 #graph-svg .graph-link-label { cursor: pointer; pointer-events: all; }
@@ -753,6 +754,34 @@ body {
   fill: #817965 !important;
 }
 
+#graph-svg .graph-node.node-type-SemanticDomain circle:last-of-type {
+  fill: #2f2e2b !important;
+}
+
+#graph-svg .graph-node.node-type-Function circle:last-of-type {
+  fill: #b46a3c !important;
+}
+
+#graph-svg .graph-node.node-type-UseScene circle:last-of-type {
+  fill: #527792 !important;
+}
+
+#graph-svg .graph-node.node-type-UserNeed circle:last-of-type {
+  fill: #9b5570 !important;
+}
+
+#graph-svg .graph-node.node-type-CareInstruction circle:last-of-type,
+#graph-svg .graph-node.node-type-UsageInstruction circle:last-of-type {
+  fill: #74665b !important;
+}
+
+#graph-svg .graph-node.node-type-Material circle:last-of-type {
+  fill: #817965 !important;
+}
+
+#graph-svg .graph-node.node-type-CraftTechnique circle:last-of-type {
+  fill: #655b71 !important;
+}
 #graph-svg .graph-node-label {
   fill: #2b2a27;
   font-size: 10px;
