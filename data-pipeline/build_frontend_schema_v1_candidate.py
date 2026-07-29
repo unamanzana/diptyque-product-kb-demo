@@ -19,10 +19,24 @@ SEMANTIC_DATASET_PATH = ROOT / "diptyque_semantic_fact_dataset_v1.json"
 NODE_MAP_PATH = ROOT / "diptyque_legacy_scent_node_replacement_v1.csv"
 EDGE_MAP_PATH = ROOT / "diptyque_legacy_scent_edge_replacement_v1.csv"
 QUERY_SNAPSHOT_PATH = ROOT / "diptyque_scent_query_regression_snapshot_v1.json"
+NAME_REVIEW_PATH = ROOT / "diptyque_scent_identity_name_review_v1.csv"
 CANDIDATE_PATH = ROOT / "diptyque_frontend_schema_v1_candidate.json"
 COMPARISON_PATH = ROOT / "diptyque_frontend_schema_v1_comparison.json"
 REPORT_PATH = REPO / "docs" / "ontology" / "frontend-schema-v1-candidate.md"
 
+
+NOTE_FAMILY_DISPLAY_LABELS = {
+    "木质": "木质调",
+    "果香": "果香调",
+    "柑橘": "柑橘调",
+    "树脂琥珀": "琥珀调",
+    "海洋矿物": "海洋调",
+    "花香": "花香调",
+    "茶香美食": "茶香与美食调",
+    "草本绿香": "绿叶草本调",
+    "辛香": "辛香调",
+    "麝香粉香": "麝香粉香调",
+}
 
 def read_csv(path: Path) -> list[dict[str, str]]:
     with path.open("r", encoding="utf-8-sig", newline="") as handle:
@@ -52,6 +66,7 @@ def main() -> None:
     query_snapshot = json.loads(QUERY_SNAPSHOT_PATH.read_text(encoding="utf-8"))
     node_map = read_csv(NODE_MAP_PATH)
     edge_map = read_csv(EDGE_MAP_PATH)
+    name_review_rows = read_csv(NAME_REVIEW_PATH)
 
     entities = {entity["id"]: entity for entity in dataset["entities"]}
     evidence = {item["id"]: item for item in dataset["evidence"]}
@@ -162,7 +177,7 @@ def main() -> None:
             "confidence": str(assertion["confidence"]),
             "reviewStatus": assertion["reviewStatus"],
             "scenario": "",
-            "displayLabel": "香气",
+            "displayLabel": "所属系列" if scent["properties"]["scentIdentityType"] == "SignatureFragrance" else "家居香味",
         })
 
     candidate_products = deepcopy(current["products"])
@@ -177,6 +192,116 @@ def main() -> None:
             for key in semantic_property_keys.values()
         }
 
+    current_node_by_id = {node["id"]: node for node in current["graph"]["nodes"]}
+    note_family_by_note: dict[str, str] = {}
+    note_family_id_by_name: dict[str, str] = {}
+    note_id_by_name: dict[str, str] = {
+        node["name"]: node["id"]
+        for node in current["graph"]["nodes"]
+        if node["nodeType"] == "NoteIngredient"
+    }
+    for node in current["graph"]["nodes"]:
+        if node["nodeType"] == "NoteFamily":
+            note_family_id_by_name[node["name"]] = node["id"]
+    for edge in current["graph"]["edges"]:
+        source = current_node_by_id.get(edge["source"])
+        target = current_node_by_id.get(edge["target"])
+        if not source or not target or source["nodeType"] != "NoteFamily":
+            continue
+        if edge["edgeType"] == "HAS_NOTE" and target["nodeType"] == "NoteIngredient":
+            note_family_by_note[target["name"]] = source["id"]
+
+    products_by_scent: dict[str, list[dict[str, object]]] = defaultdict(list)
+    for product in candidate_products:
+        for scent_ref in product["scentIdentities"]:
+            products_by_scent[scent_ref["id"]].append(product)
+
+    product_note_family_edges = []
+    product_note_edges = []
+    for product in candidate_products:
+        for family_name in product.get("noteFamilies", []):
+            family_id = note_family_id_by_name.get(family_name)
+            if not family_id:
+                continue
+            product_note_family_edges.append({
+                "source": product["id"],
+                "target": family_id,
+                "edgeType": "HAS_NOTE_FAMILY",
+                "sourceType": "Product",
+                "targetType": "NoteFamily",
+                "sourceName": product["name"],
+                "targetName": current_node_by_id[family_id]["name"],
+                "viaField": "note_families",
+                "relationLayer": "fact",
+                "evidenceType": "controlled_ontology_rule",
+                "evidenceText": product.get("subtitle", ""),
+                "evidenceUrl": product.get("url", ""),
+                "confidence": "0.9",
+                "reviewStatus": "approved",
+                "scenario": "",
+                "displayLabel": "香调",
+            })
+        for note_name in product.get("notes", []):
+            note_id = note_id_by_name.get(note_name)
+            if not note_id:
+                continue
+            product_note_edges.append({
+                "source": product["id"],
+                "target": note_id,
+                "edgeType": "HAS_NOTE",
+                "sourceType": "Product",
+                "targetType": "NoteIngredient",
+                "sourceName": product["name"],
+                "targetName": note_name,
+                "viaField": "note_tokens",
+                "relationLayer": "fact",
+                "evidenceType": "official_product_copy",
+                "evidenceText": product.get("subtitle", ""),
+                "evidenceUrl": product.get("url", ""),
+                "confidence": "1.0",
+                "reviewStatus": "approved",
+                "scenario": "",
+                "displayLabel": "香材",
+            })
+    formal_series_audit = []
+    for scent in scents:
+        if scent["properties"]["scentIdentityType"] != "SignatureFragrance":
+            continue
+        linked_products = products_by_scent.get(scent["id"], [])
+        official_profiles = sorted({
+            profile
+            for product in linked_products
+            for profile in product.get("scentProfiles", [])
+        })
+        families = sorted({
+            family
+            for product in linked_products
+            for family in product.get("noteFamilies", [])
+        })
+        notes = sorted({
+            note
+            for product in linked_products
+            for note in product.get("notes", [])
+        })
+        formal_series_audit.append({
+            "scentIdentityId": scent["id"],
+            "seriesName": scent["name"],
+            "productCount": len(linked_products),
+            "officialScentProfiles": official_profiles,
+            "scentFamilies": families,
+            "displayScentFamilies": [NOTE_FAMILY_DISPLAY_LABELS.get(family, family) for family in families],
+            "noteIngredients": notes,
+            "familyEvidence": "official_profile_and_notes" if official_profiles else "note_derived",
+            "coverageStatus": "covered" if families else "missing",
+        })
+    name_review_summary = {
+        "rowCount": len(name_review_rows),
+        "approvedCount": sum(row["decision"] == "approved" for row in name_review_rows),
+        "pendingCount": sum(row["decision"] == "pending_review" for row in name_review_rows),
+        "pendingProductConceptKeys": sorted(
+            row["product_concept_key"] for row in name_review_rows if row["decision"] == "pending_review"
+        ),
+    }
     scent_name_counts = Counter(scent["name"] for scent in scents)
     scent_type_labels = {"SignatureFragrance": "个人香氛", "HomeScent": "家居香氛"}
     legacy_node_ids = {row["legacy_node_id"] for row in node_map}
@@ -184,6 +309,12 @@ def main() -> None:
         deepcopy(node) for node in current["graph"]["nodes"]
         if node["id"] not in legacy_node_ids
     ]
+    for node in candidate_nodes:
+        if node["nodeType"] == "NoteFamily":
+            node["displayLabel"] = NOTE_FAMILY_DISPLAY_LABELS.get(
+                node["name"],
+                node["displayLabel"] if node["displayLabel"].endswith("调") else f"{node['displayLabel']}调",
+            )
     candidate_nodes.extend({
         "id": scent["id"],
         "nodeType": "ScentIdentity",
@@ -201,7 +332,7 @@ def main() -> None:
         "url": "",
         "typeRaw": "",
         "typeDerived": "",
-        "coreFamily": "香气身份",
+        "coreFamily": "香味系列" if scent["properties"]["scentIdentityType"] == "SignatureFragrance" else "家居香味",
         "productForm": scent["properties"]["scentIdentityType"],
         "scentIdentityType": scent["properties"]["scentIdentityType"],
         "aliases": scent["properties"].get("aliases", []),
@@ -241,6 +372,23 @@ def main() -> None:
         "productForm": entity_type,
         "aliases": [],
     } for entity_type in semantic_domain_types)
+    candidate_nodes.append({
+        "id": "domain:系列",
+        "nodeType": "OntologyDomain",
+        "name": "系列",
+        "displayLabel": "系列",
+        "spu": "",
+        "sku": "",
+        "size": "",
+        "price": None,
+        "stock": None,
+        "url": "",
+        "typeRaw": "",
+        "typeDerived": "",
+        "coreFamily": "系列",
+        "productForm": "ScentIdentity",
+        "aliases": [],
+    })
     candidate_nodes.sort(key=lambda node: node["id"])
 
     retired_edge_keys = {
@@ -252,6 +400,8 @@ def main() -> None:
         if edge_key(edge) not in retired_edge_keys
     ]
     candidate_edges.extend(scent_edges)
+    candidate_edges.extend(product_note_family_edges)
+    candidate_edges.extend(product_note_edges)
     candidate_edges.extend(semantic_edges)
     candidate_edges.extend({
         "source": f"semantic-domain:{concept['entityType']}",
@@ -271,17 +421,17 @@ def main() -> None:
         "scenario": "",
         "displayLabel": "包含",
     } for concept in semantic_concepts)
-    scent_domains = [node for node in candidate_nodes if node["nodeType"] == "OntologyDomain"]
-    if len(scent_domains) != 1:
-        raise ValueError(f"Expected one scent OntologyDomain, found {len(scent_domains)}")
-    scent_domain = scent_domains[0]
+    scent_domain = next((node for node in candidate_nodes if node["id"] == "domain:香调"), None)
+    series_domain = next((node for node in candidate_nodes if node["id"] == "domain:系列"), None)
+    if not scent_domain or not series_domain:
+        raise ValueError("Expected both domain:香调 and domain:系列")
     candidate_edges.extend({
-        "source": scent_domain["id"],
+        "source": series_domain["id"],
         "target": scent["id"],
         "edgeType": "HAS_SCENT_IDENTITY",
         "sourceType": "OntologyDomain",
         "targetType": "ScentIdentity",
-        "sourceName": scent_domain["name"],
+        "sourceName": series_domain["name"],
         "targetName": scent["name"],
         "viaField": "schema_type_membership",
         "relationLayer": "navigation",
@@ -291,8 +441,8 @@ def main() -> None:
         "confidence": "1.0",
         "reviewStatus": "approved",
         "scenario": "",
-        "displayLabel": "香气身份",
-    } for scent in scents)
+        "displayLabel": "香味系列",
+    } for scent in scents if scent["properties"]["scentIdentityType"] == "SignatureFragrance")
     candidate_edges.sort(key=lambda edge: (edge["source"], edge["target"], edge["edgeType"]))
 
     candidate = {
@@ -309,6 +459,10 @@ def main() -> None:
         "graph": {"nodes": candidate_nodes, "edges": candidate_edges},
         "scentQueryIndex": query_snapshot["queryTerms"],
         "expectedExclusions": query_snapshot["expectedDifferences"],
+        "scentSeriesAudit": {
+            "summary": name_review_summary,
+            "series": formal_series_audit,
+        },
         "migration": {
             "removedLegacyNodeIds": sorted(legacy_node_ids),
             "removedLegacyEdgeCount": len(retired_edge_keys),
@@ -344,7 +498,7 @@ def main() -> None:
     print(f"Candidate: {CANDIDATE_PATH}")
     print(f"Products: {len(candidate_products)}")
     print(f"Graph nodes: {len(candidate_nodes)}, edges: {len(candidate_edges)}")
-    print(f"ScentIdentity: {len(scents)}, HAS_SCENT: {len(scent_edges)}")
+    print(f"Scent identities: {len(scents)}, formal series: {sum(scent['properties']['scentIdentityType'] == 'SignatureFragrance' for scent in scents)}, product facts: {len(scent_edges)}, note-family facts: {len(product_note_family_edges)}, note facts: {len(product_note_edges)}")
     print(f"Semantic concepts: {len(semantic_concepts)}, semantic facts: {len(semantic_edges)}")
     print(f"Validation: {comparison['status']}")
     if comparison["failures"]:
@@ -417,7 +571,31 @@ def validate_candidate(
         "scentIdentityNodeCount": sum(node["nodeType"] == "ScentIdentity" for node in candidate_nodes),
         "hasScentEdgeCount": sum(edge["edgeType"] == "HAS_SCENT" for edge in candidate_edges),
         "scentIdentityNavigationEdgeCount": sum(
-            edge["edgeType"] == "HAS_SCENT_IDENTITY" for edge in candidate_edges
+            edge["edgeType"] == "HAS_SCENT_IDENTITY" and edge["source"] == "domain:系列"
+            for edge in candidate_edges
+        ),
+        "legacyScentSeriesEdgeCount": sum(
+            edge["edgeType"] == "HAS_SCENT_SERIES" for edge in candidate_edges
+        ),
+        "productNoteFamilyEdgeCount": sum(
+            edge["edgeType"] == "HAS_NOTE_FAMILY" and edge["sourceType"] == "Product"
+            for edge in candidate_edges
+        ),
+        "productNoteEdgeCount": sum(
+            edge["edgeType"] == "HAS_NOTE" and edge["sourceType"] == "Product"
+            for edge in candidate_edges
+        ),
+        "seriesDomainNodeCount": sum(node["id"] == "domain:系列" for node in candidate_nodes),
+        "nameReviewRowCount": candidate["scentSeriesAudit"]["summary"]["rowCount"],
+        "pendingNameReviewCount": candidate["scentSeriesAudit"]["summary"]["pendingCount"],
+        "formalSeriesAuditCount": len(candidate["scentSeriesAudit"]["series"]),
+        "formalSeriesWithoutScentFamilyCount": sum(
+            item["coverageStatus"] != "covered"
+            for item in candidate["scentSeriesAudit"]["series"]
+        ),
+        "officialProfileSeriesCount": sum(
+            bool(item["officialScentProfiles"])
+            for item in candidate["scentSeriesAudit"]["series"]
         ),
         "scentedProductCount": len(scented_product_ids),
         "maxScentIdentitiesPerProduct": max_scent_identities_per_product,
@@ -450,7 +628,16 @@ def validate_candidate(
         "legacyNodeCountRemoved": 116,
         "scentIdentityNodeCount": 23,
         "hasScentEdgeCount": 155,
-        "scentIdentityNavigationEdgeCount": 23,
+        "scentIdentityNavigationEdgeCount": 12,
+        "legacyScentSeriesEdgeCount": 0,
+        "productNoteFamilyEdgeCount": sum(len(product.get("noteFamilies", [])) for product in candidate["products"]),
+        "productNoteEdgeCount": sum(len(product.get("notes", [])) for product in candidate["products"]),
+        "seriesDomainNodeCount": 1,
+        "nameReviewRowCount": 42,
+        "pendingNameReviewCount": 4,
+        "formalSeriesAuditCount": 12,
+        "formalSeriesWithoutScentFamilyCount": 0,
+        "officialProfileSeriesCount": 4,
         "scentedProductCount": 155,
         "maxScentIdentitiesPerProduct": 1,
         "semanticDatasetStatus": "PASS",
@@ -499,7 +686,7 @@ def write_report(comparison: dict[str, object]) -> None:
         "",
         "## 结果",
         "",
-        f"结果：**{comparison['status']}**。候选快照保留 350 个商品和全部推荐规则；除香气身份层外，新增 {checks['semanticConceptNodeCount']} 个共享语义概念与 {checks['semanticFactEdgeCount']} 条带证据事实边。当前生产前端快照未被覆盖。",
+        f"结果：**{comparison['status']}**。候选快照保留 350 个商品和全部推荐规则；系列入口包含 {checks['scentIdentityNavigationEdgeCount']} 个正式个人香氛系列，商品层新增 {checks['productNoteFamilyEdgeCount']} 条香调事实与 {checks['productNoteEdgeCount']} 条香材事实，另有 {checks['semanticConceptNodeCount']} 个共享语义概念。",
         "",
         "## 图谱变化",
         "",
@@ -510,10 +697,20 @@ def write_report(comparison: dict[str, object]) -> None:
         f"| Legacy CollectionOrScent + ScentConcept | 116 | 0 |",
         f"| ScentIdentity | 0 | {checks['scentIdentityNodeCount']} |",
         f"| HAS_SCENT | 0 | {checks['hasScentEdgeCount']} |",
+        f"| 商品 → 香调 | 0 | {checks['productNoteFamilyEdgeCount']} |",
+        f"| 商品 → 香材 | 0 | {checks['productNoteEdgeCount']} |",
         f"| Shared semantic concepts | 0 | {checks['semanticConceptNodeCount']} |",
         f"| Evidence-backed semantic facts | 0 | {checks['semanticFactEdgeCount']} |",
         "",
-        "旧 NoteIngredient、ScentProfile、ScentAccord 直接连商品的推断边已从候选快照移除；本阶段不会在缺少官方事实证据时反向补造 ScentIdentity 到这些语义节点的关系。",
+        "香调与香材都落在逐商品事实层；页面可按商品与系列事实求交集展示，不再用香调或香材给整个系列笼统定性。",
+        "",
+        "## 香味系列与香调审计",
+        "",
+        f"- {checks['scentIdentityNavigationEdgeCount']} 个正式个人香氛系列从独立的“系列”入口进入；其余家居气味身份不进入系列分支。",
+        f"- 旧的“官方香调/香材归类 → 整个系列”边为 {checks['legacyScentSeriesEdgeCount']} 条。",
+        f"- 名称审核清单共 {checks['nameReviewRowCount']} 条商品记录，其中 {checks['pendingNameReviewCount']} 条继续隔离。",
+        f"- 已逐一审计 {checks['formalSeriesAuditCount']} 个正式系列；缺少香调归属的系列为 {checks['formalSeriesWithoutScentFamilyCount']} 个。",
+        f"- {checks['officialProfileSeriesCount']} 个系列有官网直接香调表述，其余系列仅按官方香材事实归纳；用户界面统一显示“花香调、木质调、海洋调”等易懂名称。",
         "",
         "## 查询验收",
         "",

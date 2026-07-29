@@ -13,36 +13,33 @@ This read-only audit covers 370 raw rows, 350 ProductConcepts, and 370 SKUs. It 
 | ScentIdentity | 124 | 42 | 184 | 35.4% |
 | NoteIngredient | 97 | 0 | 253 | 27.7% |
 | ScentProfile | 145 | 0 | 205 | 41.4% |
-| Function | 72 | 259 | 19 | 20.6% |
+| Function | 154 | 177 | 19 | 44.0% |
 | UseScene | 47 | 0 | 303 | 13.4% |
-| UserNeed | 18 | 0 | 332 | 5.1% |
+| UserNeed | 17 | 0 | 333 | 4.9% |
 | CareInstruction | 161 | 0 | 189 | 46.0% |
 | Inspiration | 94 | 0 | 256 | 26.9% |
 | Material | 57 | 17 | 276 | 16.3% |
-| CraftTechnique | 48 | 2 | 300 | 13.7% |
+| CraftTechnique | 50 | 0 | 300 | 14.3% |
 | CompatibilitySpec | 34 | 0 | 316 | 9.7% |
 
 ## Family distribution
 
 | Core family | Products | SKUs | Scent | Function | Scene | Care | Inspiration | Material | Craft |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 个人香氛 | 70 | 82 | 38 | 7 | 4 | 0 | 41 | 0 | 0 |
-| 家居香氛 | 168 | 171 | 72 | 52 | 38 | 108 | 36 | 0 | 10 |
+| 个人香氛 | 70 | 82 | 38 | 7 | 4 | 0 | 41 | 0 | 1 |
+| 家居香氛 | 168 | 171 | 72 | 134 | 38 | 108 | 36 | 0 | 10 |
 | 文创 | 9 | 9 | 0 | 0 | 0 | 0 | 0 | 9 | 0 |
 | 艺术家居 | 65 | 69 | 0 | 2 | 3 | 52 | 11 | 48 | 38 |
-| 身体护理 | 38 | 39 | 14 | 11 | 2 | 1 | 6 | 0 | 0 |
+| 身体护理 | 38 | 39 | 14 | 11 | 2 | 1 | 6 | 0 | 1 |
 
 ## Manual-review queue
 
 | Flag | ProductConcepts | Why it matters |
 | --- | ---: | --- |
-| `care_instruction_not_product_function` | 97 | Requires ontology review. |
 | `usage_text_requires_instruction_review` | 91 | Usage copy exists but the v1 care vocabulary did not classify it; review as UsageInstruction or a new CareInstruction term. |
 | `long_description_semantics_untyped` | 82 | Long official copy remains available for RAG but has no typed v1 semantic match. |
 | `scent_identity_name_only` | 42 | The scent identity currently depends only on a name-based cleaning rule and needs corroboration. |
 | `formula_present_without_note_evidence` | 22 | Formula ingredients must not be promoted to olfactory notes. |
-| `craft_copy_outside_physical_family` | 2 | Requires ontology review. |
-| `cross_family_duplicate_craft_copy` | 1 | Requires ontology review. |
 
 ## Interpretation
 

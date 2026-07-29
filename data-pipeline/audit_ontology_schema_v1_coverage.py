@@ -27,8 +27,10 @@ DIRECT_PATTERNS = {
     "function": {
         "洁肤": (r"清洁(?:肌肤|双手|身体)", r"洁净(?:肌肤|双手|身体)", r"温和洁肤"),
         "润肤": (r"滋润(?:肌肤|双手|身体)", r"保湿(?:肌肤|双手|身体)", r"润肤"),
+        "去角质": (r"去除.*角质", r"去角质"),
         "留香": (r"散发.*香气", r"留下.*香气", r"香气.*萦绕"),
         "扩香": (r"扩散.*香气", r"散香", r"为空间.*增香", r"香气.*弥漫"),
+        "清洁": (r"清洁(?:餐具|器皿|家居表面)", r"去除(?:污渍|异味)"),
         "装饰": (r"装饰(?:空间|家居|餐桌)", r"作为.*装饰", r"点缀(?:空间|家居|餐桌)"),
         "蜡烛养护": (r"保护.*蜡烛", r"熄灭.*蜡烛", r"修剪.*烛芯"),
         "便携补香": (r"随时补香", r"随身.*补香", r"便于携带"),
@@ -42,10 +44,10 @@ DIRECT_PATTERNS = {
     },
     "user_need": {
         "放松": (r"放松身心", r"令人放松", r"舒缓身心"),
-        "营造氛围": (r"营造.*氛围", r"烘托.*氛围"),
-        "空间清新": (r"清新.*空间", r"净化.*空气", r"清新空气"),
+        "空间氛围": (r"营造.*氛围", r"烘托.*氛围"),
+        "空间清新": (r"去除异味", r"净化.*空气", r"清新空气", r"令.*空间.*清新"),
         "送礼": (r"适合.*送礼", r"馈赠", r"礼赠佳选"),
-        "随身携带": (r"随身携带", r"便于携带", r"随时随地"),
+        "便携使用": (r"随身携带", r"便于携带", r"随时随地"),
     },
     "care": {
         "首次燃烧": (r"首次(?:使用|燃烧|点燃)", r"第一次(?:使用|燃烧|点燃)"),
@@ -153,6 +155,9 @@ def main() -> None:
         raw = merge_raw([raw_by_sku[row["sku"]] for row in variants])
         family, form, flags = first["core_family"], first["product_form"], set()
         scent_values = sorted({v for row in variants for v in values(row["collection_or_scent"])})
+        scent_sources = {row.get("collection_source", "") for row in variants if row.get("collection_or_scent")}
+        scent_is_name_only = bool(scent_values) and scent_sources <= {"name", "name_override"}
+        scent_identity_status = "candidate" if scent_is_name_only else "direct" if scent_values else "none"
         note_values = sorted({v for row in variants for v in values(row["note_tokens"])})
         profile_values = sorted({v for row in variants for v in values(row["scent_profiles"])})
         cleaned_material = sorted({v for row in variants for v in values(row["material_or_craft"])})
@@ -188,7 +193,7 @@ def main() -> None:
             "product_concept_key": key, "product_name": first["product_concept_name"],
             "core_family": family, "product_form": form,
             "sku_count": len({row["sku"] for row in variants}),
-            "scent_identity_status": status(scent_values), "scent_identity_values": "|".join(scent_values),
+            "scent_identity_status": scent_identity_status, "scent_identity_values": "|".join(scent_values),
             "note_status": status(note_values), "note_values": "|".join(note_values),
             "scent_profile_status": status(profile_values), "scent_profile_values": "|".join(profile_values),
             "function_status": status(function_direct, form_candidates),

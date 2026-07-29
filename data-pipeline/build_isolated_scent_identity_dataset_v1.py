@@ -134,7 +134,10 @@ def main() -> None:
             },
         })
         raw = merge_raw([raw_by_sku[variant["sku"]] for variant in variants])
-        source_field, excerpt = raw_evidence(raw, name)
+        try:
+            source_field, excerpt = raw_evidence(raw, name)
+        except ValueError as error:
+            raise ValueError(f"{error} (product_concept_key={key})") from error
         relation_seed = f"{product_id}|HAS_SCENT|{target_id}"
         assertion_id = f"assertion:has_scent:{short_hash(relation_seed)}"
         evidence_id = f"evidence:has_scent:{short_hash(relation_seed + '|' + source_field)}"

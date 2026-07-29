@@ -85,11 +85,15 @@ function relationLayerText(value: string) {
     factual_compatibility: "兼容事实",
     recommendation: "推荐关系",
     derived_compatibility: "规格推导",
+    derived_intent: "功能 / 需求推导",
+    profile_classification: "香调关系",
+    derived_classification: "香调关系",
   };
   return labels[value] ?? value;
 }
 
 function relationProvenanceText(line: GraphLine) {
+  if (line.evidenceType === "controlled_ontology_rule") return "已审核本体规则推导";
   if (line.reviewStatus === "derived_from_approved_rule") return "策展规则推导";
   if (line.reviewStatus === "derived_from_approved_spec") return "审核规格推导";
   if (line.reviewStatus === "approved" && line.evidenceType.includes("official_")) return "官方证据 + 人工审核";
@@ -112,6 +116,7 @@ function evidenceTypeText(value: string) {
   const labels: Record<string, string> = {
     official_product_copy: "官方商品文案",
     official_product_identity: "官方商品信息",
+    controlled_ontology_rule: "已审核本体规则",
     verified_collection: "已核验系列",
     source_field: "原始数据字段",
     curatorial_review: "人工策展审核",
@@ -1023,7 +1028,7 @@ export function DiptyqueKnowledgeBase() {
             </div>
             <div className="legend-row">
               {legendItems.map((item, index) => (
-                <span key={item.label} className="legend-item">
+                <span key={item.color + "-" + index} className="legend-item">
                   <span className={`legend-dot legend-dot-${index + 1}`} style={{ backgroundColor: item.color }} />
                   {item.label}
                 </span>
@@ -1065,7 +1070,7 @@ export function DiptyqueKnowledgeBase() {
                     const lineLabel = semanticRelationLabels[line.edgeType] || line.label || graphDataset.edgeLabels[index];
                     const labelPoint = lineMidpoint(line.x1, line.y1, line.x2, line.y2, index % 2 === 0 ? 0 : 2);
                     const isHoverLine = hoveredHighlightIds.has(line.sourceId) && hoveredHighlightIds.has(line.targetId);
-                    const isProductRelation = line.relationLayer !== "fact" || ["REFILL_FOR", "ACCESSORY_FOR", "PAIRS_WITH", "LAYER_WITH", "EXTENDS_TO_HOME"].includes(line.edgeType);
+                    const isProductRelation = line.relationLayer !== "fact" || ["REFILL_FOR", "ACCESSORY_FOR", "PAIRS_WITH", "LAYER_WITH", "SCENT_RITUAL_WITH", "EXTENDS_TO_HOME", "GIFT_WITH"].includes(line.edgeType);
                     const isAnswerEdge = focusedEdgeIds.has(line.edgeId);
                     const isDimmedEdge = focusedEdgeIds.size > 0 && !isAnswerEdge;
                     const isSelectedEdge = selectedEdge?.edgeId === line.edgeId;

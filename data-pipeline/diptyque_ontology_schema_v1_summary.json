@@ -24,10 +24,10 @@
       "direct_rate": "41.4%"
     },
     "function": {
-      "direct": 72,
-      "candidate": 259,
+      "direct": 154,
+      "candidate": 177,
       "none": 19,
-      "direct_rate": "20.6%"
+      "direct_rate": "44.0%"
     },
     "scene": {
       "direct": 47,
@@ -36,10 +36,10 @@
       "direct_rate": "13.4%"
     },
     "user_need": {
-      "direct": 18,
+      "direct": 17,
       "candidate": 0,
-      "none": 332,
-      "direct_rate": "5.1%"
+      "none": 333,
+      "direct_rate": "4.9%"
     },
     "care": {
       "direct": 161,
@@ -60,10 +60,10 @@
       "direct_rate": "16.3%"
     },
     "craft": {
-      "direct": 48,
-      "candidate": 2,
+      "direct": 50,
+      "candidate": 0,
       "none": 300,
-      "direct_rate": "13.7%"
+      "direct_rate": "14.3%"
     },
     "compatibility": {
       "direct": 34,
@@ -86,7 +86,7 @@
         "care": 0,
         "inspiration": 41,
         "material": 0,
-        "craft": 0,
+        "craft": 1,
         "compatibility": 0
       }
     },
@@ -97,9 +97,9 @@
         "scent_identity": 72,
         "note": 10,
         "scent_profile": 135,
-        "function": 52,
+        "function": 134,
         "scene": 38,
-        "user_need": 6,
+        "user_need": 5,
         "care": 108,
         "inspiration": 36,
         "material": 0,
@@ -154,19 +154,16 @@
         "care": 1,
         "inspiration": 6,
         "material": 0,
-        "craft": 0,
+        "craft": 1,
         "compatibility": 0
       }
     }
   },
   "manual_review_flags": {
-    "care_instruction_not_product_function": 97,
     "usage_text_requires_instruction_review": 91,
     "long_description_semantics_untyped": 82,
     "scent_identity_name_only": 42,
-    "formula_present_without_note_evidence": 22,
-    "craft_copy_outside_physical_family": 2,
-    "cross_family_duplicate_craft_copy": 1
+    "formula_present_without_note_evidence": 22
   },
   "approved_compatibility_relations": {
     "ACCESSORY_FOR_SPEC": 37
