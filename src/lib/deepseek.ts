@@ -1,6 +1,7 @@
 import {
   buildGiftFallbackRecommendation,
   diptyqueAgentTools,
+  executeDiptyqueQueryPlan,
   executeDiptyqueTool,
   productIdsMentionedInAnswer,
 } from "@/lib/diptyque-agent-tools";
@@ -9,6 +10,13 @@ import {
   extractGiftBudgetCeiling,
   isGiftRecommendationQuery,
 } from "@/lib/diptyque-query-intent";
+import type { DiptyqueQueryPlan } from "@/lib/diptyque-query-plan";
+import {
+  formatOfficialCopyContext,
+  officialCopyFallback,
+  retrieveOfficialCopy,
+  verifyAnswerClaims,
+} from "@/lib/diptyque-official-copy-rag";
 
 const DEFAULT_BASE_URL = "https://api.deepseek.com";
 const DEFAULT_MODEL = "deepseek-v4-flash";
@@ -25,6 +33,7 @@ export type ChatHistoryMessage = {
 export type DeepSeekChatInput = {
   history: ChatHistoryMessage[];
   message: string;
+  queryPlan: DiptyqueQueryPlan;
 };
 
 type ToolCall = {
@@ -136,32 +145,82 @@ const SYSTEM_PROMPT = [
   "Do not call list_catalog_values for a gifting request unless the user explicitly asks for catalog dimensions. Missing preferences are not a reason to return zero products.",
   "Use numeric filters for price questions. For a question about products at or below 500 yuan, call search_products with max_price 500. For the cheapest product, sort price_asc and use a small limit.",
   "Use get_product_details for evidence before recommendations. Use get_product_relations only for approved pairing, layering, refill, accessory or set claims.",
+  "Treat the supplied QUERY_PLAN as authoritative. Do not replace a relation, recommendation, comparison or safety intent with a broad product catalog list.",
+  "PLANNED_RETRIEVAL was executed deterministically from QUERY_PLAN before model reasoning. Use it as the initial candidate and evidence set; call tools only when more evidence is needed." ,
+  "OFFICIAL_COPY_EVIDENCE contains exact excerpts from Diptyque product pages. Use it to interpret fuzzy sensory language and to explain recommendations. Retrieval expansion terms are never evidence; only the exact excerpts and structured product facts are evidence.",
+  "For every subjective comparison or recommendation, distinguish official wording from inference. If sweetness, longevity, projection, popularity, gender suitability, season or safety is not explicitly supported, say that the current official data cannot confirm it.",
+  "For relation intent, first identify the source product with search_products, then call get_product_relations with the relation_types from QUERY_PLAN. Series membership is not a direct pairing: search by the shared collection or scent identity instead.",
+  "Apply every hard constraint from QUERY_PLAN to tool arguments, converting camelCase plan keys to the matching snake_case tool keys. This includes excludedCollections to exclude_collections and excludedProductForms to exclude_product_forms. Inherited constraints remain active unless the current user explicitly replaces them.",
+  "Soft preferences are ranking signals, not verified facts. Never turn soft, gentle or natural smelling into a safety claim.",
   "Never invent products, prices, URLs or relations. Shared scent, material or category is not an approved direct relation.",
   "For exhaustive questions such as which products, all products or how many products, set search_products limit to 100 so the complete matching set is returned.",
   "When a tool reports total greater than returned, say that the displayed answer is partial unless the user requested only recommendations.",
-  "For recommendations, select 3 to 5 products with distinct evidence and ask one high-impact follow-up question when useful.",
+  "For recommendations, obey QUERY_PLAN recommendationLimit when present; otherwise select 3 to 5 products with distinct evidence and ask one high-impact follow-up question when useful.",
   "Never infer gender or rely on gender stereotypes.",
   "Your final response must be a JSON object with exactly these keys: answer, product_ids, answer_mode.",
   "answer is concise Chinese plain text. product_ids contains only exact IDs returned by tools for products actually shown or recommended in the answer, maximum 5. answer_mode is one of product_search, price_search, gift_recommendation, relation_search.",
 ].join("\n");
 
+function conceptualGiftComparison(query: string) {
+  if (!/香水/.test(query) || !/蜡烛/.test(query) || !/护手霜/.test(query)) return "";
+  return [
+    "这三类都可以送人，但风险不同：",
+    "香水最有完整的香气体验，但气味偏好最主观；不清楚对方喜好时，选错香调的风险也最高。",
+    "蜡烛适合家居氛围，礼物属性明确；需要考虑对方是否使用家居香氛，以及是否愿意按说明养护蜡烛。",
+    "护手霜日常使用门槛较低，但仍要考虑香味偏好与个人肌肤状况，现有资料不能替代成分或过敏判断。",
+    "如果不了解对方的香气偏好，可先在蜡烛和护手霜中按预算选择；如果知道其喜欢的系列，再选同系列香水更有针对性。",
+  ].join("\n");
+}
+
 export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
   const apiKey = process.env.DEEPSEEK_API_KEY;
   const model = process.env.DEEPSEEK_MODEL || DEFAULT_MODEL;
-  const giftFallback = isGiftRecommendationQuery(input.message)
-    ? buildGiftFallbackRecommendation(extractGiftBudgetCeiling(input.message))
+  const plannedRetrieval = executeDiptyqueQueryPlan(input.queryPlan);
+  const constraints = input.queryPlan.constraints;
+  const gateOfficialCopyToStructuredCandidates = input.queryPlan.intent === "gifting"
+    || constraints.excludeRefills
+    || constraints.collections.length > 0
+    || constraints.excludedCollections.length > 0
+    || constraints.coreFamilies.length > 0
+    || constraints.excludedProductForms.length > 0
+    || constraints.productForms.length > 0
+    || constraints.sizes.length > 0
+    || constraints.variantTags.length > 0
+    || constraints.maxPrice != null;
+  const officialCopyHits = retrieveOfficialCopy(
+    input.message,
+    input.queryPlan,
+    gateOfficialCopyToStructuredCandidates ? plannedRetrieval.productIds : [],
+    10,
+    gateOfficialCopyToStructuredCandidates
+  );
+  const officialCopyContext = formatOfficialCopyContext(officialCopyHits);
+  const copyFallback = officialCopyFallback(officialCopyHits, input.queryPlan);
+  const initialMatchedProductIds = Array.from(new Set([
+    ...plannedRetrieval.productIds,
+    ...officialCopyHits.map((hit) => hit.productId),
+  ]));
+  const conceptualGiftAnswer = conceptualGiftComparison(input.message);
+  const giftFallback = input.queryPlan.intent === "gifting" || isGiftRecommendationQuery(input.message)
+    ? buildGiftFallbackRecommendation({
+        coreFamilies: input.queryPlan.constraints.coreFamilies,
+        excludedCollections: input.queryPlan.constraints.excludedCollections,
+        excludedProductForms: input.queryPlan.constraints.excludedProductForms,
+        maxPrice: input.queryPlan.constraints.maxPrice ?? extractGiftBudgetCeiling(input.message),
+      })
     : undefined;
   if (!apiKey) {
     return {
-      answer: giftFallback?.answer ?? "",
-      answerMode: giftFallback?.answerMode ?? "agentic_search",
+      answer: conceptualGiftAnswer || copyFallback?.answer || giftFallback?.answer || plannedRetrieval.fallbackAnswer,
+      answerMode: giftFallback?.answerMode ?? plannedRetrieval.answerMode,
       fallback: true,
       reasoningUsed: false,
       model,
       reason: "missing_api_key",
-      matchedProductIds: giftFallback?.matchedProductIds ?? [],
-      selectedProductIds: giftFallback?.selectedProductIds ?? [],
-      toolTrace: [] as string[],
+      matchedProductIds: giftFallback?.matchedProductIds ?? initialMatchedProductIds,
+      selectedProductIds: copyFallback?.productIds ?? giftFallback?.selectedProductIds ?? plannedRetrieval.selectedProductIds,
+      toolTrace: [...plannedRetrieval.toolTrace, `official_copy_retrieval hits=${officialCopyHits.length}`],
+      evidenceTrace: officialCopyHits,
     };
   }
 
@@ -170,21 +229,23 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   const messages: Array<Record<string, unknown>> = [
     { role: "system", content: SYSTEM_PROMPT },
+    { role: "system", content: "QUERY_PLAN\n" + JSON.stringify(input.queryPlan) },
+    { role: "system", content: "PLANNED_RETRIEVAL\n" + plannedRetrieval.content },
+    { role: "system", content: "OFFICIAL_COPY_EVIDENCE\n" + officialCopyContext },
     ...input.history.slice(-8).map((message) => ({
       role: message.role,
       content: message.content.slice(0, 1800),
     })),
     { role: "user", content: input.message },
   ];
-  const matchedProductIds: string[] = [];
-  const toolTrace: string[] = [];
+  const matchedProductIds: string[] = [...initialMatchedProductIds];
+  const toolTrace: string[] = [
+    ...plannedRetrieval.toolTrace,
+    `official_copy_retrieval hits=${officialCopyHits.length}`,
+  ];
   const usage: ModelUsage = {};
   let reasoningUsed = false;
-  let exactSelection: {
-    answer: string;
-    answerMode: "price_search";
-    productIds: string[];
-  } | undefined;
+  let exactSelection = plannedRetrieval.exactSelection;
 
   try {
     for (let round = 0; round < MAX_TOOL_ROUNDS; round += 1) {
@@ -219,17 +280,18 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
           error: errorText.slice(0, 800),
         }));
         return {
-          answer: giftFallback?.answer ?? "",
-          answerMode: giftFallback?.answerMode ?? "agentic_search",
+          answer: conceptualGiftAnswer || copyFallback?.answer || giftFallback?.answer || plannedRetrieval.fallbackAnswer,
+          answerMode: giftFallback?.answerMode ?? plannedRetrieval.answerMode,
           fallback: true,
           reasoningUsed,
           model,
           reason: "deepseek_http_" + response.status,
           errorText,
           matchedProductIds: giftFallback?.matchedProductIds ?? matchedProductIds,
-          selectedProductIds: giftFallback?.selectedProductIds ?? [],
+          selectedProductIds: copyFallback?.productIds ?? giftFallback?.selectedProductIds ?? plannedRetrieval.selectedProductIds,
           toolTrace,
           usage,
+          evidenceTrace: officialCopyHits,
         };
       }
 
@@ -286,6 +348,7 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
           selectedProductIds: exactSelection.productIds,
           toolTrace,
           usage,
+          evidenceTrace: officialCopyHits,
         };
       }
       const selectedFromModel = final.productIds.filter((id) => candidates.includes(id)).slice(0, 5);
@@ -293,6 +356,26 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
         ...selectedFromModel,
         ...productIdsMentionedInAnswer(final.answer, candidates),
       ])).slice(0, 5);
+      const verification = verifyAnswerClaims(
+        final.answer,
+        officialCopyContext + "\n" + plannedRetrieval.content
+      );
+      if (!verification.passed) {
+        toolTrace.push(`claim_verifier blocked=${verification.unsupported.join(",")}`);
+        return {
+          answer: conceptualGiftAnswer || copyFallback?.answer || giftFallback?.answer || plannedRetrieval.fallbackAnswer,
+          answerMode: giftFallback ? "gift_recommendation" : plannedRetrieval.answerMode,
+          fallback: true,
+          reasoningUsed,
+          model,
+          reason: "unsupported_model_claim",
+          matchedProductIds: candidates,
+          selectedProductIds: copyFallback?.productIds ?? giftFallback?.selectedProductIds ?? plannedRetrieval.selectedProductIds,
+          toolTrace,
+          usage,
+          evidenceTrace: officialCopyHits,
+        };
+      }
 
       return {
         answer: final.answer,
@@ -305,6 +388,7 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
         selectedProductIds,
         toolTrace,
         usage,
+        evidenceTrace: officialCopyHits,
       };
     }
 
@@ -359,6 +443,26 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
           ...selectedFromModel,
           ...productIdsMentionedInAnswer(final.answer, candidates),
         ])).slice(0, 5);
+        const verification = verifyAnswerClaims(
+          final.answer,
+          officialCopyContext + "\n" + plannedRetrieval.content
+        );
+        if (!verification.passed) {
+          toolTrace.push(`claim_verifier blocked=${verification.unsupported.join(",")}`);
+          return {
+            answer: conceptualGiftAnswer || copyFallback?.answer || giftFallback?.answer || plannedRetrieval.fallbackAnswer,
+            answerMode: giftFallback ? "gift_recommendation" : plannedRetrieval.answerMode,
+            fallback: true,
+            reasoningUsed,
+            model,
+            reason: "unsupported_model_claim",
+            matchedProductIds: candidates,
+            selectedProductIds: copyFallback?.productIds ?? giftFallback?.selectedProductIds ?? plannedRetrieval.selectedProductIds,
+            toolTrace,
+            usage,
+            evidenceTrace: officialCopyHits,
+          };
+        }
         return {
           answer: final.answer,
           answerMode: giftFallback ? "gift_recommendation" : final.answerMode,
@@ -370,27 +474,29 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
           selectedProductIds,
           toolTrace,
           usage,
+          evidenceTrace: officialCopyHits,
         };
       }
     }
 
     return {
-      answer: giftFallback?.answer ?? "",
-      answerMode: giftFallback?.answerMode ?? "agentic_search",
+      answer: conceptualGiftAnswer || copyFallback?.answer || giftFallback?.answer || plannedRetrieval.fallbackAnswer,
+      answerMode: giftFallback?.answerMode ?? plannedRetrieval.answerMode,
       fallback: true,
       reasoningUsed,
       model,
       reason: "tool_round_limit",
       matchedProductIds:
         giftFallback?.matchedProductIds ?? Array.from(new Set(matchedProductIds)),
-      selectedProductIds: giftFallback?.selectedProductIds ?? [],
+      selectedProductIds: copyFallback?.productIds ?? giftFallback?.selectedProductIds ?? plannedRetrieval.selectedProductIds,
       toolTrace,
       usage,
+      evidenceTrace: officialCopyHits,
     };
   } catch (error) {
     return {
-      answer: giftFallback?.answer ?? "",
-      answerMode: giftFallback?.answerMode ?? "agentic_search",
+      answer: conceptualGiftAnswer || copyFallback?.answer || giftFallback?.answer || plannedRetrieval.fallbackAnswer,
+      answerMode: giftFallback?.answerMode ?? plannedRetrieval.answerMode,
       fallback: true,
       reasoningUsed,
       model,
@@ -398,9 +504,10 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
       errorText: error instanceof Error ? error.message : "unknown_error",
       matchedProductIds:
         giftFallback?.matchedProductIds ?? Array.from(new Set(matchedProductIds)),
-      selectedProductIds: giftFallback?.selectedProductIds ?? [],
+      selectedProductIds: copyFallback?.productIds ?? giftFallback?.selectedProductIds ?? plannedRetrieval.selectedProductIds,
       toolTrace,
       usage,
+      evidenceTrace: officialCopyHits,
     };
   } finally {
     clearTimeout(timer);

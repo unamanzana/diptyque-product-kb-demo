@@ -1,4 +1,5 @@
 import frontendData from "@/data/diptyque-frontend-payload";
+import type { DiptyqueQueryPlan } from "@/lib/diptyque-query-plan";
 
 type Product = {
   id: string;
@@ -115,6 +116,22 @@ function productPrice(product: Product) {
   return product.priceMin ?? product.priceMax;
 }
 
+function productMatchesExcludedScent(product: Product, excludedTerms: string[]) {
+  const scentValues = [
+    product.name,
+    ...product.collections,
+    ...product.notes,
+    ...product.scentProfiles,
+    ...product.scentAccords,
+    ...product.scentConcepts,
+    ...product.noteFamilies,
+  ].map(normalize);
+  return excludedTerms.some((term) => {
+    const normalizedTerm = normalize(term);
+    return normalizedTerm && scentValues.some((value) => value.includes(normalizedTerm));
+  });
+}
+
 function compactProduct(product: Product) {
   return {
     id: product.id,
@@ -189,7 +206,10 @@ function searchProducts(args: Record<string, unknown>): ToolExecution {
   const requestedFamilies = expandFamilies(stringArray(args.core_families));
   const requestedForms = stringArray(args.product_forms);
   const collections = stringArray(args.collections);
+  const excludedCollections = stringArray(args.exclude_collections);
+  const excludedForms = stringArray(args.exclude_product_forms);
   const scentTerms = stringArray(args.scent_terms);
+  const requestedSizes = stringArray(args.sizes).map(normalize);
   const materials = stringArray(args.materials);
   const functions = stringArray(args.functions);
   const scenes = stringArray(args.scenes);
@@ -208,7 +228,10 @@ function searchProducts(args: Record<string, unknown>): ToolExecution {
     .filter(({ product, score }) => {
       if (requestedFamilies.length && !requestedFamilies.includes(product.coreFamily)) return false;
       if (!matchesAny([product.productForm], requestedForms)) return false;
+      if (requestedSizes.length && !product.sizes.some((size) => requestedSizes.includes(normalize(size)))) return false;
+      if (excludedForms.includes(product.productForm)) return false;
       if (!matchesAny(product.collections, collections)) return false;
+      if (productMatchesExcludedScent(product, excludedCollections)) return false;
       if (
         !matchesAny(
           [
@@ -236,6 +259,7 @@ function searchProducts(args: Record<string, unknown>): ToolExecution {
       const hasStructuredFilter = Boolean(
         requestedFamilies.length
         || requestedForms.length
+        || requestedSizes.length
         || collections.length
         || scentTerms.length
         || materials.length
@@ -326,12 +350,16 @@ function selectDiverseGiftProducts(candidates: Product[], limit: number) {
 
 function searchGiftCandidates(args: Record<string, unknown>): ToolExecution {
   const requestedFamilies = expandFamilies(stringArray(args.core_families));
+  const excludedCollections = stringArray(args.exclude_collections);
+  const excludedForms = stringArray(args.exclude_product_forms);
   const maxPrice = numberValue(args.max_price);
   const limit = Math.min(5, Math.max(3, Math.floor(numberValue(args.limit) ?? 5)));
   const eligible = products.filter((product) => {
     if (!product.marketingTags.includes("臻选礼赠")) return false;
     if (product.variantTags.includes("补充装")) return false;
     if (requestedFamilies.length && !requestedFamilies.includes(product.coreFamily)) return false;
+    if (excludedForms.includes(product.productForm)) return false;
+    if (productMatchesExcludedScent(product, excludedCollections)) return false;
     const price = productPrice(product);
     if (maxPrice != null && (price == null || price > maxPrice)) return false;
     return true;
@@ -365,13 +393,21 @@ function formatGiftPrice(product: Product) {
   return "¥" + (product.priceMin ?? product.priceMax);
 }
 
-export function buildGiftFallbackRecommendation(maxPrice?: number) {
+export function buildGiftFallbackRecommendation(options: {
+  coreFamilies?: string[];
+  excludedCollections?: string[];
+  excludedProductForms?: string[];
+  maxPrice?: number;
+} = {}) {
   const selected = selectDiverseGiftProducts(
     products.filter((product) => {
       if (!product.marketingTags.includes("臻选礼赠")) return false;
       if (product.variantTags.includes("补充装") || product.stockTotal <= 0) return false;
+      if (options.coreFamilies?.length && !options.coreFamilies.includes(product.coreFamily)) return false;
+      if (options.excludedProductForms?.includes(product.productForm)) return false;
+      if (productMatchesExcludedScent(product, options.excludedCollections ?? [])) return false;
       const price = productPrice(product);
-      return maxPrice == null || (price != null && price <= maxPrice);
+      return options.maxPrice == null || (price != null && price <= options.maxPrice);
     }),
     5
   );
@@ -416,7 +452,7 @@ function getProductDetails(args: Record<string, unknown>): ToolExecution {
 }
 
 function getProductRelations(args: Record<string, unknown>): ToolExecution {
-  const ids = new Set(stringArray(args.product_ids).slice(0, 12));
+  const ids = new Set(stringArray(args.product_ids).slice(0, 100));
   const relationTypes = new Set(stringArray(args.relation_types));
   const relations = payload.graph.edges
     .filter(
@@ -503,7 +539,10 @@ export const diptyqueAgentTools: ToolDefinition[] = [
           query: { type: "string", description: "Short semantic search phrase when structured filters are insufficient." },
           core_families: { type: "array", items: { type: "string", enum: coreFamilies } },
           product_forms: { type: "array", items: { type: "string" } },
+          sizes: { type: "array", items: { type: "string" } },
           collections: { type: "array", items: { type: "string" } },
+          exclude_collections: { type: "array", items: { type: "string" } },
+          exclude_product_forms: { type: "array", items: { type: "string" } },
           scent_terms: { type: "array", items: { type: "string" } },
           materials: { type: "array", items: { type: "string" } },
           functions: { type: "array", items: { type: "string" } },
@@ -532,6 +571,8 @@ export const diptyqueAgentTools: ToolDefinition[] = [
         type: "object",
         properties: {
           core_families: { type: "array", items: { type: "string", enum: coreFamilies } },
+          exclude_collections: { type: "array", items: { type: "string" } },
+          exclude_product_forms: { type: "array", items: { type: "string" } },
           max_price: { type: "number" },
           limit: { type: "integer", minimum: 3, maximum: 5 },
         },
@@ -563,7 +604,7 @@ export const diptyqueAgentTools: ToolDefinition[] = [
       parameters: {
         type: "object",
         properties: {
-          product_ids: { type: "array", items: { type: "string" }, maxItems: 12 },
+          product_ids: { type: "array", items: { type: "string" }, maxItems: 100 },
           relation_types: { type: "array", items: { type: "string" } },
         },
         required: ["product_ids"],
@@ -591,6 +632,186 @@ export const diptyqueAgentTools: ToolDefinition[] = [
   },
 ];
 
+export type PlannedRetrieval = {
+  answerMode: "gift_recommendation" | "price_search" | "product_search" | "relation_search";
+  content: string;
+  exactSelection?: ToolExecution["exactSelection"];
+  fallbackAnswer: string;
+  productIds: string[];
+  selectedProductIds: string[];
+  toolTrace: string[];
+};
+
+function plannedFallback(
+  plan: DiptyqueQueryPlan,
+  primary: ToolExecution,
+  relationExecution?: ToolExecution
+) {
+  if (primary.exactSelection) {
+    return {
+      answer: primary.exactSelection.answer,
+      answerMode: "price_search" as const,
+      selectedProductIds: primary.exactSelection.productIds,
+    };
+  }
+  const primaryProducts = primary.productIds
+    .map((id) => productById.get(id))
+    .filter((product): product is Product => Boolean(product));
+  if (
+    plan.relationIntent === "series_membership"
+    && !plan.constraints.collections.length
+    && /搭配关系|同系列关系|应该理解/.test(plan.currentQuery)
+  ) {
+    return {
+      answer: "同一个香味下的香水、身体乳和护手霜应理解为共享同一香味身份的同系列商品，不自动构成搭配关系。只有存在官方文案或已审核关系证据时，才能另外标记为搭配或叠香。",
+      answerMode: "relation_search" as const,
+      selectedProductIds: [],
+    };
+  }
+  if (plan.relationIntent === "series_membership") {
+    const scope = plan.constraints.collections.join(" / ") || "当前香味";
+    return {
+      answer: primaryProducts.length
+        ? `${scope}同系列且符合当前条件的产品共${primaryProducts.length}款：${primaryProducts.map((product) => product.name).join("、")}。`
+        : `当前商品资料中没有找到${scope}同系列且符合条件的产品。`,
+      answerMode: "relation_search" as const,
+      selectedProductIds: primary.productIds.slice(0, 5),
+    };
+  }
+  if (plan.intent === "relation") {
+    const relationData = relationExecution
+      ? JSON.parse(relationExecution.content) as {
+          relations?: Array<{ evidence?: string; relationType: string; sourceName: string; targetName: string }>;
+        }
+      : {};
+    const relations = relationData.relations ?? [];
+    const relationLabel = plan.relationIntent === "layering"
+      ? "叠香"
+      : plan.relationIntent === "accessory"
+        ? "配件"
+        : plan.relationIntent === "refill_compatibility"
+          ? "补充装适配"
+          : "搭配";
+    return {
+      answer: relations.length
+        ? `当前已审核的${relationLabel}关系：${relations.map((relation) =>
+            `${relation.sourceName}与${relation.targetName}${relation.evidence ? `（依据：${relation.evidence}）` : ""}`
+          ).join("；")}。`
+        : `当前已审核商品关系中没有找到符合条件的${relationLabel}关系，因此不能根据同系列、同香材或名称相似自行推断。`,
+      answerMode: "relation_search" as const,
+      selectedProductIds: (relationExecution?.productIds ?? primary.productIds).slice(0, 5),
+    };
+  }
+  if (/容量|规格|尺寸/.test(plan.currentQuery) && primaryProducts.some((product) => product.sizes.length)) {
+    const productsWithSizes = primaryProducts.filter((product) => product.sizes.length);
+    return {
+      answer: productsWithSizes.map((product) =>
+        `${product.name}在当前商品记录中可确认的规格为：${product.sizes.join("、")}`
+      ).join("；") + "。",
+      answerMode: "product_search" as const,
+      selectedProductIds: productsWithSizes.slice(0, 5).map((product) => product.id),
+    };
+  }
+  if (plan.constraints.variantTags.includes("补充装")) {
+    return {
+      answer: primaryProducts.length
+        ? `当前商品记录中找到${primaryProducts.length}款真正的补充装：${primaryProducts.map((product) => product.name).join("、")}。`
+        : "当前商品记录中没有找到符合条件的真正补充装。",
+      answerMode: "product_search" as const,
+      selectedProductIds: primary.productIds.slice(0, 5),
+    };
+  }
+  if (plan.intent === "catalog") {
+    return {
+      answer: primaryProducts.length
+        ? `符合当前条件的产品共${primaryProducts.length}款：${primaryProducts.map((product) => product.name).join("、")}。`
+        : "当前商品资料中没有找到符合全部条件的产品。",
+      answerMode: "product_search" as const,
+      selectedProductIds: [],
+    };
+  }
+  if (/含有|包含|真的含/.test(plan.currentQuery) && primaryProducts.length === 1) {
+    const product = primaryProducts[0];
+    const evidenceTerms = Array.from(new Set([
+      ...product.notes,
+      ...product.scentConcepts,
+      ...product.noteFamilies,
+    ])).filter((term) => term && plan.currentQuery.includes(term));
+    if (evidenceTerms.length) {
+      return {
+        answer: `${product.name}的商品数据中明确记录了${evidenceTerms.join("、")}，因此可以确认包含${evidenceTerms.join("、")}。`,
+        answerMode: "product_search" as const,
+        selectedProductIds: primary.productIds,
+      };
+    }
+  }
+  const recommendationLimit = plan.recommendationLimit ?? 5;
+  return {
+    answer: primaryProducts.length
+      ? `已按当前硬性条件检索到${primaryProducts.length}款候选：${primaryProducts.slice(0, recommendationLimit).map((product) => product.name).join("、")}。当前无法完成需要官方文案支持的主观比较，因此不额外推断气味感受或适用场景。`
+      : "按当前全部硬性条件检索结果为0款；没有符合条件的商品，因此不放宽条件另行推荐。",
+    answerMode: plan.intent === "gifting" ? "gift_recommendation" as const : "product_search" as const,
+    selectedProductIds: primary.productIds.slice(0, recommendationLimit),
+  };
+}
+
+export function executeDiptyqueQueryPlan(plan: DiptyqueQueryPlan): PlannedRetrieval {
+  const constraints = plan.constraints;
+  const commonArgs = {
+    core_families: constraints.coreFamilies,
+    collections: constraints.collections,
+    exclude_collections: constraints.excludedCollections,
+    exclude_product_forms: constraints.excludedProductForms,
+    product_forms: constraints.productForms,
+    sizes: constraints.sizes,
+    variant_tags: constraints.variantTags,
+    exclude_refills: constraints.excludeRefills,
+    max_price: constraints.maxPrice,
+  };
+  const executions: Array<{ label: string; result: ToolExecution }> = [];
+  const cheapest = /最低|最便宜/.test(plan.currentQuery);
+  const primary = plan.intent === "gifting"
+    ? searchGiftCandidates({
+        core_families: constraints.coreFamilies,
+        exclude_collections: constraints.excludedCollections,
+        exclude_product_forms: constraints.excludedProductForms,
+        max_price: constraints.maxPrice,
+        limit: 5,
+      })
+    : searchProducts({
+        ...commonArgs,
+        query: cheapest || plan.softPreferences.length ? "" : plan.currentQuery,
+        limit: cheapest ? 3 : plan.intent === "catalog" || plan.intent === "relation" || plan.softPreferences.length ? 100 : 30,
+        sort: cheapest ? "price_asc" : "relevance",
+      });
+  executions.push({ label: "PLANNED_PRODUCT_SEARCH", result: primary });
+
+  let relationExecution: ToolExecution | undefined;
+  if (plan.intent === "relation" && plan.relationTypes.length && primary.productIds.length) {
+    relationExecution = getProductRelations({
+      product_ids: primary.productIds,
+      relation_types: plan.relationTypes,
+    });
+    executions.push({ label: "PLANNED_APPROVED_RELATIONS", result: relationExecution });
+  }
+  if (plan.requiresEvidence && primary.productIds.length) {
+    executions.push({
+      label: "PLANNED_PRODUCT_DETAILS",
+      result: getProductDetails({ product_ids: primary.productIds.slice(0, 12) }),
+    });
+  }
+
+  const fallback = plannedFallback(plan, primary, relationExecution);
+  return {
+    answerMode: fallback.answerMode,
+    content: executions.map(({ label, result }) => `${label}\n${result.content}`).join("\n\n"),
+    exactSelection: primary.exactSelection,
+    fallbackAnswer: fallback.answer,
+    productIds: Array.from(new Set(executions.flatMap(({ result }) => result.productIds))),
+    selectedProductIds: fallback.selectedProductIds,
+    toolTrace: executions.map(({ result }) => "query_plan " + result.summary),
+  };
+}
 export function executeDiptyqueTool(name: string, rawArguments: string): ToolExecution {
   let args: Record<string, unknown> = {};
   try {

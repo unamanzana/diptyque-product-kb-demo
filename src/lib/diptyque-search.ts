@@ -379,13 +379,21 @@ function formatCompleteCatalogAnswer(
     : "";
   return `${heading}\n${lines.join("\n")}${followUp}`;
 }
-export function buildDiptyqueContext(query: string) {
+export function buildDiptyqueContext(
+  query: string,
+  options: { allowDeterministicCatalog?: boolean; collectionTerms?: string[] } = {}
+) {
   const scentListTerm = extractScentCatalogTerm(query, scentCatalogVocabulary);
   const giftRecommendationQuery = isGiftRecommendationQuery(query);
-  const productCatalogScope = !scentListTerm && !giftRecommendationQuery
+  const collectionListTerm = options.allowDeterministicCatalog !== false
+    && /系列/.test(query)
+    && options.collectionTerms?.length === 1
+    ? options.collectionTerms[0]
+    : "";
+  const productCatalogScope = !scentListTerm && !collectionListTerm && !giftRecommendationQuery
     ? extractProductCatalogScope(query, productCatalogVocabulary)
     : null;
-  const answerMode = scentListTerm
+  const answerMode = scentListTerm || collectionListTerm
     ? "ontology_catalog_list"
     : giftRecommendationQuery
       ? "gift_recommendation"
@@ -394,6 +402,8 @@ export function buildDiptyqueContext(query: string) {
         : "knowledge_search";
   const matchedProducts = scentListTerm
     ? scentCatalogProducts(scentListTerm)
+    : collectionListTerm
+      ? products.filter((product) => product.collections.includes(collectionListTerm))
     : answerMode === "gift_recommendation"
       ? giftRecommendationProducts(query)
       : productCatalogScope
@@ -424,9 +434,9 @@ export function buildDiptyqueContext(query: string) {
   return {
     answerMode,
     deterministicAnswer:
-      answerMode === "ontology_catalog_list"
-        ? formatCompleteCatalogAnswer(scentListTerm, matchedProducts)
-        : answerMode === "product_catalog_list" && productCatalogScope
+      options.allowDeterministicCatalog !== false && answerMode === "ontology_catalog_list"
+        ? formatCompleteCatalogAnswer(scentListTerm || collectionListTerm, matchedProducts)
+        : options.allowDeterministicCatalog !== false && answerMode === "product_catalog_list" && productCatalogScope
           ? formatCompleteCatalogAnswer(
               productCatalogScope.label,
               matchedProducts,

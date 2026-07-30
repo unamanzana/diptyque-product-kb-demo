@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { productNamesByIds } from "@/lib/diptyque-agent-tools";
 import { logModelRequest, logZeroHit } from "@/lib/chat-observability";
 import { generateDiptyqueAnswer, type ChatHistoryMessage } from "@/lib/deepseek";
+import { buildDiptyqueQueryPlan, safetyGuardAnswer } from "@/lib/diptyque-query-plan";
 import { buildDiptyqueContext } from "@/lib/diptyque-search";
 
 export const runtime = "nodejs";
@@ -30,7 +31,26 @@ export async function POST(request: Request) {
           .slice(-8)
       : [];
 
-    const deterministic = buildDiptyqueContext(message);
+    const queryPlan = buildDiptyqueQueryPlan(message, history);
+    const safetyAnswer = safetyGuardAnswer(queryPlan);
+    if (safetyAnswer) {
+      return NextResponse.json({
+        answer: safetyAnswer,
+        answerMode: "safety_abstention",
+        answerSource: "query_plan_guard",
+        fallback: false,
+        matchedProductNames: [],
+        recommendedProductNames: [],
+        model: "ontology",
+        reasoningUsed: false,
+        diagnostics: { queryPlan },
+      });
+    }
+
+    const deterministic = buildDiptyqueContext(message, {
+      allowDeterministicCatalog: queryPlan.allowDeterministicCatalog,
+      collectionTerms: queryPlan.constraints.collections,
+    });
     if (deterministic.deterministicAnswer) {
       return NextResponse.json({
         answer: deterministic.deterministicAnswer,
@@ -41,6 +61,7 @@ export async function POST(request: Request) {
         recommendedProductNames: [],
         model: "ontology",
         reasoningUsed: false,
+        diagnostics: { queryPlan },
       });
     }
 
@@ -48,6 +69,7 @@ export async function POST(request: Request) {
     const result = await generateDiptyqueAnswer({
       history,
       message,
+      queryPlan,
     });
     const durationMs = Math.round(performance.now() - modelStartedAt);
     const reason = "reason" in result ? result.reason : undefined;
@@ -85,6 +107,8 @@ export async function POST(request: Request) {
         zeroHit: Boolean(zeroHitQueryId),
         zeroHitQueryId,
         toolTrace: result.toolTrace,
+        evidenceTrace: "evidenceTrace" in result ? result.evidenceTrace : [],
+        queryPlan,
       },
     });
   } catch (error) {

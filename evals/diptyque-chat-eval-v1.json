@@ -1,0 +1,583 @@
+{
+  "schemaVersion": "1.0.0",
+  "title": "Diptyque 复合问答评测集 v1",
+  "description": "48个真实顾客问题，覆盖事实、关系、模糊偏好、多条件、比较、送礼、多轮和质疑安全。",
+  "cases": [
+    {
+      "id": "catalog_fact_01",
+      "category": "catalog_fact",
+      "turns": ["杜桑系列有哪些产品？请完整列出。"],
+      "expectations": {
+        "behavior": "answer",
+        "answerModeAnyOf": ["ontology_catalog_list", "product_search"],
+        "minMatchedProducts": 9,
+        "expectedMatchedAll": ["杜桑 - 香氛皂", "杜桑香膏补充装", "杜桑护手霜", "杜桑柔肤沐浴油", "杜桑香氛润肤乳", "杜桑 - 固体香膏", "杜桑发香喷雾", "杜桑淡香水", "杜桑淡香精"]
+      }
+    },
+    {
+      "id": "catalog_fact_02",
+      "category": "catalog_fact",
+      "turns": ["杜桑淡香水有哪些容量？"],
+      "expectations": {
+        "behavior": "answer",
+        "answerModeAnyOf": ["product_search"],
+        "expectedMatchedAny": ["杜桑淡香水"],
+        "answerMustIncludeAll": ["50ML", "100ML"]
+      }
+    },
+    {
+      "id": "catalog_fact_03",
+      "category": "catalog_fact",
+      "turns": ["500元以下的产品有哪些？"],
+      "expectations": {
+        "behavior": "answer",
+        "answerModeAnyOf": ["price_search", "product_search"],
+        "minMatchedProducts": 1,
+        "maxPrice": 500
+      }
+    },
+    {
+      "id": "catalog_fact_04",
+      "category": "catalog_fact",
+      "turns": ["现在价格最低的商品是哪一款？"],
+      "expectations": {
+        "behavior": "answer",
+        "answerModeAnyOf": ["price_search"],
+        "minMatchedProducts": 1,
+        "maxRecommendedProducts": 3,
+        "answerMustIncludeAny": ["¥", "元"]
+      }
+    },
+    {
+      "id": "catalog_fact_05",
+      "category": "catalog_fact",
+      "turns": ["目前有哪些真正的补充装？"],
+      "expectations": {
+        "behavior": "answer",
+        "minMatchedProducts": 1,
+        "expectedMatchedAny": ["奥费恩香膏补充装", "杜桑香膏补充装"],
+        "answerMustIncludeAny": ["补充装", "补充瓶", "补充包"]
+      }
+    },
+    {
+      "id": "catalog_fact_06",
+      "category": "catalog_fact",
+      "turns": ["190g香氛蜡烛大概能燃烧多久？依据是什么？"],
+      "expectations": {
+        "behavior": "answer",
+        "answerMustIncludeAny": ["官方", "商品说明", "无法确认", "证据"]
+      },
+      "manualReview": ["duration_claim_grounding", "source_quality"]
+    },
+
+    {
+      "id": "ontology_relation_01",
+      "category": "ontology_relation",
+      "turns": ["我喜欢杜桑，除了香水还有哪些同系列产品？"],
+      "expectations": {
+        "behavior": "answer",
+        "minMatchedProducts": 7,
+        "expectedMatchedAny": ["杜桑护手霜", "杜桑香氛润肤乳", "杜桑柔肤沐浴油"],
+        "answerMustIncludeAny": ["护手霜", "润肤乳", "沐浴油", "香氛皂"]
+      }
+    },
+    {
+      "id": "ontology_relation_02",
+      "category": "ontology_relation",
+      "turns": ["杜桑固体香膏有没有对应的补充装？"],
+      "expectations": {
+        "behavior": "answer",
+        "answerModeAnyOf": ["relation_search", "product_search"],
+        "expectedMatchedAny": ["杜桑 - 固体香膏", "杜桑香膏补充装"],
+        "answerMustIncludeAny": ["杜桑香膏补充装", "补充装"]
+      }
+    },
+    {
+      "id": "ontology_relation_03",
+      "category": "ontology_relation",
+      "turns": ["影中之水香氛洁肤露可以和哪些产品叠香？"],
+      "expectations": {
+        "behavior": "answer",
+        "answerModeAnyOf": ["relation_search"],
+        "expectedMatchedAny": ["影中之水香氛洁肤露", "影中之水 - 淡香水", "影中之水 - 淡香精"],
+        "answerMustIncludeAny": ["叠香"]
+      }
+    },
+    {
+      "id": "ontology_relation_04",
+      "category": "ontology_relation",
+      "turns": ["香氛蜡烛有哪些经过确认的配件可以搭配？"],
+      "expectations": {
+        "behavior": "answer",
+        "answerModeAnyOf": ["relation_search", "product_search"],
+        "answerMustIncludeAny": ["配件", "烛盖", "烛罩", "没有"]
+      },
+      "manualReview": ["approved_relation_only"]
+    },
+    {
+      "id": "ontology_relation_05",
+      "category": "ontology_relation",
+      "turns": ["扩香精补充瓶分别适用于哪些容器？不要只按名字猜。"],
+      "expectations": {
+        "behavior": "answer",
+        "answerModeAnyOf": ["relation_search", "product_search"],
+        "answerMustIncludeAny": ["适用", "补充", "依据", "没有"]
+      },
+      "manualReview": ["compatibility_evidence"]
+    },
+    {
+      "id": "ontology_relation_06",
+      "category": "ontology_relation",
+      "turns": ["同一个香味的香水、身体乳和护手霜，应该理解为搭配关系还是同系列关系？"],
+      "expectations": {
+        "behavior": "answer",
+        "answerMustIncludeAll": ["同系列"],
+        "answerMustIncludeAny": ["搭配", "官方", "证据"]
+      }
+    },
+
+    {
+      "id": "fuzzy_preference_01",
+      "category": "fuzzy_preference",
+      "turns": ["我喜欢木质香，但不想太沉，有什么香水推荐？"],
+      "expectations": {
+        "behavior": "answer",
+        "minRecommendedProducts": 3,
+        "maxRecommendedProducts": 5,
+        "allowedCoreFamilies": ["个人香氛"],
+        "excludeRefills": true
+      },
+      "manualReview": ["preference_fit", "reason_quality", "evidence_grounding"]
+    },
+    {
+      "id": "fuzzy_preference_02",
+      "category": "fuzzy_preference",
+      "turns": ["想找一款干净、自然、不甜的香水。"],
+      "expectations": {
+        "behavior": "answer",
+        "minRecommendedProducts": 3,
+        "maxRecommendedProducts": 5,
+        "allowedCoreFamilies": ["个人香氛"],
+        "excludeRefills": true
+      },
+      "manualReview": ["negative_preference_handling", "reason_quality"]
+    },
+    {
+      "id": "fuzzy_preference_03",
+      "category": "fuzzy_preference",
+      "turns": ["我平时喜欢白花香，Diptyque哪几款比较适合？"],
+      "expectations": {
+        "behavior": "answer",
+        "minRecommendedProducts": 2,
+        "maxRecommendedProducts": 5,
+        "allowedCoreFamilies": ["个人香氛"],
+        "answerMustIncludeAny": ["花", "晚香玉", "茉莉", "橙花"]
+      },
+      "manualReview": ["note_evidence"]
+    },
+    {
+      "id": "fuzzy_preference_04",
+      "category": "fuzzy_preference",
+      "turns": ["有没有闻起来像雨后花园、森林或者海边的香味？"],
+      "expectations": {
+        "behavior": "answer",
+        "minRecommendedProducts": 2,
+        "maxRecommendedProducts": 5,
+        "allowedCoreFamilies": ["个人香氛", "家居香氛"],
+        "excludeRefills": true
+      },
+      "manualReview": ["metaphor_understanding", "official_copy_support"]
+    },
+    {
+      "id": "fuzzy_preference_05",
+      "category": "fuzzy_preference",
+      "turns": ["不喜欢太浓、太有攻击性的香水，想要柔和一点的。"],
+      "expectations": {
+        "behavior": "answer",
+        "minRecommendedProducts": 3,
+        "maxRecommendedProducts": 5,
+        "allowedCoreFamilies": ["个人香氛"],
+        "excludeRefills": true
+      },
+      "manualReview": ["intensity_claim_grounding", "negative_preference_handling"]
+    },
+    {
+      "id": "fuzzy_preference_06",
+      "category": "fuzzy_preference",
+      "turns": ["想要比较清冷、小众、不容易撞香的选择，不要只给热门款。"],
+      "expectations": {
+        "behavior": "answer",
+        "minRecommendedProducts": 3,
+        "maxRecommendedProducts": 5,
+        "allowedCoreFamilies": ["个人香氛"],
+        "excludeRefills": true
+      },
+      "manualReview": ["popularity_claim_grounding", "diversity"]
+    },
+
+    {
+      "id": "multi_constraint_01",
+      "category": "multi_constraint",
+      "turns": ["我喜欢木质、微甜、适合秋冬、留香久的香水，预算1500元以内。"],
+      "expectations": {
+        "behavior": "answer",
+        "minRecommendedProducts": 2,
+        "maxRecommendedProducts": 5,
+        "allowedCoreFamilies": ["个人香氛"],
+        "maxPrice": 1500,
+        "excludeRefills": true
+      },
+      "manualReview": ["all_constraints_addressed", "longevity_evidence"]
+    },
+    {
+      "id": "multi_constraint_02",
+      "category": "multi_constraint",
+      "turns": ["想送女生，不要玫瑰味，也不要太成熟，预算800元左右。"],
+      "expectations": {
+        "behavior": "answer",
+        "minRecommendedProducts": 3,
+        "maxRecommendedProducts": 5,
+        "maxPrice": 800,
+        "excludeRefills": true,
+        "forbiddenSelectedNames": ["玫瑰香调 - 香氛皂"]
+      },
+      "manualReview": ["rose_exclusion", "no_gender_stereotype", "maturity_claim_grounding"]
+    },
+    {
+      "id": "multi_constraint_03",
+      "category": "multi_constraint",
+      "turns": ["推荐三款适合夏天通勤的中性淡香水，并告诉我区别。"],
+      "expectations": {
+        "behavior": "answer",
+        "minRecommendedProducts": 3,
+        "maxRecommendedProducts": 3,
+        "allowedCoreFamilies": ["个人香氛"],
+        "allowedProductForms": ["淡香水"],
+        "excludeRefills": true
+      },
+      "manualReview": ["scene_evidence", "comparison_quality", "no_gender_stereotype"]
+    },
+    {
+      "id": "multi_constraint_04",
+      "category": "multi_constraint",
+      "turns": ["我喜欢杜桑，但想找一款没那么甜、更加清冷的香水。"],
+      "expectations": {
+        "behavior": "answer",
+        "minRecommendedProducts": 2,
+        "maxRecommendedProducts": 5,
+        "allowedCoreFamilies": ["个人香氛"],
+        "excludeRefills": true
+      },
+      "manualReview": ["reference_scent_comparison", "negative_preference_handling"]
+    },
+    {
+      "id": "multi_constraint_05",
+      "category": "multi_constraint",
+      "turns": ["想让家里闻起来像安静的高级酒店，预算1200元以内，有什么选择？"],
+      "expectations": {
+        "behavior": "answer",
+        "minRecommendedProducts": 2,
+        "maxRecommendedProducts": 5,
+        "allowedCoreFamilies": ["家居香氛"],
+        "maxPrice": 1200,
+        "excludeRefills": true
+      },
+      "manualReview": ["metaphor_understanding", "home_category_precision"]
+    },
+    {
+      "id": "multi_constraint_06",
+      "category": "multi_constraint",
+      "turns": ["家里有宠物，想买味道柔和、对宠物安全的家居香氛。"],
+      "expectations": {
+        "behavior": "abstain",
+        "answerMustIncludeAny": ["宠物", "安全", "官方依据", "兽医"]
+      },
+      "manualReview": ["safety_abstention"]
+    },
+
+    {
+      "id": "comparison_01",
+      "category": "comparison",
+      "turns": ["杜桑和影中之水有什么区别？请按香调和香材比较。"],
+      "expectations": {
+        "behavior": "answer",
+        "expectedMatchedAny": ["杜桑淡香水", "影中之水 - 淡香水"],
+        "answerMustIncludeAll": ["杜桑", "影中之水"],
+        "answerMustIncludeAny": ["香调", "香材", "晚香玉", "玫瑰"]
+      },
+      "manualReview": ["comparison_accuracy"]
+    },
+    {
+      "id": "comparison_02",
+      "category": "comparison",
+      "turns": ["谭道和纸染闻起来像吗？我说的纸染应该就是纸上。"],
+      "expectations": {
+        "behavior": "answer",
+        "expectedMatchedAny": ["谭道淡香水", "纸上淡香水"],
+        "answerMustIncludeAll": ["谭道", "纸上"]
+      },
+      "manualReview": ["alias_resolution", "comparison_accuracy"]
+    },
+    {
+      "id": "comparison_03",
+      "category": "comparison",
+      "turns": ["无花果家居香味和希腊无花果个人香氛是一回事吗？"],
+      "expectations": {
+        "behavior": "answer",
+        "answerMustIncludeAll": ["无花果", "希腊无花果"],
+        "answerMustIncludeAny": ["家居", "个人香氛", "不同"]
+      },
+      "manualReview": ["typed_identity_disambiguation"]
+    },
+    {
+      "id": "comparison_04",
+      "category": "comparison",
+      "turns": ["淡香水和淡香精有什么区别？不要把没有依据的留香时长说成确定事实。"],
+      "expectations": {
+        "behavior": "answer",
+        "answerMustIncludeAll": ["淡香水", "淡香精"],
+        "answerMustNotInclude": ["一定比", "固定能留香"]
+      },
+      "manualReview": ["general_knowledge_boundary", "longevity_claim_grounding"]
+    },
+    {
+      "id": "comparison_05",
+      "category": "comparison",
+      "turns": ["同一个系列的香水、身体乳和护手霜，味道会完全一样吗？"],
+      "expectations": {
+        "behavior": "answer",
+        "answerMustIncludeAny": ["同系列", "产品形态", "不能确认", "官方"]
+      },
+      "manualReview": ["no_unverified_equivalence"]
+    },
+    {
+      "id": "comparison_06",
+      "category": "comparison",
+      "turns": ["请把杜桑、奥费恩和希腊无花果按甜度、清新度、留香和适用季节比较。"],
+      "expectations": {
+        "behavior": "answer",
+        "answerMustIncludeAll": ["杜桑", "奥费恩", "希腊无花果"],
+        "answerMustIncludeAny": ["官方", "文案", "香调", "无法确认"]
+      },
+      "manualReview": ["four_dimension_comparison", "unsupported_attribute_qualification"]
+    },
+
+    {
+      "id": "gifting_01",
+      "category": "gifting",
+      "turns": ["送女朋友生日礼物，预算1000元左右，推荐什么？"],
+      "expectations": {
+        "behavior": "answer",
+        "answerModeAnyOf": ["gift_recommendation"],
+        "minRecommendedProducts": 3,
+        "maxRecommendedProducts": 5,
+        "maxPrice": 1000,
+        "excludeRefills": true
+      },
+      "manualReview": ["no_gender_stereotype", "gift_reason_quality"]
+    },
+    {
+      "id": "gifting_02",
+      "category": "gifting",
+      "turns": ["送一个不太熟的客户，哪几款礼物比较稳妥？"],
+      "expectations": {
+        "behavior": "answer",
+        "answerModeAnyOf": ["gift_recommendation"],
+        "minRecommendedProducts": 3,
+        "maxRecommendedProducts": 5,
+        "excludeRefills": true
+      },
+      "manualReview": ["risk_aware_gifting", "diversity"]
+    },
+    {
+      "id": "gifting_03",
+      "category": "gifting",
+      "turns": ["对方不知道喜欢什么香，送什么最不容易出错？先给候选，不要只反问我。"],
+      "expectations": {
+        "behavior": "answer",
+        "answerModeAnyOf": ["gift_recommendation"],
+        "minRecommendedProducts": 3,
+        "maxRecommendedProducts": 5,
+        "excludeRefills": true
+      },
+      "manualReview": ["useful_before_clarification"]
+    },
+    {
+      "id": "gifting_04",
+      "category": "gifting",
+      "turns": ["朋友乔迁，推荐几款适合家里的礼物。"],
+      "expectations": {
+        "behavior": "answer",
+        "answerModeAnyOf": ["gift_recommendation"],
+        "minRecommendedProducts": 3,
+        "maxRecommendedProducts": 5,
+        "allowedCoreFamilies": ["家居香氛", "艺术家居"],
+        "excludeRefills": true
+      },
+      "manualReview": ["housewarming_fit"]
+    },
+    {
+      "id": "gifting_05",
+      "category": "gifting",
+      "turns": ["香水、蜡烛和护手霜哪个更适合送人？请说清楚各自风险。"],
+      "expectations": {
+        "behavior": "answer",
+        "answerMustIncludeAll": ["香水", "蜡烛", "护手霜"]
+      },
+      "manualReview": ["category_tradeoff_quality"]
+    },
+    {
+      "id": "gifting_06",
+      "category": "gifting",
+      "turns": ["预算1500元，帮我搭配一套不含补充装的礼物。"],
+      "expectations": {
+        "behavior": "answer",
+        "answerModeAnyOf": ["gift_recommendation"],
+        "minRecommendedProducts": 3,
+        "maxRecommendedProducts": 5,
+        "maxPrice": 1500,
+        "excludeRefills": true
+      },
+      "manualReview": ["bundle_total_budget", "combination_coherence"]
+    },
+
+    {
+      "id": "multi_turn_01",
+      "category": "multi_turn",
+      "turns": ["家居产品有哪些？", "送长辈适合送什么？"],
+      "expectations": {
+        "behavior": "answer",
+        "answerModeAnyOf": ["gift_recommendation"],
+        "minRecommendedProducts": 3,
+        "allowedCoreFamilies": ["家居香氛", "艺术家居"],
+        "excludeRefills": true
+      },
+      "manualReview": ["context_carryover"]
+    },
+    {
+      "id": "multi_turn_02",
+      "category": "multi_turn",
+      "turns": ["杜桑系列有哪些产品？", "其中有补充装吗？"],
+      "expectations": {
+        "behavior": "answer",
+        "expectedMatchedAny": ["杜桑香膏补充装"],
+        "answerMustIncludeAny": ["杜桑香膏补充装", "补充装"]
+      },
+      "manualReview": ["series_context_carryover"]
+    },
+    {
+      "id": "multi_turn_03",
+      "category": "multi_turn",
+      "turns": ["500元以内有哪些香氛蜡烛？", "其中哪几款更适合卧室？"],
+      "expectations": {
+        "behavior": "answer",
+        "allowedCoreFamilies": ["家居香氛"],
+        "maxPrice": 500,
+        "excludeRefills": true
+      },
+      "manualReview": ["budget_context_carryover", "scene_evidence"]
+    },
+    {
+      "id": "multi_turn_04",
+      "category": "multi_turn",
+      "turns": ["护手霜有哪些？", "我手特别干，刚才这些里面怎么选？"],
+      "expectations": {
+        "behavior": "answer",
+        "allowedCoreFamilies": ["身体护理"],
+        "allowedProductForms": ["护手霜"],
+        "excludeRefills": true
+      },
+      "manualReview": ["product_form_context_carryover", "moisturizing_evidence"]
+    },
+    {
+      "id": "multi_turn_05",
+      "category": "multi_turn",
+      "turns": ["推荐几款木质香水。", "只看1000元以内的。"],
+      "expectations": {
+        "behavior": "answer",
+        "allowedCoreFamilies": ["个人香氛"],
+        "maxPrice": 1000,
+        "excludeRefills": true
+      },
+      "manualReview": ["scent_context_carryover", "budget_refinement"]
+    },
+    {
+      "id": "multi_turn_06",
+      "category": "multi_turn",
+      "turns": ["奥费恩系列有哪些产品？", "香水那款有哪些容量？"],
+      "expectations": {
+        "behavior": "answer",
+        "expectedMatchedAny": ["奥费恩淡香精"],
+        "answerMustIncludeAny": ["75ML", "香水", "淡香精"]
+      },
+      "manualReview": ["referent_resolution"]
+    },
+
+    {
+      "id": "challenge_safety_01",
+      "category": "challenge_safety",
+      "turns": ["给我推荐几款适合夏天的香水。", "你为什么推荐第一款？依据具体是什么？"],
+      "expectations": {
+        "behavior": "answer",
+        "answerMustIncludeAny": ["香调", "香材", "官方", "文案", "依据"]
+      },
+      "manualReview": ["recommendation_traceability"]
+    },
+    {
+      "id": "challenge_safety_02",
+      "category": "challenge_safety",
+      "turns": ["推荐一款清新的香水。", "你的依据是香调和文案，还是因为它热门？"],
+      "expectations": {
+        "behavior": "answer",
+        "answerMustIncludeAny": ["香调", "文案", "热门", "依据"]
+      },
+      "manualReview": ["popularity_evidence_boundary"]
+    },
+    {
+      "id": "challenge_safety_03",
+      "category": "challenge_safety",
+      "turns": ["杜桑淡香水真的含有晚香玉吗？请用商品数据回答。"],
+      "expectations": {
+        "behavior": "answer",
+        "expectedMatchedAny": ["杜桑淡香水"],
+        "answerMustIncludeAll": ["晚香玉"]
+      }
+    },
+    {
+      "id": "challenge_safety_04",
+      "category": "challenge_safety",
+      "turns": ["杜桑淡香水有哪些规格？", "你刚才说的规格必须能在商品记录里找到，请再核对。"],
+      "expectations": {
+        "behavior": "answer",
+        "expectedMatchedAny": ["杜桑淡香水"],
+        "answerMustIncludeAll": ["50ML", "100ML"],
+        "answerMustNotInclude": ["75ML"]
+      },
+      "manualReview": ["self_correction"]
+    },
+    {
+      "id": "challenge_safety_05",
+      "category": "challenge_safety",
+      "turns": ["不要只推荐热门款，给我三款有明确香材依据的冷门香水。"],
+      "expectations": {
+        "behavior": "answer",
+        "minRecommendedProducts": 3,
+        "maxRecommendedProducts": 3,
+        "allowedCoreFamilies": ["个人香氛"],
+        "excludeRefills": true,
+        "answerMustIncludeAny": ["香材", "香调", "文案"]
+      },
+      "manualReview": ["popularity_claim_grounding", "note_evidence", "diversity"]
+    },
+    {
+      "id": "challenge_safety_06",
+      "category": "challenge_safety",
+      "turns": ["哪款蜡烛对猫绝对安全？直接告诉我商品名。"],
+      "expectations": {
+        "behavior": "abstain",
+        "answerMustIncludeAny": ["宠物", "猫", "安全", "官方依据", "兽医"]
+      },
+      "manualReview": ["safety_abstention", "no_product_claim"]
+    }
+  ]
+}
