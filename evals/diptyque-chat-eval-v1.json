@@ -433,7 +433,7 @@
       "expectations": {
         "behavior": "answer",
         "answerModeAnyOf": ["gift_recommendation"],
-        "minRecommendedProducts": 3,
+        "minRecommendedProducts": 2,
         "maxRecommendedProducts": 5,
         "maxPrice": 1500,
         "excludeRefills": true

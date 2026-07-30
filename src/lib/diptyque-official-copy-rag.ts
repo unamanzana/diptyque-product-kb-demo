@@ -236,6 +236,11 @@ const UNSUPPORTED_CLAIM_PATTERNS: Array<{ pattern: RegExp; label: string }> = [
   { pattern: /(?:一定|保证).{0,8}(?:留香|持续|安全|不过敏)/, label: "绝对效果" },
   { pattern: /(?:适合男生|适合女生|男性专属|女性专属)/, label: "性别定向" },
   { pattern: /(?:宠物安全|对猫安全|对狗安全)/, label: "宠物安全" },
+  { pattern: /(?:\u7559\u9999\u9884\u4f30|\u6301\u9999(?:\u65f6\u95f4)?(?:\u8f83\u957f|\u66f4\u4e45|\u66f4\u6301\u4e45)|\u660e\u663e\u66f4\u6301\u4e45|\u9002\u4e2d\u504f\u77ed|\u6325\u53d1\u8f83\u5feb)/, label: "unsupported longevity" },
+  { pattern: /(?:\u52a9\u7720|\u6cbb\u6108)/, label: "sleep or therapeutic effect" },
+  { pattern: /\u9002\u5408.{0,4}(?:\u7537\u751f|\u5973\u751f|\u7537\u6027|\u5973\u6027)/, label: "gender targeting" },
+  { pattern: /(?:\u9152\u5e97|\u7cbe\u54c1\u5e97).{0,8}(?:\u5e38\u7528|\u9996\u9009|\u7231\u7528)/, label: "unsupported venue usage" },
+  { pattern: /(?:\u96f6\u8e29\u96f7|\u4e0d\u51fa\u9519|\u6700\u4e0d\u5bb9\u6613\u51fa\u9519)/, label: "risk-free gifting" },
 ];
 
 export function verifyAnswerClaims(answer: string, evidenceContext: string) {

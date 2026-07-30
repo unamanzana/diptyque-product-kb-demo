@@ -3,7 +3,7 @@ import {
   diptyqueAgentTools,
   executeDiptyqueQueryPlan,
   executeDiptyqueTool,
-  productIdsMentionedInAnswer,
+  filterRecommendedProductIds,
 } from "@/lib/diptyque-agent-tools";
 import type { ModelUsage } from "@/lib/chat-observability";
 import {
@@ -99,11 +99,45 @@ function addUsage(total: ModelUsage, usage: DeepSeekResponse["usage"]) {
   total.promptTokens = (total.promptTokens ?? 0) + (usage?.prompt_tokens ?? 0);
 }
 
-function cleanAnswer(value: string) {
-  return value
-    .replace(/\*\*/g, "")
-    .replace(/^#{1,6}\s*/gm, "")
-    .trim();
+const INTERNAL_PROTOCOL_PATTERN = /(?:<[^>]*(?:DSML|tool_calls|invoke\s+name=)[^>]*>|\btool_calls\b|<\|(?:assistant|tool)[^|]*\|>)/i;
+
+export function containsInternalProtocol(value: string) {
+  return INTERNAL_PROTOCOL_PATTERN.test(value);
+}
+
+export function cleanAnswer(value: string) {
+  if (containsInternalProtocol(value)) throw new Error("deepseek_internal_protocol_leak");
+
+  const answerOnly = value.replace(/```(?:json)?[\s\S]*?```/gi, "");
+  const rawLines = answerOnly.replace(/\r\n/g, "\n").split("\n");
+  const lines: string[] = [];
+  for (let index = 0; index < rawLines.length; index += 1) {
+    const rawLine = rawLines[index].trim();
+    if (!rawLine || /^[-*_]{3,}$/.test(rawLine)) {
+      if (lines.at(-1) !== "") lines.push("");
+      continue;
+    }
+    if (/^\|?\s*:?-{3,}:?(?:\s*\|\s*:?-{3,}:?)+\s*\|?$/.test(rawLine)) continue;
+
+    const tableCells = rawLine.startsWith("|") && rawLine.endsWith("|")
+      ? rawLine.slice(1, -1).split("|").map((cell) => cell.trim()).filter(Boolean)
+      : [];
+    const nextLine = rawLines[index + 1]?.trim() ?? "";
+    if (tableCells.length && /^\|?\s*:?-{3,}/.test(nextLine)) continue;
+
+    const normalizedLine = tableCells.length
+      ? "- " + tableCells.join("; ")
+      : rawLine
+          .replace(/^#{1,6}\s*/, "")
+          .replace(/\*\*/g, "")
+          .replace(/^[\u{1F300}-\u{1FAFF}\u2600-\u27BF]\uFE0F?\s*/u, "")
+          .replace(/^(\d+)[\uFE0F\u20E3]+\s*/, "$1. ")
+          .replace(/[\u2705\u274C\u26A0\uFE0F\u{1F60A}]/gu, "")
+          .trim();
+    if (normalizedLine) lines.push(normalizedLine);
+  }
+
+  return lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
 function parseFinalResponse(content: string) {
@@ -156,7 +190,12 @@ const SYSTEM_PROMPT = [
   "For exhaustive questions such as which products, all products or how many products, set search_products limit to 100 so the complete matching set is returned.",
   "When a tool reports total greater than returned, say that the displayed answer is partial unless the user requested only recommendations.",
   "For recommendations, obey QUERY_PLAN recommendationLimit when present; otherwise select 3 to 5 products with distinct evidence and ask one high-impact follow-up question when useful.",
+  "For a bundle or set, calculate the sum of the selected item prices. Never present an over-budget combination as a recommendation.",
+  "Do not infer longevity, season, sleep benefits, therapeutic effects, hotel usage, popularity or risk-free gifting from ingredients or general knowledge.",
   "Never infer gender or rely on gender stereotypes.",
+  "The answer field must not contain Markdown tables, Markdown headings, horizontal rules, emoji, checkmark symbols or tool-call markup.",
+  "For two or more recommendations, use a consistent numbered plain-text list. Put the product name, recommendation reason, specification and price on short separate lines.",
+  "Put exclusions in a final explanation paragraph. A product mentioned only as unsuitable, excluded, over budget, out of stock or for comparison must not appear in product_ids.",
   "Your final response must be a JSON object with exactly these keys: answer, product_ids, answer_mode.",
   "answer is concise Chinese plain text. product_ids contains only exact IDs returned by tools for products actually shown or recommended in the answer, maximum 5. answer_mode is one of product_search, price_search, gift_recommendation, relation_search.",
 ].join("\n");
@@ -209,6 +248,20 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
         maxPrice: input.queryPlan.constraints.maxPrice ?? extractGiftBudgetCeiling(input.message),
       })
     : undefined;
+  if (gateOfficialCopyToStructuredCandidates && plannedRetrieval.productIds.length === 0) {
+    return {
+      answer: plannedRetrieval.fallbackAnswer,
+      answerMode: plannedRetrieval.answerMode,
+      fallback: true,
+      reasoningUsed: false,
+      model,
+      reason: "strict_constraints_zero_hit",
+      matchedProductIds: [],
+      selectedProductIds: [],
+      toolTrace: [...plannedRetrieval.toolTrace, "strict_constraints_zero_hit"],
+      evidenceTrace: [],
+    };
+  }
   if (!apiKey) {
     return {
       answer: conceptualGiftAnswer || copyFallback?.answer || giftFallback?.answer || plannedRetrieval.fallbackAnswer,
@@ -352,10 +405,11 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
         };
       }
       const selectedFromModel = final.productIds.filter((id) => candidates.includes(id)).slice(0, 5);
-      const selectedProductIds = Array.from(new Set([
-        ...selectedFromModel,
-        ...productIdsMentionedInAnswer(final.answer, candidates),
-      ])).slice(0, 5);
+      const selectedProductIds = filterRecommendedProductIds(
+        final.answer,
+        candidates,
+        selectedFromModel
+      );
       const verification = verifyAnswerClaims(
         final.answer,
         officialCopyContext + "\n" + plannedRetrieval.content
@@ -439,10 +493,11 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
           };
         }
         const selectedFromModel = final.productIds.filter((id) => candidates.includes(id)).slice(0, 5);
-        const selectedProductIds = Array.from(new Set([
-          ...selectedFromModel,
-          ...productIdsMentionedInAnswer(final.answer, candidates),
-        ])).slice(0, 5);
+        const selectedProductIds = filterRecommendedProductIds(
+          final.answer,
+          candidates,
+          selectedFromModel
+        );
         const verification = verifyAnswerClaims(
           final.answer,
           officialCopyContext + "\n" + plannedRetrieval.content
@@ -494,14 +549,19 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
       evidenceTrace: officialCopyHits,
     };
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "unknown_error";
     return {
       answer: conceptualGiftAnswer || copyFallback?.answer || giftFallback?.answer || plannedRetrieval.fallbackAnswer,
       answerMode: giftFallback?.answerMode ?? plannedRetrieval.answerMode,
       fallback: true,
       reasoningUsed,
       model,
-      reason: error instanceof Error && error.name === "AbortError" ? "deepseek_timeout" : "deepseek_exception",
-      errorText: error instanceof Error ? error.message : "unknown_error",
+      reason: error instanceof Error && error.name === "AbortError"
+        ? "deepseek_timeout"
+        : errorMessage === "deepseek_internal_protocol_leak"
+          ? "internal_protocol_leak"
+          : "deepseek_exception",
+      errorText: errorMessage,
       matchedProductIds:
         giftFallback?.matchedProductIds ?? Array.from(new Set(matchedProductIds)),
       selectedProductIds: copyFallback?.productIds ?? giftFallback?.selectedProductIds ?? plannedRetrieval.selectedProductIds,

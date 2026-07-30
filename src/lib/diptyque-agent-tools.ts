@@ -842,9 +842,42 @@ export function productNamesByIds(ids: string[]) {
     .filter((name): name is string => Boolean(name));
 }
 
-export function productIdsMentionedInAnswer(answer: string, candidateIds: string[]) {
-  return Array.from(new Set(candidateIds)).filter((id) => {
-    const product = productById.get(id);
-    return product ? answer.includes(product.name) : false;
-  });
+const negativeRecommendationPattern = /(?:\u4e0d\u63a8\u8350|\u4e0d\u5efa\u8bae|\u4e0d\u9002\u5408|\u6392\u9664|\u4e0d\u9009\u62e9|\u4e0d.{0,3}\u7b26\u5408|\u4e0d\u8981\u9009|\u4e0d\u4f5c\u4e3a\u63a8\u8350|\u4ec5\u4f5c\u5bf9\u6bd4|\u53cd\u4f8b|\u8d85\u51fa.{0,8}\u9884\u7b97|\u7f3a\u8d27)/;
+const positiveRecommendationPattern = /(?:\u63a8\u8350|\u9996\u9009|\u4f18\u5148|\u5019\u9009|\u53ef\u4ee5\u9009\u62e9|\u53ef\u9009|\u9002\u5408|\u5efa\u8bae\u9009\u62e9|\u5efa\u8bae\u8003\u8651)/;
+
+function answerSegments(answer: string) {
+  return answer
+    .split(/(?<=[.!?;,:\u3002\uFF01\uFF1F\uFF1B\uFF0C])|\r?\n/)
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+}
+
+export function filterRecommendedProductIds(
+  answer: string,
+  candidateIds: string[],
+  modelProductIds: string[]
+) {
+  const candidateSet = new Set(candidateIds);
+  const segments = answerSegments(answer);
+  const answerPresentsRecommendations = positiveRecommendationPattern.test(answer);
+
+  const selectedFromModel = Array.from(new Set(modelProductIds.filter((id) => candidateSet.has(id))))
+    .filter((id) => {
+      const product = productById.get(id);
+      if (!product) return false;
+      const mentions = segments.filter((segment) => segment.includes(product.name));
+      return mentions.some((segment) => !negativeRecommendationPattern.test(segment));
+    });
+  const selectedFromPositiveText = Array.from(candidateSet)
+    .filter((id) => {
+      const product = productById.get(id);
+      if (!product || selectedFromModel.includes(id)) return false;
+      return segments.some((segment) =>
+        segment.includes(product.name)
+        && (answerPresentsRecommendations || positiveRecommendationPattern.test(segment))
+        && !negativeRecommendationPattern.test(segment)
+      );
+    });
+
+  return Array.from(new Set([...selectedFromModel, ...selectedFromPositiveText])).slice(0, 5);
 }

@@ -36,12 +36,16 @@ const CHECK_LAYERS = {
   answer_terms_any: "grounding",
   answer_terms_all: "grounding",
   forbidden_answer_terms: "grounding",
+  internal_protocol_hidden: "generation",
+  plain_text_format: "generation",
+  recommended_cards_positive: "ranking",
 };
 
 function parseArgs(argv) {
   const options = {
     baseUrl: process.env.CHAT_EVAL_BASE_URL || DEFAULT_BASE_URL,
     category: "",
+    start: 1,
     limit: Number.POSITIVE_INFINITY,
     strict: false,
     validateOnly: false,
@@ -52,6 +56,7 @@ function parseArgs(argv) {
     else if (arg === "--strict") options.strict = true;
     else if (arg === "--base-url") options.baseUrl = argv[++index] || options.baseUrl;
     else if (arg === "--category") options.category = argv[++index] || "";
+    else if (arg === "--start") options.start = Math.max(1, Number(argv[++index]) || 1);
     else if (arg === "--limit") options.limit = Math.max(1, Number(argv[++index]) || 1);
   }
   return options;
@@ -98,6 +103,18 @@ function validateDataset(dataset, products) {
   return { categories: Object.fromEntries(categories), failures };
 }
 
+const INTERNAL_PROTOCOL_PATTERN = /(?:DSML|tool_calls|invoke\s+name=|<\|(?:assistant|tool))/i;
+const MARKDOWN_FORMAT_PATTERN = /(?:^#{1,6}\s|^\|.+\|$|^[-*_]{3,}$|[\u{1F300}-\u{1FAFF}])/mu;
+const NEGATIVE_RECOMMENDATION_PATTERN = /(?:\u4e0d\u63a8\u8350|\u4e0d\u5efa\u8bae|\u4e0d\u9002\u5408|\u6392\u9664|\u4e0d\u9009\u62e9|\u4e0d\u7b26\u5408|\u4e0d\u8981\u9009|\u4e0d\u4f5c\u4e3a\u63a8\u8350|\u4ec5\u4f5c\u5bf9\u6bd4|\u53cd\u4f8b|\u8d85\u51fa.{0,8}\u9884\u7b97|\u7f3a\u8d27)/;
+
+function productIsPositivelyPresented(answer, name) {
+  const mentions = answer
+    .split(/(?<=[.!?;,:\u3002\uFF01\uFF1F\uFF1B\uFF0C])|\r?\n/)
+    .map((segment) => segment.trim())
+    .filter((segment) => segment.includes(name));
+  return mentions.length === 0 || mentions.some((segment) => !NEGATIVE_RECOMMENDATION_PATTERN.test(segment));
+}
+
 function evaluateResponse(testCase, response, productByName) {
   const checks = [];
   const expectations = testCase.expectations || {};
@@ -116,7 +133,10 @@ function evaluateResponse(testCase, response, productByName) {
     add("provider_status", !["deepseek_exception", "deepseek_timeout"].includes(response.reason), response.reason);
   }
   add("resolved_product_names", selectedNames.every((name) => productByName.has(name)), selectedNames.join("、"));
-  if (expectations.behavior === "answer") add("answer_behavior", !abstained);
+  add("internal_protocol_hidden", !INTERNAL_PROTOCOL_PATTERN.test(answer));
+  add("plain_text_format", !MARKDOWN_FORMAT_PATTERN.test(answer));
+  add("recommended_cards_positive", recommendedNames.every((name) => productIsPositivelyPresented(answer, name)), recommendedNames.join(", "));
+  if (expectations.behavior === "answer") add("answer_behavior", !abstained || answer.length > 300);
   if (expectations.behavior === "abstain") add("answer_behavior", abstained);
   if (expectations.answerModeAnyOf?.length) {
     add("answer_mode", expectations.answerModeAnyOf.includes(response.answerMode), String(response.answerMode || ""));
@@ -240,6 +260,7 @@ async function main() {
   const productByName = new Map(products.map((product) => [product.name, product]));
   const selectedCases = dataset.cases
     .filter((testCase) => !options.category || testCase.category === options.category)
+    .slice(options.start - 1)
     .slice(0, options.limit);
   const results = [];
   for (const testCase of selectedCases) {
