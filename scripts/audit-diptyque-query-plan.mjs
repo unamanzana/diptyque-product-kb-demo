@@ -144,6 +144,38 @@ const cases = [
     query: "预算1500元，帮我搭配一套不含补充装的礼物。",
     check: (plan) => plan.constraints.excludeRefills && plan.constraints.variantTags.length === 0,
   },
+  {
+    name: "contextual alternatives retain sensory preferences",
+    query: "\u8fd8\u6709\u5417\uff1f\u5c31\u53ea\u6709\u8fd9\u4e00\u6b3e\u63a8\u8350\uff1f",
+    history: [
+      { role: "user", content: "\u6709\u6ca1\u6709\u50cf\u521a\u5265\u5f00\u7684\u67d1\u6a58\u76ae\u4e00\u6837\u6e05\u723d\uff0c\u53c8\u4e0d\u663e\u5f97\u592a\u6d3b\u6cfc\u7684\u9009\u62e9" },
+      { role: "assistant", content: "1. \u4e1c\u4eac\u6de1\u9999\u6c34" },
+    ],
+    check: (plan) =>
+      plan.intent === "recommendation"
+      && plan.conversationState.isFollowUp
+      && plan.conversationState.contextualQuery.includes("\u67d1\u6a58\u76ae")
+      && plan.conversationState.previouslyPresentedProductIds.length === 1
+      && plan.softPreferences.includes("\u6e05\u65b0")
+      && plan.softPreferences.includes("\u67d1\u6a58")
+      && plan.softPreferences.includes("\u514b\u5236")
+      && plan.conversationState.hardConstraintKeys.length === 0,
+  },
+  {
+    name: "automatic refill exclusion is not an explicit hard constraint",
+    query: "\u60f3\u627e\u4e00\u6b3e\u6e05\u723d\u81ea\u7136\u7684\u9999\u5473\u3002",
+    check: (plan) =>
+      plan.intent === "recommendation"
+      && plan.constraints.excludeRefills
+      && !plan.conversationState.hardConstraintKeys.includes("excludeRefills"),
+  },
+  {
+    name: "explicit budget remains a hard constraint",
+    query: "\u9884\u7b971000\u5143\u4ee5\u5185\uff0c\u63a8\u8350\u51e0\u6b3e\u9999\u6c34\u3002",
+    check: (plan) =>
+      plan.constraints.maxPrice === 1000
+      && plan.conversationState.hardConstraintKeys.includes("maxPrice"),
+  },
 ];
 
 const failures = cases.flatMap((testCase) => {

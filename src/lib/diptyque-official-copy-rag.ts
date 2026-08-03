@@ -16,6 +16,7 @@ type Product = {
   scentProfiles: string[];
   scentAccords: string[];
   materials: string[];
+  variantTags: string[];
   subtitle: string;
   description: string;
   storyText: string;
@@ -63,6 +64,8 @@ const QUERY_EXPANSIONS: Array<[RegExp, string[]]> = [
   [/秋冬/, ["木质", "辛香", "琥珀", "温暖", "香脂"]],
   [/睡前|放松/, ["柔和", "舒缓", "宁静", "温暖"]],
   [/高级酒店/, ["木质", "洁净", "香氛仪式", "空间", "氛围"]],
+  [/\u67d1\u6a58\u76ae|\u67d1\u6a58|\u6a58\u76ae/, ["\u67da\u5b50", "\u9752\u67d1", "\u6a59\u76ae", "\u67e0\u6aac", "\u4f5b\u624b\u67d1", "\u6e05\u65b0"]],
+  [/\u514b\u5236|\u4e0d[^\u3002\uff01\uff1f]{0,5}\u6d3b\u6cfc/, ["\u5185\u655b", "\u6c89\u9759", "\u5b81\u9759", "\u67d4\u548c", "\u7ec6\u817b"]],
 ];
 
 function unique(values: string[]) {
@@ -96,10 +99,12 @@ function ngrams(value: string) {
 
 function queryTerms(query: string, plan: DiptyqueQueryPlan) {
   const expanded = QUERY_EXPANSIONS.flatMap(([pattern, terms]) => pattern.test(query) ? terms : []);
-  const semanticQuery = query.replace(
-    /diptyque|我|平时|喜欢|不喜欢|想要|想找|有没有|闻起来|比较|哪些|哪几款|几款|推荐|适合|选择|不要|只给|产品|香味|或者/gi,
-    ""
-  );
+  const semanticQuery = query
+    .replace(/\u4e0d[^\u3002\uff01\uff1f]{0,5}\u6d3b\u6cfc/g, "\u514b\u5236")
+    .replace(
+      /diptyque|\u6211|\u5e73\u65f6|\u559c\u6b22|\u4e0d\u559c\u6b22|\u60f3\u8981|\u60f3\u627e|\u6709\u6ca1\u6709|\u95fb\u8d77\u6765|\u6bd4\u8f83|\u54ea\u4e9b|\u54ea\u51e0\u6b3e|\u51e0\u6b3e|\u63a8\u8350|\u9002\u5408|\u9009\u62e9|\u4e0d\u8981|\u53ea\u7ed9|\u4ea7\u54c1|\u9999\u5473|\u6216\u8005/gi,
+      ""
+    );
   const ontologyTerms = [
     ...plan.constraints.collections,
     ...plan.softPreferences,
@@ -131,15 +136,19 @@ export function retrieveOfficialCopy(
   plan: DiptyqueQueryPlan,
   candidateProductIds: string[] = [],
   limit = 10,
-  strictCandidateGate = false
+  strictCandidateGate = false,
+  excludedProductIds: string[] = []
 ) {
   const terms = queryTerms(query, plan);
   const candidateSet = new Set(candidateProductIds);
+  const excludedProductSet = new Set(excludedProductIds);
   const useCandidateGate = strictCandidateGate || candidateSet.size > 0;
   const scored = chunks.flatMap((chunk) => {
     if (useCandidateGate && !candidateSet.has(chunk.productId)) return [];
+    if (excludedProductSet.has(chunk.productId)) return [];
     const product = productById.get(chunk.productId);
     if (!product) return [];
+    if (plan.constraints.excludeRefills && product.variantTags.includes("\u8865\u5145\u88c5")) return [];
     const matchedTerms = unique(terms.filter((term) => chunk.normalizedExcerpt.includes(term)));
     const exactQuery = normalize(query);
     const exactBonus = exactQuery.length >= 4 && chunk.normalizedExcerpt.includes(exactQuery) ? 12 : 0;
@@ -226,7 +235,7 @@ export function officialCopyFallback(hits: OfficialCopyHit[], plan: DiptyqueQuer
     ? `本次分别核对了${plan.constraints.collections.join("、")}。`
     : "";
   return {
-    answer: `根据当前硬性条件和官网文案，优先候选如下：\n${reasons.join("\n")}\n${figComparison}${comparisonScope}这些描述只能支持文案中明确写出的气味或体验；甜度、留香、热门程度等未被官方资料明确量化的维度，我不会当作确定事实。`,
+    answer: `\u6839\u636e\u5f53\u524d\u9700\u6c42\u548c\u5b98\u7f51\u6587\u6848\uff0c\u4f18\u5148\u5019\u9009\u5982\u4e0b\uff1a\n${reasons.join("\n")}\n${figComparison}${comparisonScope}\u8fd9\u4e9b\u63cf\u8ff0\u53ea\u80fd\u652f\u6301\u6587\u6848\u4e2d\u660e\u786e\u5199\u51fa\u7684\u6c14\u5473\u6216\u4f53\u9a8c\uff1b\u751c\u5ea6\u3001\u7559\u9999\u3001\u70ed\u95e8\u7a0b\u5ea6\u7b49\u672a\u88ab\u5b98\u65b9\u8d44\u6599\u660e\u786e\u91cf\u5316\u7684\u7ef4\u5ea6\uff0c\u6211\u4e0d\u4f1a\u5f53\u4f5c\u786e\u5b9a\u4e8b\u5b9e\u3002`,
     productIds: selectedHits.map((hit) => hit.productId),
   };
 }

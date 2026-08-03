@@ -52,6 +52,21 @@ if (emptyGatedHits.length) {
   failures.push("strict candidate gate returned evidence after structured retrieval found no products");
 }
 
+const followUpPlan = buildDiptyqueQueryPlan("\u8fd8\u6709\u5176\u4ed6\u6e05\u65b0\u7684\u9009\u62e9\u5417\uff1f", []);
+const initialFollowUpHits = retrieveOfficialCopy("\u63a8\u8350\u6e05\u65b0\u7684\u9999\u6c34", followUpPlan, [], 10);
+const excludedProductId = initialFollowUpHits[0]?.productId;
+const alternativeHits = excludedProductId
+  ? retrieveOfficialCopy("\u63a8\u8350\u6e05\u65b0\u7684\u9999\u6c34", followUpPlan, [], 10, false, [excludedProductId])
+  : [];
+if (excludedProductId && alternativeHits.some((hit) => hit.productId === excludedProductId)) {
+  failures.push("follow-up retrieval repeated an explicitly excluded product");
+}
+
+const noRefillPlan = buildDiptyqueQueryPlan("\u63a8\u8350\u6e05\u65b0\u7684\u9999\u6c34", []);
+const noRefillHits = retrieveOfficialCopy("\u63a8\u8350\u6e05\u65b0\u7684\u9999\u6c34", noRefillPlan, [], 20);
+if (noRefillHits.some((hit) => catalog.products.find((product) => product.id === hit.productId)?.variantTags.includes("\u8865\u5145\u88c5"))) {
+  failures.push("recommendation retrieval included a refill despite the default exclusion");
+}
 const unsupported = verifyAnswerClaims("这是最热门而且保证留香的选择。", "普通商品描述");
 if (unsupported.passed || unsupported.unsupported.length !== 2) {
   failures.push("claim verifier failed to block unsupported popularity and absolute-effect claims");

@@ -52,6 +52,7 @@ type ProductEdge = {
   relationLayer: string;
   reviewStatus: string;
   scenario: string;
+  evidenceType: string;
   evidenceText: string;
   evidenceUrl: string;
 };
@@ -208,6 +209,7 @@ function searchProducts(args: Record<string, unknown>): ToolExecution {
   const collections = stringArray(args.collections);
   const excludedCollections = stringArray(args.exclude_collections);
   const excludedForms = stringArray(args.exclude_product_forms);
+  const excludedProductIds = new Set(stringArray(args.exclude_product_ids));
   const scentTerms = stringArray(args.scent_terms);
   const requestedSizes = stringArray(args.sizes).map(normalize);
   const materials = stringArray(args.materials);
@@ -230,6 +232,7 @@ function searchProducts(args: Record<string, unknown>): ToolExecution {
       if (!matchesAny([product.productForm], requestedForms)) return false;
       if (requestedSizes.length && !product.sizes.some((size) => requestedSizes.includes(normalize(size)))) return false;
       if (excludedForms.includes(product.productForm)) return false;
+      if (excludedProductIds.has(product.id)) return false;
       if (!matchesAny(product.collections, collections)) return false;
       if (productMatchesExcludedScent(product, excludedCollections)) return false;
       if (
@@ -454,7 +457,7 @@ function getProductDetails(args: Record<string, unknown>): ToolExecution {
 function getProductRelations(args: Record<string, unknown>): ToolExecution {
   const ids = new Set(stringArray(args.product_ids).slice(0, 100));
   const relationTypes = new Set(stringArray(args.relation_types));
-  const relations = payload.graph.edges
+  const directRelations = payload.graph.edges
     .filter(
       (edge) =>
         edge.sourceType === "Product"
@@ -464,25 +467,98 @@ function getProductRelations(args: Record<string, unknown>): ToolExecution {
         && (!relationTypes.size || relationTypes.has(edge.edgeType))
     )
     .slice(0, 60);
+
+  const includeAccessoryCompatibility = !relationTypes.size || relationTypes.has("ACCESSORY_FOR");
+  const specificationGroups = new Map<string, {
+    accessories: Array<{ evidence: string; evidenceUrl: string; id: string; name: string }>;
+    compatibilitySpec: string;
+    matchingProducts: Array<{ id: string; name: string }>;
+    specId: string;
+  }>();
+
+  if (includeAccessoryCompatibility) {
+    payload.graph.edges
+      .filter(
+        (edge) =>
+          edge.edgeType === "ACCESSORY_FOR_SPEC"
+          && edge.sourceType === "Product"
+          && edge.targetType === "CompatibilitySpec"
+          && edge.reviewStatus === "approved"
+      )
+      .forEach((accessorySpec) => {
+        const matchingProducts = payload.graph.edges
+          .filter(
+            (edge) =>
+              edge.edgeType === "HAS_COMPATIBILITY_SPEC"
+              && edge.sourceType === "Product"
+              && edge.target === accessorySpec.target
+              && edge.source !== accessorySpec.source
+              && productById.has(edge.source)
+          )
+          .map((edge) => ({ id: edge.source, name: edge.sourceName }));
+        if (!ids.has(accessorySpec.source) && !matchingProducts.some((product) => ids.has(product.id))) return;
+
+        const existing = specificationGroups.get(accessorySpec.target) ?? {
+          accessories: [],
+          compatibilitySpec: accessorySpec.targetName,
+          matchingProducts,
+          specId: accessorySpec.target,
+        };
+        if (!existing.accessories.some((accessory) => accessory.id === accessorySpec.source)) {
+          existing.accessories.push({
+            evidence: accessorySpec.evidenceText,
+            evidenceUrl: accessorySpec.evidenceUrl,
+            id: accessorySpec.source,
+            name: accessorySpec.sourceName,
+          });
+        }
+        specificationGroups.set(accessorySpec.target, existing);
+      });
+  }
+
+  const specificationCompatibility = Array.from(specificationGroups.values())
+    .sort((a, b) => a.compatibilitySpec.localeCompare(b.compatibilitySpec, "zh-CN"));
   const productIds = Array.from(
-    new Set(relations.flatMap((edge) => [edge.source, edge.target]).filter((id) => productById.has(id)))
+    new Set([
+      ...directRelations.flatMap((edge) => [edge.source, edge.target]),
+      ...specificationCompatibility.flatMap((group) => [
+        ...group.accessories.map((accessory) => accessory.id),
+        ...group.matchingProducts.map((product) => product.id),
+      ]),
+    ].filter((id) => productById.has(id)))
   );
   return {
     content: JSON.stringify({
-      relations: relations.map((edge) => ({
+      relations: directRelations.map((edge) => ({
         sourceId: edge.source,
         sourceName: edge.sourceName,
         targetId: edge.target,
         targetName: edge.targetName,
         relationType: edge.edgeType,
         relationLayer: edge.relationLayer,
+        evidenceLevel: edge.evidenceType.startsWith("official_")
+          ? "official_confirmed_direct_relation"
+          : "reviewed_direct_relation",
         scenario: edge.scenario,
         evidence: edge.evidenceText,
         evidenceUrl: edge.evidenceUrl,
       })),
+      specificationCompatibility: specificationCompatibility.map((group) => ({
+        ...group,
+        relationType: "ACCESSORY_FOR",
+        relationLayer: "derived_compatibility",
+        evidenceLevel: "specification_compatibility_not_official_item_pairing",
+        matchingProductCount: group.matchingProducts.length,
+        statementRule: "\u53ef\u8868\u8ff0\u4e3a\u6839\u636e\u5df2\u5ba1\u6838\u89c4\u683c\u53ef\u4ee5\u9002\u914d\uff1b\u4e0d\u5f97\u8868\u8ff0\u4e3a\u5b98\u7f51\u9010\u6b3e\u642d\u914d\u6216\u5b98\u65b9\u63a8\u8350\u3002",
+      })),
     }),
     productIds,
-    summary: "get_product_relations returned=" + relations.length,
+    summary: [
+      "get_product_relations",
+      "direct=" + directRelations.length,
+      "specificationGroups=" + specificationCompatibility.length,
+      "specificationAccessories=" + specificationCompatibility.reduce((sum, group) => sum + group.accessories.length, 0),
+    ].join(" "),
   };
 }
 
@@ -543,6 +619,7 @@ export const diptyqueAgentTools: ToolDefinition[] = [
           collections: { type: "array", items: { type: "string" } },
           exclude_collections: { type: "array", items: { type: "string" } },
           exclude_product_forms: { type: "array", items: { type: "string" } },
+          exclude_product_ids: { type: "array", items: { type: "string" }, description: "Product IDs already shown in the conversation and excluded only when requesting alternatives." },
           scent_terms: { type: "array", items: { type: "string" } },
           materials: { type: "array", items: { type: "string" } },
           functions: { type: "array", items: { type: "string" } },
@@ -600,7 +677,7 @@ export const diptyqueAgentTools: ToolDefinition[] = [
     function: {
       name: "get_product_relations",
       description:
-        "Get approved direct product relations such as pairing, layering, refill, accessory, set membership or gift combinations. Do not infer a relation from shared attributes.",
+        "Get approved direct product relations and approved specification compatibility. specificationCompatibility is derived by joining an accessory's official compatible specification to products with that recorded specification; it is not an official item-by-item pairing or recommendation.",
       parameters: {
         type: "object",
         properties: {
@@ -682,9 +759,31 @@ function plannedFallback(
     const relationData = relationExecution
       ? JSON.parse(relationExecution.content) as {
           relations?: Array<{ evidence?: string; relationType: string; sourceName: string; targetName: string }>;
+          specificationCompatibility?: Array<{
+            accessories: Array<{ evidence: string; evidenceUrl: string; id: string; name: string }>;
+            compatibilitySpec: string;
+            matchingProductCount: number;
+            matchingProducts: Array<{ id: string; name: string }>;
+          }>;
         }
       : {};
     const relations = relationData.relations ?? [];
+    const specificationCompatibility = relationData.specificationCompatibility ?? [];
+    const accessoryNameTerm = /\u70db\u76d6/.test(plan.currentQuery)
+      ? "\u70db\u76d6"
+      : /\u70db\u7f69/.test(plan.currentQuery)
+        ? "\u70db\u7f69"
+        : /\u70db\u53f0/.test(plan.currentQuery)
+          ? "\u70db\u53f0"
+          : "";
+    const relevantSpecificationCompatibility = specificationCompatibility
+      .map((group) => ({
+        ...group,
+        accessories: accessoryNameTerm
+          ? group.accessories.filter((accessory) => accessory.name.includes(accessoryNameTerm))
+          : group.accessories,
+      }))
+      .filter((group) => group.accessories.length);
     const relationLabel = plan.relationIntent === "layering"
       ? "叠香"
       : plan.relationIntent === "accessory"
@@ -693,11 +792,21 @@ function plannedFallback(
           ? "补充装适配"
           : "搭配";
     return {
-      answer: relations.length
-        ? `当前已审核的${relationLabel}关系：${relations.map((relation) =>
-            `${relation.sourceName}与${relation.targetName}${relation.evidence ? `（依据：${relation.evidence}）` : ""}`
-          ).join("；")}。`
-        : `当前已审核商品关系中没有找到符合条件的${relationLabel}关系，因此不能根据同系列、同香材或名称相似自行推断。`,
+      answer: [
+        relations.length
+          ? `\u5b98\u7f51\u660e\u786e\u6216\u5df2\u7ecf\u5ba1\u6838\u7684\u76f4\u63a5${relationLabel}\u5173\u7cfb\uff1a${relations.map((relation) =>
+              `${relation.sourceName}\u4e0e${relation.targetName}${relation.evidence ? `\uff08\u4f9d\u636e\uff1a${relation.evidence}\uff09` : ""}`
+            ).join("\uff1b")}\u3002`
+          : "",
+        relevantSpecificationCompatibility.length
+          ? `\u89c4\u683c\u9002\u914d\uff08\u4e0d\u662f\u5b98\u7f51\u9010\u6b3e\u642d\u914d\uff09\uff1a${relevantSpecificationCompatibility.map((item) => {
+              const accessories = item.accessories.map((accessory) => accessory.name).join("\u3001");
+              const names = item.matchingProducts.slice(0, 12).map((product) => product.name).join("\u3001");
+              const remainder = item.matchingProductCount > 12 ? `\u7b49${item.matchingProductCount}\u6b3e` : "";
+              return `${accessories}\u7684\u5b98\u65b9\u8d44\u6599\u6807\u6ce8\u9002\u914d${item.compatibilitySpec}\uff1b\u6309\u5df2\u8bb0\u5f55\u5546\u54c1\u89c4\u683c\uff0c\u53ef\u9002\u914d${names}${remainder}`;
+            }).join("\uff1b")}\u3002`
+          : "",
+      ].filter(Boolean).join("\n") || `\u5f53\u524d\u5df2\u5ba1\u6838\u5546\u54c1\u5173\u7cfb\u548c\u89c4\u683c\u9002\u914d\u8bb0\u5f55\u4e2d\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684${relationLabel}\u5173\u7cfb\uff0c\u56e0\u6b64\u4e0d\u80fd\u6839\u636e\u540c\u7cfb\u5217\u3001\u540c\u9999\u6750\u6216\u540d\u79f0\u76f8\u4f3c\u81ea\u884c\u63a8\u65ad\u3002`,
       answerMode: "relation_search" as const,
       selectedProductIds: (relationExecution?.productIds ?? primary.productIds).slice(0, 5),
     };
@@ -762,6 +871,7 @@ export function executeDiptyqueQueryPlan(plan: DiptyqueQueryPlan): PlannedRetrie
     collections: constraints.collections,
     exclude_collections: constraints.excludedCollections,
     exclude_product_forms: constraints.excludedProductForms,
+    exclude_product_ids: plan.conversationState.previouslyPresentedProductIds,
     product_forms: constraints.productForms,
     sizes: constraints.sizes,
     variant_tags: constraints.variantTags,
@@ -780,7 +890,7 @@ export function executeDiptyqueQueryPlan(plan: DiptyqueQueryPlan): PlannedRetrie
       })
     : searchProducts({
         ...commonArgs,
-        query: cheapest || plan.softPreferences.length ? "" : plan.currentQuery,
+        query: cheapest || plan.softPreferences.length || plan.conversationState.isFollowUp ? "" : plan.currentQuery,
         limit: cheapest ? 3 : plan.intent === "catalog" || plan.intent === "relation" || plan.softPreferences.length ? 100 : 30,
         sort: cheapest ? "price_asc" : "relevance",
       });

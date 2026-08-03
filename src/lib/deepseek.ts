@@ -178,14 +178,19 @@ const SYSTEM_PROMPT = [
   "For every gifting request, including vague requests such as what can I give my family, call search_gift_candidates first. Present useful candidates before asking for recipient, budget or scent preferences.",
   "Do not call list_catalog_values for a gifting request unless the user explicitly asks for catalog dimensions. Missing preferences are not a reason to return zero products.",
   "Use numeric filters for price questions. For a question about products at or below 500 yuan, call search_products with max_price 500. For the cheapest product, sort price_asc and use a small limit.",
-  "Use get_product_details for evidence before recommendations. Use get_product_relations only for approved pairing, layering, refill, accessory or set claims.",
-  "Treat the supplied QUERY_PLAN as authoritative. Do not replace a relation, recommendation, comparison or safety intent with a broad product catalog list.",
+  "Use get_product_details for evidence before recommendations. Use get_product_relations for approved direct relations and approved specification compatibility.",
+  "QUERY_PLAN is a deterministic preliminary plan, not a substitute for understanding the conversation. Use the recent conversation and CONVERSATION_STATE to resolve the user's current meaning.",
+  "Never relax an explicit hard constraint listed in CONVERSATION_STATE hardConstraintKeys. Soft preferences may be used for ranking and may be partially relaxed only when you clearly explain what changed.",
+  "For a contextual follow-up, continue the previous request, exclude previously presented products when the user asks for alternatives, and do not search the short follow-up wording as a standalone product phrase.",
   "PLANNED_RETRIEVAL was executed deterministically from QUERY_PLAN before model reasoning. Use it as the initial candidate and evidence set; call tools only when more evidence is needed." ,
   "OFFICIAL_COPY_EVIDENCE contains exact excerpts from Diptyque product pages. Use it to interpret fuzzy sensory language and to explain recommendations. Retrieval expansion terms are never evidence; only the exact excerpts and structured product facts are evidence.",
   "For every subjective comparison or recommendation, distinguish official wording from inference. If sweetness, longevity, projection, popularity, gender suitability, season or safety is not explicitly supported, say that the current official data cannot confirm it.",
   "For relation intent, first identify the source product with search_products, then call get_product_relations with the relation_types from QUERY_PLAN. Series membership is not a direct pairing: search by the shared collection or scent identity instead.",
+  "Relationship evidence has two levels. relations contains official or reviewed direct product relations. specificationCompatibility groups accessories by their official compatible specification and lists products whose recorded specification matches.",
+  "For specificationCompatibility, say only that the products can fit or are compatible by specification. Explicitly state that this is not an official item-by-item pairing or official recommendation. Never describe specification-derived compatibility as official pairing, official match or official recommendation.",
   "Apply every hard constraint from QUERY_PLAN to tool arguments, converting camelCase plan keys to the matching snake_case tool keys. This includes excludedCollections to exclude_collections and excludedProductForms to exclude_product_forms. Inherited constraints remain active unless the current user explicitly replaces them.",
-  "Soft preferences are ranking signals, not verified facts. Never turn soft, gentle or natural smelling into a safety claim.",
+  "Soft preferences are ranking signals, not hard filters or verified facts. A soft-preference mismatch must not produce an automatic zero-result answer. Never turn soft, gentle or natural smelling into a safety claim.",
+  "When preliminary retrieval is empty, inspect the conversation and call tools again before answering. Return zero only when explicit hard constraints truly leave no matching products.",
   "Never invent products, prices, URLs or relations. Shared scent, material or category is not an approved direct relation.",
   "For exhaustive questions such as which products, all products or how many products, set search_products limit to 100 so the complete matching set is returned.",
   "When a tool reports total greater than returned, say that the displayed answer is partial unless the user requested only recommendations.",
@@ -215,23 +220,15 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
   const apiKey = process.env.DEEPSEEK_API_KEY;
   const model = process.env.DEEPSEEK_MODEL || DEFAULT_MODEL;
   const plannedRetrieval = executeDiptyqueQueryPlan(input.queryPlan);
-  const constraints = input.queryPlan.constraints;
   const gateOfficialCopyToStructuredCandidates = input.queryPlan.intent === "gifting"
-    || constraints.excludeRefills
-    || constraints.collections.length > 0
-    || constraints.excludedCollections.length > 0
-    || constraints.coreFamilies.length > 0
-    || constraints.excludedProductForms.length > 0
-    || constraints.productForms.length > 0
-    || constraints.sizes.length > 0
-    || constraints.variantTags.length > 0
-    || constraints.maxPrice != null;
+    || input.queryPlan.conversationState.hardConstraintKeys.length > 0;
   const officialCopyHits = retrieveOfficialCopy(
-    input.message,
+    input.queryPlan.conversationState.contextualQuery,
     input.queryPlan,
     gateOfficialCopyToStructuredCandidates ? plannedRetrieval.productIds : [],
     10,
-    gateOfficialCopyToStructuredCandidates
+    gateOfficialCopyToStructuredCandidates,
+    input.queryPlan.conversationState.previouslyPresentedProductIds
   );
   const officialCopyContext = formatOfficialCopyContext(officialCopyHits);
   const copyFallback = officialCopyFallback(officialCopyHits, input.queryPlan);
@@ -248,20 +245,6 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
         maxPrice: input.queryPlan.constraints.maxPrice ?? extractGiftBudgetCeiling(input.message),
       })
     : undefined;
-  if (gateOfficialCopyToStructuredCandidates && plannedRetrieval.productIds.length === 0) {
-    return {
-      answer: plannedRetrieval.fallbackAnswer,
-      answerMode: plannedRetrieval.answerMode,
-      fallback: true,
-      reasoningUsed: false,
-      model,
-      reason: "strict_constraints_zero_hit",
-      matchedProductIds: [],
-      selectedProductIds: [],
-      toolTrace: [...plannedRetrieval.toolTrace, "strict_constraints_zero_hit"],
-      evidenceTrace: [],
-    };
-  }
   if (!apiKey) {
     return {
       answer: conceptualGiftAnswer || copyFallback?.answer || giftFallback?.answer || plannedRetrieval.fallbackAnswer,
@@ -283,6 +266,7 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
   const messages: Array<Record<string, unknown>> = [
     { role: "system", content: SYSTEM_PROMPT },
     { role: "system", content: "QUERY_PLAN\n" + JSON.stringify(input.queryPlan) },
+    { role: "system", content: "CONVERSATION_STATE\n" + JSON.stringify(input.queryPlan.conversationState) },
     { role: "system", content: "PLANNED_RETRIEVAL\n" + plannedRetrieval.content },
     { role: "system", content: "OFFICIAL_COPY_EVIDENCE\n" + officialCopyContext },
     ...input.history.slice(-8).map((message) => ({

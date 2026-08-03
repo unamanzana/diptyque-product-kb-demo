@@ -42,8 +42,17 @@ export type DiptyqueQueryConstraints = {
   variantTags: string[];
 };
 
+export type DiptyqueConversationState = {
+  contextualQuery: string;
+  hardConstraintKeys: Array<keyof DiptyqueQueryConstraints>;
+  isFollowUp: boolean;
+  previousUserQuery: string;
+  previouslyPresentedProductIds: string[];
+};
+
 export type DiptyqueQueryPlan = {
   allowDeterministicCatalog: boolean;
+  conversationState: DiptyqueConversationState;
   constraints: DiptyqueQueryConstraints;
   currentQuery: string;
   inheritedConstraintKeys: Array<keyof DiptyqueQueryConstraints>;
@@ -64,6 +73,8 @@ type Payload = {
   products: Array<{
     collections: string[];
     coreFamily: string;
+    id: string;
+    name: string;
     productForm: string;
   }>;
 };
@@ -271,12 +282,40 @@ function extractRecommendationLimit(query: string) {
 }
 
 function extractSoftPreferences(query: string) {
-  return unique([
-    ...["木质", "白花", "清新", "清冷", "柔和", "自然", "不甜", "微甜", "小众", "不容易撞香"]
+  const preferences = [
+    ...["\u6728\u8d28", "\u767d\u82b1", "\u6e05\u65b0", "\u6e05\u51b7", "\u67d4\u548c", "\u81ea\u7136", "\u4e0d\u751c", "\u5fae\u751c", "\u5c0f\u4f17", "\u4e0d\u5bb9\u6613\u649e\u9999"]
       .filter((term) => query.includes(term)),
-    ...["夏天", "秋冬", "通勤", "卧室", "睡前", "约会", "高级酒店", "雨后花园", "森林", "海边"]
+    ...["\u590f\u5929", "\u79cb\u51ac", "\u901a\u52e4", "\u5367\u5ba4", "\u7761\u524d", "\u7ea6\u4f1a", "\u9ad8\u7ea7\u9152\u5e97", "\u96e8\u540e\u82b1\u56ed", "\u68ee\u6797", "\u6d77\u8fb9"]
       .filter((term) => query.includes(term)),
-  ]);
+  ];
+  if (/\u6e05\u723d/.test(query)) preferences.push("\u6e05\u65b0");
+  if (/\u67d1\u6a58\u76ae|\u6a58\u76ae|\u67d1\u6a58/.test(query)) preferences.push("\u67d1\u6a58");
+  if (/\u4e0d[^\u3002\uff01\uff1f]{0,5}\u6d3b\u6cfc|\u514b\u5236|\u6c89\u9759/.test(query)) preferences.push("\u514b\u5236");
+  if (/\u4e0d[^\u3002\uff01\uff1f]{0,4}\u751c/.test(query)) preferences.push("\u4e0d\u751c");
+  return unique(preferences);
+}
+
+const FOLLOW_UP_PATTERN = /\u8fd8\u6709|\u66f4\u591a|\u5176\u4ed6|\u522b\u7684|\u518d(?:\u63a8\u8350|\u6765|\u7ed9|\u770b\u770b)|\u5c31\u53ea\u6709|\u6362(?:\u4e00|\u51e0|\u4e9b)|\u90a3(?:\u6b3e|\u4e9b)|\u5b83\u4eec/;
+
+function populatedConstraintKeys(constraints: DiptyqueQueryConstraints) {
+  return (Object.keys(constraints) as Array<keyof DiptyqueQueryConstraints>).filter((key) => {
+    const value = constraints[key];
+    if (Array.isArray(value)) return value.length > 0;
+    if (typeof value === "boolean") return value;
+    return value != null;
+  });
+}
+
+function previouslyPresentedProductIds(history: QueryHistoryMessage[]) {
+  const assistantText = history
+    .filter((message) => message.role === "assistant")
+    .slice(-3)
+    .map((message) => message.content)
+    .join("\n");
+  if (!assistantText) return [];
+  return payload.products
+    .filter((product) => product.name.length >= 2 && assistantText.includes(product.name))
+    .map((product) => product.id);
 }
 
 export function buildDiptyqueQueryPlan(
@@ -285,13 +324,17 @@ export function buildDiptyqueQueryPlan(
 ): DiptyqueQueryPlan {
   const currentConstraints = extractConstraints(currentQuery);
   const merged = mergeWithHistory(currentConstraints, history);
+  const previousUserQuery = history
+    .filter((message) => message.role === "user")
+    .slice(-1)[0]?.content ?? "";
+  const isFollowUp = FOLLOW_UP_PATTERN.test(currentQuery) || REFERENTIAL_PATTERN.test(currentQuery);
   const relation = relationRule(currentQuery);
   const petSafety = PET_PATTERN.test(currentQuery) && SAFETY_PATTERN.test(currentQuery);
   const gifting = isGiftRecommendationQuery(currentQuery) || GIFT_FALLBACK_PATTERN.test(currentQuery);
   const comparison = COMPARISON_PATTERN.test(currentQuery);
-  const preference = PREFERENCE_PATTERN.test(currentQuery) || /选择|想让/.test(currentQuery);
+  const preference = PREFERENCE_PATTERN.test(currentQuery) || /\u9009\u62e9|\u60f3\u8ba9/.test(currentQuery);
   const catalog = CATALOG_PATTERN.test(currentQuery);
-  const intent: DiptyqueQueryIntent = petSafety
+  const preliminaryIntent: DiptyqueQueryIntent = petSafety
     ? "safety"
     : gifting
       ? "gifting"
@@ -304,20 +347,8 @@ export function buildDiptyqueQueryPlan(
             : catalog
               ? "catalog"
               : "fact";
-  const effectiveConstraints = {
-    ...merged.constraints,
-    excludeRefills:
-      merged.constraints.excludeRefills
-      || ((intent === "recommendation" || intent === "gifting") && !/补充装|补充瓶/.test(currentQuery)),
-  };
-  const allowDeterministicCatalog =
-    intent === "catalog"
-    && effectiveConstraints.maxPrice == null
-    && !ATTRIBUTE_PATTERN.test(currentQuery)
-    && !REFERENTIAL_PATTERN.test(currentQuery)
-    && merged.inheritedConstraintKeys.length === 0;
 
-  const preferenceSeedCollections = /喜欢.*但.*(?:想找|找一款)/.test(normalize(currentQuery))
+  const preferenceSeedCollections = /\u559c\u6b22.*\u4f46.*(?:\u60f3\u627e|\u627e\u4e00\u6b3e)/.test(normalize(currentQuery))
     ? mentionedValues(currentQuery, collections)
     : [];
   const currentSoftPreferences = unique([
@@ -330,17 +361,46 @@ export function buildDiptyqueQueryPlan(
     .reverse()
     .map((message) => extractSoftPreferences(message.content))
     .find((values) => values.length) ?? [];
-  const effectiveIntent = intent === "fact" && inheritedSoftPreferences.length
+  const previousWasRecommendation = Boolean(
+    previousUserQuery
+    && (PREFERENCE_PATTERN.test(previousUserQuery)
+      || /\u9009\u62e9|\u60f3\u8ba9/.test(previousUserQuery)
+      || isGiftRecommendationQuery(previousUserQuery))
+  );
+  const effectiveIntent = preliminaryIntent === "fact"
+    && ((isFollowUp && previousWasRecommendation) || inheritedSoftPreferences.length)
     ? "recommendation"
-    : intent;
+    : preliminaryIntent;
   const finalConstraints = {
-    ...effectiveConstraints,
-    excludeRefills: effectiveConstraints.excludeRefills
-      || (effectiveIntent === "recommendation" && !/补充装|补充瓶/.test(currentQuery)),
+    ...merged.constraints,
+    excludeRefills:
+      merged.constraints.excludeRefills
+      || ((effectiveIntent === "recommendation" || effectiveIntent === "gifting")
+        && !/\u8865\u5145\u88c5|\u8865\u5145\u74f6/.test(currentQuery)),
   };
+  const hardConstraintKeys = Array.from(new Set([
+    ...populatedConstraintKeys(currentConstraints),
+    ...merged.inheritedConstraintKeys,
+  ]));
+  const contextualQuery = isFollowUp && previousUserQuery
+    ? previousUserQuery + "\n" + currentQuery
+    : currentQuery;
+  const allowDeterministicCatalog =
+    effectiveIntent === "catalog"
+    && !isFollowUp
+    && finalConstraints.maxPrice == null
+    && !ATTRIBUTE_PATTERN.test(currentQuery)
+    && merged.inheritedConstraintKeys.length === 0;
 
   return {
     allowDeterministicCatalog,
+    conversationState: {
+      contextualQuery,
+      hardConstraintKeys,
+      isFollowUp,
+      previousUserQuery,
+      previouslyPresentedProductIds: isFollowUp ? previouslyPresentedProductIds(history) : [],
+    },
     constraints: finalConstraints,
     currentQuery,
     inheritedConstraintKeys: merged.inheritedConstraintKeys,
@@ -351,7 +411,7 @@ export function buildDiptyqueQueryPlan(
     requiresEvidence: effectiveIntent === "comparison" || effectiveIntent === "relation" || effectiveIntent === "safety" || EVIDENCE_PATTERN.test(currentQuery),
     safety: {
       blockProductRecommendation: petSafety,
-      reason: petSafety ? "当前商品资料没有宠物安全认证或官方说明" : "",
+      reason: petSafety ? "\u5f53\u524d\u5546\u54c1\u8d44\u6599\u6ca1\u6709\u5ba0\u7269\u5b89\u5168\u8ba4\u8bc1\u6216\u5b98\u65b9\u8bf4\u660e" : "",
       topic: petSafety ? "pet_safety" : "none",
     },
     softPreferences: currentSoftPreferences.length ? currentSoftPreferences : inheritedSoftPreferences,
