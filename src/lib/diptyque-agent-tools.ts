@@ -1,4 +1,9 @@
 import frontendData from "@/data/diptyque-frontend-payload";
+import type {
+  ConversationAction,
+  ConversationField,
+  ConversationFrameUpdate,
+} from "@/lib/diptyque-conversation-frame";
 import type { DiptyqueQueryPlan } from "@/lib/diptyque-query-plan";
 
 type Product = {
@@ -75,6 +80,7 @@ export type ToolExecution = {
   content: string;
   productIds: string[];
   summary: string;
+  conversationFrameUpdate?: ConversationFrameUpdate;
   exactSelection?: {
     answer: string;
     answerMode: "price_search";
@@ -587,6 +593,19 @@ function semanticEntity(args: Record<string, unknown>, key: "subject" | "object"
   };
 }
 
+function canonicalSemanticEntity(value: ReturnType<typeof semanticEntity>) {
+  const normalizedText = normalize(value.text);
+  if (!normalizedText) return value;
+  const exactProduct = products.find((product) => normalize(product.name) === normalizedText);
+  if (exactProduct) return { entityType: "product", text: exactProduct.name };
+  const exactForm = productForms.find((form) => normalize(form) === normalizedText);
+  if (exactForm) return { entityType: "product_form", text: exactForm };
+  const allCollections = Array.from(new Set(products.flatMap((product) => product.collections)));
+  const exactCollection = allCollections.find((collection) => normalize(collection) === normalizedText);
+  if (exactCollection) return { entityType: "collection", text: exactCollection };
+  return value;
+}
+
 function ontologyMatches(text: string) {
   const term = normalize(text);
   if (!term) return { coreFamilies: [], productForms: [], collections: [], products: [], scents: [], materials: [] };
@@ -622,8 +641,8 @@ function resolveQuerySemantics(args: Record<string, unknown>): ToolExecution {
   const predicate = typeof args.predicate === "string" && args.predicate in semanticRelationTypes
     ? args.predicate
     : "none";
-  const subject = semanticEntity(args, "subject");
-  const object = semanticEntity(args, "object");
+  const subject = canonicalSemanticEntity(semanticEntity(args, "subject"));
+  const object = canonicalSemanticEntity(semanticEntity(args, "object"));
   const hard = args.hard_constraints && typeof args.hard_constraints === "object" && !Array.isArray(args.hard_constraints)
     ? args.hard_constraints as Record<string, unknown>
     : {};
@@ -638,6 +657,14 @@ function resolveQuerySemantics(args: Record<string, unknown>): ToolExecution {
   };
   const relationTypes = semanticRelationTypes[predicate] ?? [];
   const warnings: string[] = [];
+  if (/\u5bb6\u5c45(?:\u4ea7\u54c1|\u7528\u54c1)/.test(subject.text)) {
+    hardConstraints.coreFamilies = Array.from(new Set([
+      ...hardConstraints.coreFamilies,
+      "\u5bb6\u5c45\u9999\u6c1b",
+      "\u827a\u672f\u5bb6\u5c45",
+    ])).filter((family) => coreFamilies.includes(family));
+    warnings.push("home_product_umbrella_normalized_to_home_fragrance_and_art_home");
+  }
   if (intent === "relation" && predicate === "none") warnings.push("relation_intent_without_predicate");
   if (intent === "relation" && !subject.text) warnings.push("relation_intent_without_subject");
   if (intent === "relation" && !object.text) warnings.push("relation_intent_without_object");
@@ -649,6 +676,30 @@ function resolveQuerySemantics(args: Record<string, unknown>): ToolExecution {
     hardConstraints,
     softPreferences: stringArray(args.soft_preferences),
   };
+  const actionValues = new Set<ConversationAction>(["KEEP", "ADD", "REPLACE", "CLEAR", "NEW_TOPIC"]);
+  const action = typeof args.context_action === "string" && actionValues.has(args.context_action as ConversationAction)
+    ? args.context_action as ConversationAction
+    : "NEW_TOPIC";
+  const clearFieldValues = new Set<ConversationField>([
+    "subject", "object", "predicate", "coreFamilies", "productForms", "collections",
+    "excludedTerms", "maxPrice", "sizes", "softPreferences", "resultSet",
+  ]);
+  const conversationFrameUpdate: ConversationFrameUpdate = {
+    action,
+    clearFields: stringArray(args.clear_fields).filter((field): field is ConversationField => clearFieldValues.has(field as ConversationField)),
+    reason: typeof args.context_reason === "string" ? args.context_reason.slice(0, 300) : "",
+    intent: intent as ConversationFrameUpdate["intent"],
+    subject,
+    object,
+    predicate,
+    coreFamilies: hardConstraints.coreFamilies,
+    productForms: hardConstraints.productForms,
+    collections: stringArray(args.collections),
+    excludedTerms: hardConstraints.excludedTerms,
+    maxPrice: hardConstraints.maxPrice,
+    sizes: hardConstraints.sizes,
+    softPreferences: frame.softPreferences,
+  };
   return {
     content: JSON.stringify({
       semanticFrame: frame,
@@ -659,9 +710,11 @@ function resolveQuerySemantics(args: Record<string, unknown>): ToolExecution {
         warnings,
       },
       executionRule: "Search only the subject as the relation source. Use the object to choose the target type or interpret relation results; never copy the object noun into source-product filters.",
+      conversationStateUpdate: conversationFrameUpdate,
     }),
     productIds: [],
-    summary: "resolve_query_semantics intent=" + intent + " predicate=" + predicate + " subject=" + (subject.text || "empty") + " object=" + (object.text || "empty") + " warnings=" + warnings.length,
+    summary: "resolve_query_semantics intent=" + intent + " predicate=" + predicate + " subject=" + (subject.text || "empty") + " object=" + (object.text || "empty") + " action=" + action + " warnings=" + warnings.length,
+    conversationFrameUpdate,
   };
 }
 function listCatalogValues(args: Record<string, unknown>): ToolExecution {
@@ -709,11 +762,20 @@ export const diptyqueAgentTools: ToolDefinition[] = [
     type: "function",
     function: {
       name: "resolve_query_semantics",
-      description: "First parse the user's full utterance into semantic roles. Identify who or what is the subject, which predicate is asked, and what is the object. This tool validates those roles against the Diptyque ontology but does not retrieve recommendations.",
+      description: "First parse the user's full utterance and active conversation frame. Identify whether this turn keeps, adds to, replaces, clears, or starts a new topic; then identify semantic roles. This tool validates state and ontology roles but does not retrieve recommendations.",
       parameters: {
         type: "object",
         properties: {
           intent: { type: "string", enum: ["catalog", "comparison", "fact", "gifting", "recommendation", "relation", "safety"] },
+          context_action: { type: "string", enum: ["KEEP", "ADD", "REPLACE", "CLEAR", "NEW_TOPIC"] },
+          context_reason: { type: "string" },
+          clear_fields: {
+            type: "array",
+            items: {
+              type: "string",
+              enum: ["subject", "object", "predicate", "coreFamilies", "productForms", "collections", "excludedTerms", "maxPrice", "sizes", "softPreferences", "resultSet"],
+            },
+          },
           subject: {
             type: "object",
             properties: {
@@ -746,9 +808,10 @@ export const diptyqueAgentTools: ToolDefinition[] = [
             },
             additionalProperties: false,
           },
+          collections: { type: "array", items: { type: "string" } },
           soft_preferences: { type: "array", items: { type: "string" } },
         },
-        required: ["intent", "subject", "predicate", "object", "hard_constraints", "soft_preferences"],
+        required: ["intent", "context_action", "context_reason", "clear_fields", "subject", "predicate", "object", "hard_constraints", "collections", "soft_preferences"],
         additionalProperties: false,
       },
     },

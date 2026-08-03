@@ -7,6 +7,10 @@ import {
   type ToolExecution,
 } from "@/lib/diptyque-agent-tools";
 import type { ModelUsage } from "@/lib/chat-observability";
+import type {
+  ConversationFrame,
+  ConversationFrameUpdate,
+} from "@/lib/diptyque-conversation-frame";
 import {
   extractGiftBudgetCeiling,
   isGiftRecommendationQuery,
@@ -32,6 +36,7 @@ export type ChatHistoryMessage = {
 };
 
 export type DeepSeekChatInput = {
+  conversationFrame: ConversationFrame | null;
   history: ChatHistoryMessage[];
   message: string;
   queryPlan: DiptyqueQueryPlan;
@@ -174,6 +179,9 @@ function parseFinalResponse(content: string) {
 const SYSTEM_PROMPT = [
   "You are the semantic interpreter, retrieval planner and grounded answer writer for a Diptyque product knowledge graph.",
   "Your first action for every non-safety user request must be resolve_query_semantics. Parse the full utterance and recent conversation before calling any retrieval tool.",
+  "The ACTIVE_CONVERSATION_FRAME is mutable context, not a permanent filter. Choose KEEP, ADD, REPLACE, CLEAR or NEW_TOPIC explicitly. Referential follow-ups normally keep or add; a new named subject or comparison normally starts a new topic and clears unrelated scope, budget and result state.",
+  "A change of intent is not by itself a new topic. If the user moves from browsing a scoped catalog to gifting, recommendation, comparison, or narrowing without naming an incompatible new product scope, preserve the prior scope with ADD or REPLACE. Use NEW_TOPIC only when the new entities or scope are genuinely incompatible with the prior request.",
+  "Treat the customer phrase \u5bb6\u5c45\u4ea7\u54c1 as an umbrella over both \u5bb6\u5c45\u9999\u6c1b and \u827a\u672f\u5bb6\u5c45 unless the user explicitly narrows it. Keep that umbrella when a following turn asks whom it is for, what to recommend, or adds a budget.",
   "In a relation question, distinguish grammatical roles: subject is the entity whose relations are requested, predicate is the requested relation, and object is the target type or entity. In a question meaning which candles fit a candle lid, candle lid is the subject, accessory_for is the predicate, and candle is the object.",
   "Do not copy every noun into product filters. Search only the validated subject as the relation source; use the object to select the target type or interpret relation results.",
   "After resolve_query_semantics returns ontologyValidation, use only ontology-supported entity values and relation types. If validation is ambiguous, call list_catalog_values or search_products rather than inventing a mapping.",
@@ -211,6 +219,7 @@ function conceptualGiftComparison(query: string) {
 export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
   const apiKey = process.env.DEEPSEEK_API_KEY;
   const model = process.env.DEEPSEEK_MODEL || DEFAULT_MODEL;
+  let conversationFrameUpdate: ConversationFrameUpdate | undefined;
   const fallbackRetrieval = executeDiptyqueQueryPlan(input.queryPlan);
   const gateFallbackCopyToStructuredCandidates = input.queryPlan.intent === "gifting"
     || input.queryPlan.conversationState.hardConstraintKeys.length > 0;
@@ -243,6 +252,7 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
       answerMode: giftFallback?.answerMode ?? fallbackRetrieval.answerMode,
       fallback: true,
       reasoningUsed: false,
+      conversationFrameUpdate,
       model,
       reason: "missing_api_key",
       matchedProductIds: giftFallback?.matchedProductIds ?? fallbackMatchedProductIds,
@@ -262,6 +272,10 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
       content: "CONVERSATION_MEMORY\n" + JSON.stringify({
         previouslyPresentedProductIds: input.queryPlan.conversationState.previouslyPresentedProductIds,
       }),
+    },
+    {
+      role: "system",
+      content: "ACTIVE_CONVERSATION_FRAME\n" + JSON.stringify(input.conversationFrame),
     },
     ...input.history.slice(-8).map((message) => ({
       role: message.role,
@@ -295,9 +309,7 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
             max_tokens: 2200,
             messages,
             tools: diptyqueAgentTools,
-            tool_choice: round === 0
-              ? { type: "function", function: { name: "resolve_query_semantics" } }
-              : "auto",
+            tool_choice: "auto",
           }),
         },
         toolTrace
@@ -316,6 +328,7 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
           answerMode: giftFallback?.answerMode ?? fallbackRetrieval.answerMode,
           fallback: true,
           reasoningUsed,
+          conversationFrameUpdate,
           model,
           reason: "deepseek_http_" + response.status,
           errorText,
@@ -341,7 +354,17 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
           tool_calls: toolCalls,
         });
         for (const toolCall of toolCalls) {
+          if (!semanticFrameResolved && toolCall.function.name !== "resolve_query_semantics") {
+            const content = JSON.stringify({
+              error: "semantic_frame_required",
+              instruction: "Call resolve_query_semantics before any retrieval tool.",
+            });
+            toolTrace.push("blocked_pre_semantic_tool name=" + toolCall.function.name);
+            messages.push({ role: "tool", tool_call_id: toolCall.id, content });
+            continue;
+          }
           const execution = executeDiptyqueTool(toolCall.function.name, toolCall.function.arguments);
+          conversationFrameUpdate = execution.conversationFrameUpdate ?? conversationFrameUpdate;
           matchedProductIds.push(...execution.productIds);
           toolTrace.push(execution.summary);
           groundingContext.push(toolCall.function.name + "\n" + execution.content);
@@ -397,12 +420,38 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
 
       const final = parseFinalResponse(message?.content ?? "");
       const candidates = Array.from(new Set(matchedProductIds));
+      if (!final.answer.trim()) {
+        toolTrace.push("empty_model_answer");
+        if (round < MAX_TOOL_ROUNDS - 1) {
+          messages.push({ role: "assistant", content: message?.content ?? "" });
+          messages.push({
+            role: "user",
+            content: "Your answer was empty. Produce the required final JSON with a non-empty grounded answer and productIds from the retrieved candidates.",
+          });
+          continue;
+        }
+        return {
+          answer: conceptualGiftAnswer || copyFallback?.answer || giftFallback?.answer || fallbackRetrieval.fallbackAnswer,
+          answerMode: giftFallback ? "gift_recommendation" : fallbackRetrieval.answerMode,
+          fallback: true,
+          reasoningUsed,
+          conversationFrameUpdate,
+          model,
+          reason: "empty_model_answer",
+          matchedProductIds: candidates,
+          selectedProductIds: copyFallback?.productIds ?? giftFallback?.selectedProductIds ?? fallbackRetrieval.selectedProductIds,
+          toolTrace,
+          usage,
+          evidenceTrace: officialCopyHits.length ? officialCopyHits : fallbackOfficialCopyHits,
+        };
+      }
       if (exactSelection) {
         return {
           answer: exactSelection.answer,
           answerMode: exactSelection.answerMode,
           fallback: false,
           reasoningUsed,
+          conversationFrameUpdate,
           model,
           finishReason: data.choices?.[0]?.finish_reason,
           matchedProductIds: candidates,
@@ -429,6 +478,7 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
           answerMode: giftFallback ? "gift_recommendation" : fallbackRetrieval.answerMode,
           fallback: true,
           reasoningUsed,
+          conversationFrameUpdate,
           model,
           reason: "unsupported_model_claim",
           matchedProductIds: candidates,
@@ -444,6 +494,7 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
         answerMode: giftFallback ? "gift_recommendation" : final.answerMode,
         fallback: false,
         reasoningUsed,
+        conversationFrameUpdate,
         model,
         finishReason: data.choices?.[0]?.finish_reason,
         matchedProductIds: candidates,
@@ -486,12 +537,30 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
         reasoningUsed = reasoningUsed || Boolean(finalMessage?.reasoning_content?.trim());
         const final = parseFinalResponse(finalMessage?.content ?? "");
         const candidates = Array.from(new Set(matchedProductIds));
+        if (!final.answer.trim()) {
+          toolTrace.push("empty_final_model_answer");
+          return {
+            answer: conceptualGiftAnswer || copyFallback?.answer || giftFallback?.answer || fallbackRetrieval.fallbackAnswer,
+            answerMode: giftFallback ? "gift_recommendation" : fallbackRetrieval.answerMode,
+            fallback: true,
+            reasoningUsed,
+            conversationFrameUpdate,
+            model,
+            reason: "empty_model_answer",
+            matchedProductIds: candidates,
+            selectedProductIds: copyFallback?.productIds ?? giftFallback?.selectedProductIds ?? fallbackRetrieval.selectedProductIds,
+            toolTrace,
+            usage,
+            evidenceTrace: officialCopyHits.length ? officialCopyHits : fallbackOfficialCopyHits,
+          };
+        }
         if (exactSelection) {
           return {
             answer: exactSelection.answer,
             answerMode: exactSelection.answerMode,
             fallback: false,
             reasoningUsed,
+            conversationFrameUpdate,
             model,
             finishReason: finalData.choices?.[0]?.finish_reason,
             matchedProductIds: candidates,
@@ -517,6 +586,7 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
             answerMode: giftFallback ? "gift_recommendation" : fallbackRetrieval.answerMode,
             fallback: true,
             reasoningUsed,
+            conversationFrameUpdate,
             model,
             reason: "unsupported_model_claim",
             matchedProductIds: candidates,
@@ -531,6 +601,7 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
           answerMode: giftFallback ? "gift_recommendation" : final.answerMode,
           fallback: false,
           reasoningUsed,
+          conversationFrameUpdate,
           model,
           finishReason: finalData.choices?.[0]?.finish_reason,
           matchedProductIds: candidates,
@@ -547,6 +618,7 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
       answerMode: giftFallback?.answerMode ?? fallbackRetrieval.answerMode,
       fallback: true,
       reasoningUsed,
+      conversationFrameUpdate,
       model,
       reason: "tool_round_limit",
       matchedProductIds:
@@ -563,6 +635,7 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
       answerMode: giftFallback?.answerMode ?? fallbackRetrieval.answerMode,
       fallback: true,
       reasoningUsed,
+      conversationFrameUpdate,
       model,
       reason: error instanceof Error && error.name === "AbortError"
         ? "deepseek_timeout"

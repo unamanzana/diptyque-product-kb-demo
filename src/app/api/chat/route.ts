@@ -3,16 +3,53 @@ import { NextResponse } from "next/server";
 import { productNamesByIds } from "@/lib/diptyque-agent-tools";
 import { logModelRequest, logZeroHit } from "@/lib/chat-observability";
 import { generateDiptyqueAnswer, type ChatHistoryMessage } from "@/lib/deepseek";
-import { buildDiptyqueQueryPlan, safetyGuardAnswer } from "@/lib/diptyque-query-plan";
+import {
+  applyConversationFrameUpdate,
+  sanitizeConversationFrame,
+  type ConversationFrameUpdate,
+} from "@/lib/diptyque-conversation-frame";
+import { buildDiptyqueQueryPlan, safetyGuardAnswer, type DiptyqueQueryPlan } from "@/lib/diptyque-query-plan";
 import { buildDiptyqueContext } from "@/lib/diptyque-search";
 
 export const runtime = "nodejs";
+
+function fallbackConversationFrameUpdate(
+  hasPreviousFrame: boolean,
+  queryPlan: DiptyqueQueryPlan
+): ConversationFrameUpdate {
+  const followsPrevious = hasPreviousFrame && queryPlan.conversationState.isFollowUp;
+  const inherited = new Set(queryPlan.inheritedConstraintKeys);
+  const keepArray = <T,>(key: keyof typeof queryPlan.constraints, values: T[]) =>
+    !followsPrevious && inherited.has(key) ? [] : values;
+  const keepValue = <T,>(key: keyof typeof queryPlan.constraints, value: T | undefined) =>
+    !followsPrevious && inherited.has(key) ? undefined : value;
+  return {
+    action: followsPrevious ? "ADD" : "NEW_TOPIC",
+    clearFields: followsPrevious ? [] : ["resultSet"],
+    reason: "No model semantic action was available; used the conservative query-plan fallback.",
+    intent: queryPlan.intent,
+    subject: { entityType: "unknown", text: "" },
+    object: { entityType: "unknown", text: "" },
+    predicate: "none",
+    coreFamilies: keepArray("coreFamilies", queryPlan.constraints.coreFamilies),
+    productForms: keepArray("productForms", queryPlan.constraints.productForms),
+    collections: keepArray("collections", queryPlan.constraints.collections),
+    excludedTerms: [
+      ...keepArray("excludedCollections", queryPlan.constraints.excludedCollections),
+      ...keepArray("excludedProductForms", queryPlan.constraints.excludedProductForms),
+    ],
+    maxPrice: keepValue("maxPrice", queryPlan.constraints.maxPrice),
+    sizes: keepArray("sizes", queryPlan.constraints.sizes),
+    softPreferences: queryPlan.softPreferences,
+  };
+}
 
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as {
       message?: string;
       history?: ChatHistoryMessage[];
+      conversationFrame?: unknown;
     };
     const message = body.message?.trim();
 
@@ -31,6 +68,7 @@ export async function POST(request: Request) {
           .slice(-8)
       : [];
 
+    const previousConversationFrame = sanitizeConversationFrame(body.conversationFrame);
     const queryPlan = buildDiptyqueQueryPlan(message, history);
     const safetyAnswer = safetyGuardAnswer(queryPlan);
     if (safetyAnswer) {
@@ -52,6 +90,12 @@ export async function POST(request: Request) {
       collectionTerms: queryPlan.constraints.collections,
     });
     if (deterministic.deterministicAnswer) {
+      const frameUpdate = fallbackConversationFrameUpdate(Boolean(previousConversationFrame), queryPlan);
+      const conversationFrame = applyConversationFrameUpdate(previousConversationFrame, frameUpdate, {
+        matchedProductIds: deterministic.matchedProducts.map((product) => product.id),
+        selectedProductIds: [],
+        question: message,
+      });
       return NextResponse.json({
         answer: deterministic.deterministicAnswer,
         answerMode: deterministic.answerMode,
@@ -61,12 +105,18 @@ export async function POST(request: Request) {
         recommendedProductNames: [],
         model: "ontology",
         reasoningUsed: false,
-        diagnostics: { queryPlan },
+        conversationFrame,
+        diagnostics: {
+          conversationAction: conversationFrame.lastAction,
+          conversationActionReason: frameUpdate.reason,
+          queryPlan,
+        },
       });
     }
 
     const modelStartedAt = performance.now();
     const result = await generateDiptyqueAnswer({
+      conversationFrame: previousConversationFrame,
       history,
       message,
       queryPlan,
@@ -76,6 +126,13 @@ export async function POST(request: Request) {
     const usage = "usage" in result ? result.usage : undefined;
     const matchedProductNames = productNamesByIds(result.matchedProductIds);
     const recommendedProductNames = productNamesByIds(result.selectedProductIds);
+    const fallbackFrameUpdate = fallbackConversationFrameUpdate(Boolean(previousConversationFrame), queryPlan);
+    const frameUpdate = result.conversationFrameUpdate ?? fallbackFrameUpdate;
+    const conversationFrame = applyConversationFrameUpdate(previousConversationFrame, frameUpdate, {
+      matchedProductIds: result.matchedProductIds,
+      selectedProductIds: result.selectedProductIds,
+      question: message,
+    });
     const zeroHitQueryId = !result.fallback && result.matchedProductIds.length === 0
       ? logZeroHit(message, result.answerMode)
       : undefined;
@@ -100,6 +157,7 @@ export async function POST(request: Request) {
       recommendedProductNames,
       model: result.model,
       reasoningUsed: result.reasoningUsed,
+      conversationFrame,
       reason,
       diagnostics: {
         durationMs,
@@ -108,6 +166,8 @@ export async function POST(request: Request) {
         zeroHitQueryId,
         toolTrace: result.toolTrace,
         evidenceTrace: "evidenceTrace" in result ? result.evidenceTrace : [],
+        conversationAction: conversationFrame.lastAction,
+        conversationActionReason: frameUpdate.reason,
         queryPlan,
       },
     });

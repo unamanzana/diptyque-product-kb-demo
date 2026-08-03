@@ -21,6 +21,7 @@ import {
   type ResponseEntry,
 } from "@/data/diptyque-demo";
 import { isGiftRecommendationQuery } from "@/lib/diptyque-query-intent";
+import type { ConversationFrame } from "@/lib/diptyque-conversation-frame";
 
 type MobileTab = "chat" | "graph";
 type GraphMode = {
@@ -32,6 +33,7 @@ type GraphMode = {
   recommendationProductNames?: string[];
 };
 type PendingReply = {
+  conversationFrame: ConversationFrame | null;
   history: Array<{ role: "assistant" | "user"; content: string }>;
   question: string;
   startedAt: number;
@@ -386,6 +388,7 @@ export function DiptyqueKnowledgeBase() {
   const [graphMode, setGraphMode] = useState<GraphMode>({ filterNodeIds: [], focusEdgeIds: [], focusLabel: null });
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<KnowledgeMessage[]>(initialMessages);
+  const [conversationFrame, setConversationFrame] = useState<ConversationFrame | null>(null);
   const [graphScale, setGraphScale] = useState(1);
   const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
   const [pendingReply, setPendingReply] = useState<PendingReply | null>(null);
@@ -847,7 +850,7 @@ export function DiptyqueKnowledgeBase() {
   useEffect(() => {
     if (!pendingReply) return undefined;
 
-    const { history, question, startedAt } = pendingReply;
+    const { conversationFrame: requestConversationFrame, history, question, startedAt } = pendingReply;
     const controller = new AbortController();
     let cancelled = false;
     let streamInterval: number | null = null;
@@ -919,7 +922,11 @@ export function DiptyqueKnowledgeBase() {
         const apiResponse = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ history, message: question }),
+          body: JSON.stringify({
+            conversationFrame: requestConversationFrame,
+            history,
+            message: question,
+          }),
           signal: controller.signal,
         });
         if (!apiResponse.ok) throw new Error(`chat_http_${apiResponse.status}`);
@@ -932,7 +939,9 @@ export function DiptyqueKnowledgeBase() {
           model?: string;
           reasoningUsed?: boolean;
           fallback?: boolean;
+          conversationFrame?: ConversationFrame;
         };
+        if (data.conversationFrame) setConversationFrame(data.conversationFrame);
         if (data.answer?.trim()) {
           if (data.answerSource === "ontology_full_list") {
             response = {
@@ -1034,6 +1043,7 @@ export function DiptyqueKnowledgeBase() {
 
     setMessages((current) => [...current, { id: makeId("user"), role: "user", text: trimmed }]);
     setPendingReply({
+      conversationFrame,
       history: messages
         .filter((message) => message.role === "user" || (message.role === "bot" && message.text.trim()))
         .slice(-8)
