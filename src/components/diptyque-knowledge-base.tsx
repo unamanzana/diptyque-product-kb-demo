@@ -24,9 +24,11 @@ import { isGiftRecommendationQuery } from "@/lib/diptyque-query-intent";
 
 type MobileTab = "chat" | "graph";
 type GraphMode = {
+  expandedCompatibility?: boolean;
   filterNodeIds: string[];
   focusEdgeIds: string[];
   focusLabel: string | null;
+  page?: number;
   recommendationProductNames?: string[];
 };
 type PendingReply = {
@@ -67,6 +69,18 @@ const semanticRelationLabels: Record<string, string> = {
   HAS_USAGE_INSTRUCTION: "使用",
   SERVES_NEED: "需求",
 };
+
+const businessRelationTypes = new Set([
+  "ACCESSORY_FOR",
+  "ACCESSORY_FOR_SPEC",
+  "EXTENDS_TO_HOME",
+  "GIFT_WITH",
+  "LAYER_WITH",
+  "PAIRS_WITH",
+  "REFILL_FOR",
+  "SCENT_RITUAL_WITH",
+]);
+const inspectableRelationTypes = new Set([...Object.keys(semanticRelationLabels), ...businessRelationTypes]);
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -380,6 +394,7 @@ export function DiptyqueKnowledgeBase() {
   const [renderNodes, setRenderNodes] = useState<GraphNode[]>([]);
   const [renderLines, setRenderLines] = useState<GraphLine[]>([]);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [hoveredEdgeId, setHoveredEdgeId] = useState<string | null>(null);
   const [selectedEdge, setSelectedEdge] = useState<GraphLine | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -393,8 +408,14 @@ export function DiptyqueKnowledgeBase() {
   const suppressNodeClickRef = useRef(false);
 
   const graphDataset: GraphDataset = useMemo(
-    () => getGraphDataset(graphMode.focusLabel, graphMode.filterNodeIds, graphMode.recommendationProductNames ?? []),
-    [graphMode.filterNodeIds, graphMode.focusLabel, graphMode.recommendationProductNames]
+    () => getGraphDataset(
+      graphMode.focusLabel,
+      graphMode.filterNodeIds,
+      graphMode.recommendationProductNames ?? [],
+      graphMode.page ?? 0,
+      graphMode.expandedCompatibility ?? false
+    ),
+    [graphMode.expandedCompatibility, graphMode.filterNodeIds, graphMode.focusLabel, graphMode.page, graphMode.recommendationProductNames]
   );
   graphDatasetRef.current = graphDataset;
   const filterTrail = useMemo(() => getFilterTrail(graphMode.filterNodeIds), [graphMode.filterNodeIds]);
@@ -405,53 +426,47 @@ export function DiptyqueKnowledgeBase() {
   );
   const structuralCoreIds = useMemo(() => {
     const result = new Set<string>();
-    if (graphDataset.modeLabel === "分类概览") {
+    const leafNodeTypes = new Set(["Product", "SKU", "CompatibilityGroup", "CompatibilitySpec"]);
+    const isOverview = !graphDataset.focusLabel
+      && graphMode.filterNodeIds.length === 0
+      && !(graphMode.recommendationProductNames?.length);
+
+    if (isOverview) {
       renderNodes
         .filter((node) => ["CoreFamily", "OntologyDomain", "SemanticDomain"].includes(node.nodeType))
         .forEach((node) => result.add(node.id));
       return result;
     }
 
-    const explicitCoreTypes = ["CoreFamily", "OntologyDomain", "SemanticDomain", "ProductForm", "NoteFamily", "ScentIdentity"];
-    if (graphDataset.modeLabel === "推荐子图") explicitCoreTypes.push("Product");
-    if (graphDataset.modeLabel.endsWith("本体")) {
-      explicitCoreTypes.push("ScentConcept", "NoteIngredient", "ScentProfile", "ScentAccord", "Function", "UseScene", "UserNeed", "CareInstruction", "UsageInstruction", "Material", "CraftTechnique");
-    }
-    renderNodes
-      .filter((node) => explicitCoreTypes.includes(node.nodeType))
-      .forEach((node) => result.add(node.id));
-    const activeStructuralFilterNode = renderNodes.find((node) => node.id === graphMode.filterNodeIds.at(-1));
-    const productNodeIds = new Set(renderNodes.filter((node) => node.nodeType === "Product").map((node) => node.id));
-    const semanticCoreTypes = new Set(["Function", "UseScene", "UserNeed", "CareInstruction", "UsageInstruction", "Material", "CraftTechnique"]);
-    renderLines.forEach((line) => {
-      const targetNode = renderNodes.find((node) => node.id === line.targetId);
-      const isSemanticProductLeaf = graphDataset.modeLabel.endsWith("本体")
-        && productNodeIds.has(line.sourceId)
-        && semanticCoreTypes.has(targetNode?.nodeType ?? "");
-      if (line.edgeType === "HAS_SCENT") {
-        result.add(line.targetId);
-      } else if (!isSemanticProductLeaf && (activeStructuralFilterNode?.nodeType !== "ScentIdentity" || !productNodeIds.has(line.sourceId))) {
-        result.add(line.sourceId);
-      }
-    });
-    renderLines
-      .filter((line) => focusedEdgeIds.has(line.edgeId))
-      .forEach((line) => {
-        result.add(line.sourceId);
-        result.add(line.targetId);
-      });
-    graphMode.filterNodeIds.forEach((id) => result.add(id));
-    const activeFilterId = graphMode.filterNodeIds.at(-1);
-    const activeFilterNode = renderNodes.find((node) => node.id === activeFilterId);
-    const branchNodeTypes = new Set(["CoreFamily", "OntologyDomain", "SemanticDomain", "NoteFamily", "ScentIdentity"]);
-    if (activeFilterNode && graphDataset.focusLabel === activeFilterId && !branchNodeTypes.has(activeFilterNode.nodeType)) {
+    if (graphMode.recommendationProductNames?.length) {
       renderNodes
         .filter((node) => node.nodeType === "Product")
         .forEach((node) => result.add(node.id));
+      return result;
     }
+
+    const focusedNode = renderNodes.find((node) => node.id === graphDataset.focusLabel);
+    if (focusedNode?.nodeType === "Product") {
+      result.add(focusedNode.id);
+      return result;
+    }
+
+    renderNodes
+      .filter((node) => !leafNodeTypes.has(node.nodeType))
+      .forEach((node) => result.add(node.id));
+
     if (graphDataset.focusLabel) result.add(graphDataset.focusLabel);
+    graphMode.filterNodeIds.forEach((id) => result.add(id));
+    renderLines
+      .filter((line) => focusedEdgeIds.has(line.edgeId))
+      .forEach((line) => {
+        [line.sourceId, line.targetId].forEach((id) => {
+          const node = renderNodes.find((candidate) => candidate.id === id);
+          if (node && !leafNodeTypes.has(node.nodeType)) result.add(id);
+        });
+      });
     return result;
-  }, [focusedEdgeIds, graphDataset.focusLabel, graphDataset.modeLabel, graphMode.filterNodeIds, renderLines, renderNodes]);
+  }, [focusedEdgeIds, graphDataset.focusLabel, graphMode.filterNodeIds, graphMode.recommendationProductNames, renderLines, renderNodes]);
 
   structuralCoreIdsRef.current = structuralCoreIds;
 
@@ -741,6 +756,7 @@ export function DiptyqueKnowledgeBase() {
     setGraphMode(nextMode);
     setGraphScale(1);
     setSelectedEdge(null);
+    setHoveredEdgeId(null);
     draggedNodeRef.current = null;
     setDraggedNodeId(null);
     suppressNodeClickRef.current = false;
@@ -770,8 +786,26 @@ export function DiptyqueKnowledgeBase() {
   }
 
   function focusGraph(focusLabel: string) {
-    applyGraphMode({ filterNodeIds: graphMode.filterNodeIds, focusEdgeIds: [], focusLabel });
+    applyGraphMode({
+      expandedCompatibility: false,
+      filterNodeIds: graphMode.filterNodeIds,
+      focusEdgeIds: [],
+      focusLabel,
+      page: 0,
+    });
     setActiveTab("graph");
+  }
+
+  function changeGraphPage(nextPage: number) {
+    applyGraphMode({ ...graphMode, page: nextPage });
+  }
+
+  function toggleCompatibility() {
+    applyGraphMode({
+      ...graphMode,
+      expandedCompatibility: !graphDataset.compatibility?.expanded,
+      page: 0,
+    });
   }
 
   function pushImmediateResponse(response: ResponseEntry, note?: string) {
@@ -934,6 +968,10 @@ export function DiptyqueKnowledgeBase() {
 
   function handleGraphNodeSelect(nodeId: string) {
     if (pendingReply || streamingMessageId) return;
+    if (nodeId === graphDataset.compatibility?.nodeId) {
+      toggleCompatibility();
+      return;
+    }
     if (suppressNodeClickRef.current) {
       suppressNodeClickRef.current = false;
       return;
@@ -1070,14 +1108,19 @@ export function DiptyqueKnowledgeBase() {
                     const lineLabel = semanticRelationLabels[line.edgeType] || line.label || graphDataset.edgeLabels[index];
                     const labelPoint = lineMidpoint(line.x1, line.y1, line.x2, line.y2, index % 2 === 0 ? 0 : 2);
                     const isHoverLine = hoveredHighlightIds.has(line.sourceId) && hoveredHighlightIds.has(line.targetId);
-                    const isProductRelation = line.relationLayer !== "fact" || ["REFILL_FOR", "ACCESSORY_FOR", "PAIRS_WITH", "LAYER_WITH", "SCENT_RITUAL_WITH", "EXTENDS_TO_HOME", "GIFT_WITH"].includes(line.edgeType);
+                    const isBusinessRelation = businessRelationTypes.has(line.edgeType);
+                    const isInspectableRelation = inspectableRelationTypes.has(line.edgeType);
+                    const isHoveredEdge = hoveredEdgeId === line.edgeId;
                     const isAnswerEdge = focusedEdgeIds.has(line.edgeId);
                     const isDimmedEdge = focusedEdgeIds.size > 0 && !isAnswerEdge;
                     const isSelectedEdge = selectedEdge?.edgeId === line.edgeId;
+                    const showLineLabel = isInspectableRelation && (isSelectedEdge || isHoveredEdge || isAnswerEdge || isHoverLine);
                     return (
                       <g
                         key={line.edgeId}
-                        className={"graph-edge " + (isHoverLine ? "hover-relation " : "") + (isSelectedEdge ? "selected-relation " : "") + (isAnswerEdge ? "answer-relation " : "") + (isDimmedEdge ? "dimmed-relation" : "")}
+                        className={"graph-edge " + (isHoverLine || isHoveredEdge ? "hover-relation " : "") + (isSelectedEdge ? "selected-relation " : "") + (isAnswerEdge ? "answer-relation " : "") + (isDimmedEdge ? "dimmed-relation" : "")}
+                        onPointerEnter={() => setHoveredEdgeId(line.edgeId)}
+                        onPointerLeave={() => setHoveredEdgeId((current) => (current === line.edgeId ? null : current))}
                         onClick={(event) => {
                           event.stopPropagation();
                           setSelectedEdge(line);
@@ -1099,11 +1142,11 @@ export function DiptyqueKnowledgeBase() {
                           x2={line.x2}
                           y2={line.y2}
                           stroke={isSelectedEdge || isAnswerEdge ? "#7f0019" : "#d2cbc0"}
-                          opacity={isSelectedEdge ? 0.96 : isAnswerEdge ? 0.86 : isDimmedEdge ? 0.02 : isHoverLine ? 0.76 : 0.055}
+                          opacity={isSelectedEdge ? 0.96 : isAnswerEdge ? 0.86 : isDimmedEdge ? 0.02 : isHoverLine || isHoveredEdge ? 0.76 : 0.045}
                           strokeDasharray={line.dashed ? "5 3" : undefined}
                           markerEnd={line.dashed ? "url(#arrowhead)" : undefined}
                         />
-                        {lineLabel ? <text className={"graph-link-label " + (isProductRelation ? "product-relation-label" : "")} x={labelPoint.x} y={labelPoint.y} fill={isAnswerEdge || isSelectedEdge ? "#7f0019" : "#8c857d"} opacity={isSelectedEdge || isAnswerEdge ? 1 : isDimmedEdge ? 0 : isHoverLine ? 0.9 : 0}>{lineLabel}</text> : null}
+                        {lineLabel ? <text className={"graph-link-label " + (isBusinessRelation ? "product-relation-label" : "")} x={labelPoint.x} y={labelPoint.y} fill={isAnswerEdge || isSelectedEdge ? "#7f0019" : "#8c857d"} opacity={showLineLabel && !isDimmedEdge ? 0.92 : 0}>{lineLabel}</text> : null}
                       </g>
                     );
                   })}
@@ -1112,7 +1155,8 @@ export function DiptyqueKnowledgeBase() {
                   {renderNodes.map((node) => {
                     const isSelectedFilter = graphMode.filterNodeIds.includes(node.id);
                     const isFocusedNode = graphDataset.focusLabel === node.id;
-                    const isCoreNode = structuralCoreIds.has(node.id) || isSelectedFilter || isFocusedNode;
+                    const focusIsProduct = renderNodes.some((candidate) => candidate.id === graphDataset.focusLabel && candidate.nodeType === "Product");
+                    const isCoreNode = structuralCoreIds.has(node.id) || (isSelectedFilter && !focusIsProduct) || isFocusedNode;
                     const isDraggingThisNode = draggedNodeId === node.id;
                     const isHoverHighlight = hoveredHighlightIds.has(node.id);
                     return (
@@ -1218,7 +1262,48 @@ export function DiptyqueKnowledgeBase() {
 
           <div className="panel-footer">
             <span>{graphDataset.summaryText}</span>
-            <button type="button" className="muji-btn outline" onClick={resetGraph}>重置</button>
+            <div className="graph-footer-actions">
+              {graphDataset.compatibility ? (
+                <button type="button" className="muji-btn outline" onClick={toggleCompatibility}>
+                  {graphDataset.compatibility.expanded
+                    ? "收起适配配件"
+                    : `查看适配配件（${graphDataset.compatibility.total}）`}
+                </button>
+              ) : null}
+              {graphDataset.pagination ? (
+                <div
+                  className="graph-pagination"
+                  aria-label={graphDataset.pagination.type === "category"
+                    ? "分类分页"
+                    : graphDataset.pagination.type === "catalog"
+                    ? "商品分页"
+                    : graphDataset.pagination.type === "compatibility"
+                      ? "适配配件分页"
+                      : "关联商品分页"}
+                >
+                  <button
+                    type="button"
+                    className="graph-page-btn"
+                    disabled={graphDataset.pagination.page === 0}
+                    onClick={() => changeGraphPage(graphDataset.pagination!.page - 1)}
+                  >
+                    上一组
+                  </button>
+                  <span>
+                    {graphDataset.pagination.page + 1} / {graphDataset.pagination.pageCount}
+                  </span>
+                  <button
+                    type="button"
+                    className="graph-page-btn"
+                    disabled={graphDataset.pagination.page >= graphDataset.pagination.pageCount - 1}
+                    onClick={() => changeGraphPage(graphDataset.pagination!.page + 1)}
+                  >
+                    下一组
+                  </button>
+                </div>
+              ) : null}
+              <button type="button" className="muji-btn outline" onClick={resetGraph}>重置</button>
+            </div>
           </div>
         </section>
 

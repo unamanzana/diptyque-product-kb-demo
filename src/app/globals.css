@@ -823,6 +823,49 @@ body {
   color: #686660;
 }
 
+.graph-footer-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+}
+
+.graph-pagination {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #c6c4bd;
+  background: #ffffff;
+  padding: 0 8px;
+  color: #5e5c57;
+}
+
+.graph-page-btn {
+  border: 0;
+  background: transparent;
+  color: var(--diptyque-ink);
+  cursor: pointer;
+  font: inherit;
+  padding: 5px 3px;
+}
+
+.graph-page-btn:disabled {
+  color: #b8b5ae;
+  cursor: default;
+}
+
+#graph-svg .node-type-CompatibilityGroup circle:last-of-type {
+  fill: #777b77;
+  stroke: #ffffff;
+  stroke-width: 1.5px;
+}
+
+@media (max-width: 720px) {
+  .panel-footer { align-items: flex-start; flex-direction: column; }
+  .graph-footer-actions { width: 100%; flex-wrap: wrap; }
+}
+
 .muji-btn {
   min-width: 44px;
   min-height: 42px;

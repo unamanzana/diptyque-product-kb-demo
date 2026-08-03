@@ -93,11 +93,23 @@ export type ResponseEntry = {
 };
 
 export type GraphDataset = {
+  compatibility?: {
+    expanded: boolean;
+    nodeId: string;
+    total: number;
+  };
   edgeLabels: string[];
   focusLabel?: string;
   lines: GraphLine[];
   modeLabel: string;
   nodes: GraphNode[];
+  pagination?: {
+    page: number;
+    pageCount: number;
+    pageSize: number;
+    total: number;
+    type: "catalog" | "category" | "compatibility" | "relationship";
+  };
   summaryText: string;
   viewBox: string;
 };
@@ -270,11 +282,14 @@ const VIEWBOX_WIDTH = 640;
 const VIEWBOX_HEIGHT = 596;
 const VIEWBOX_CENTER_X = VIEWBOX_WIDTH / 2;
 const VIEWBOX_CENTER_Y = VIEWBOX_HEIGHT / 2;
+const CATEGORY_PAGE_SIZE = 6;
+const PRODUCT_PAGE_SIZE = 12;
 const hiddenEdgeTypes = new Set<string>();
 const filterableNodeTypes = new Set([
   "CoreFamily",
   "ProductForm",
   "CollectionOrScent",
+  "NoteFamily",
   "NoteIngredient",
   "ScentProfile",
   "ScentAccord",
@@ -737,12 +752,7 @@ function connectedProductsForNode(node: FrontendGraphNode) {
     case "ScentConcept":
       return sortProducts(products.filter((product) => product.scentConcepts.includes(node.name)));
     case "NoteFamily":
-      return sortProducts(
-        (edgesByTarget.get(node.id) ?? [])
-          .filter((edge) => edge.edgeType === "HAS_NOTE_FAMILY" && edge.sourceType === "Product")
-          .map((edge) => productById.get(edge.source))
-          .filter((product): product is FrontendProduct => Boolean(product))
-      );
+      return sortProducts(products.filter((product) => product.noteFamilies.includes(node.name)));
     case "ScentIdentity":
       return sortProducts(products.filter((product) =>
         (product.scentIdentities ?? []).some((identity) => identity.id === node.id)
@@ -1539,19 +1549,100 @@ function circlePositions(ids: string[], radius: number, startAngle = -Math.PI / 
   return positions;
 }
 
-function concentricPositions(ids: string[]) {
-  const positions = new Map<string, { x: number; y: number }>();
-  const capacities = [12, 18, 24, 30];
-  const radii = [92, 144, 194, 236];
-  let offset = 0;
+type BranchGroup = {
+  id: string;
+  leafIds: string[];
+};
 
-  capacities.forEach((capacity, index) => {
-    const ringIds = ids.slice(offset, offset + capacity);
-    circlePositions(ringIds, radii[index], -Math.PI / 2).forEach((value, key) => positions.set(key, value));
-    offset += capacity;
+function branchFanPositions(
+  focusId: string,
+  parentIds: string[],
+  branchGroups: BranchGroup[],
+  directLeafIds: string[]
+) {
+  const positions = new Map<string, { x: number; y: number }>();
+  positions.set(focusId, { x: VIEWBOX_CENTER_X, y: VIEWBOX_CENTER_Y });
+
+  const parentGap = 58;
+  const parentStartY = VIEWBOX_CENTER_Y - ((parentIds.length - 1) * parentGap) / 2;
+  parentIds.forEach((id, index) => {
+    positions.set(id, { x: 72, y: parentStartY + index * parentGap });
+  });
+
+  const slotCount = branchGroups.length + directLeafIds.length;
+  const startAngle = -Math.PI * 0.78;
+  const endAngle = Math.PI * 0.78;
+  const slotAngle = (index: number) => slotCount <= 1
+    ? 0
+    : startAngle + ((endAngle - startAngle) * index) / (slotCount - 1);
+  const angularStep = slotCount <= 1 ? Math.PI * 0.44 : (endAngle - startAngle) / (slotCount - 1);
+
+  branchGroups.forEach((group, index) => {
+    const angle = slotAngle(index);
+    positions.set(group.id, polarPosition(126, angle));
+    const leafSpan = Math.min(Math.abs(angularStep) * 0.68, Math.PI * 0.2);
+    group.leafIds.forEach((leafId, leafIndex) => {
+      const ratio = group.leafIds.length <= 1 ? 0.5 : leafIndex / (group.leafIds.length - 1);
+      positions.set(leafId, polarPosition(250, angle - leafSpan / 2 + leafSpan * ratio));
+    });
+  });
+
+  directLeafIds.forEach((id, index) => {
+    positions.set(id, polarPosition(250, slotAngle(branchGroups.length + index)));
   });
 
   return positions;
+}
+
+function pickRepresentativeProducts(
+  candidates: FrontendProduct[],
+  count: number,
+  usedProductIds: Set<string>
+) {
+  const available = candidates.filter((product) => !usedProductIds.has(product.id));
+  const selected: FrontendProduct[] = [];
+  const selectedForms = new Set<string>();
+
+  available.forEach((product) => {
+    if (selected.length >= count || selectedForms.has(product.productForm)) return;
+    selected.push(product);
+    selectedForms.add(product.productForm);
+  });
+  available.forEach((product) => {
+    if (selected.length >= count || selected.some((item) => item.id === product.id)) return;
+    selected.push(product);
+  });
+  selected.forEach((product) => usedProductIds.add(product.id));
+  return selected;
+}
+
+function representativeBranchGroups(
+  childIds: string[],
+  representativesPerGroup: number,
+  allowedProductIds?: Set<string>
+) {
+  const usedProductIds = new Set<string>();
+  return childIds.map((id) => {
+    const child = nodeById.get(id);
+    const representatives = child
+      ? pickRepresentativeProducts(
+          connectedProductsForNode(child).filter((product) => !allowedProductIds || allowedProductIds.has(product.id)),
+          representativesPerGroup,
+          usedProductIds
+        )
+      : [];
+    return { id, leafIds: representatives.map((product) => product.id) };
+  });
+}
+
+function branchEdges(focusId: string, groups: BranchGroup[]) {
+  const childIds = new Set(groups.map((group) => group.id));
+  const leafPairs = new Set(groups.flatMap((group) => group.leafIds.map((leafId) => `${group.id}|${leafId}`)));
+  return graphEdges.filter((edge) =>
+    (edge.source === focusId && childIds.has(edge.target))
+    || leafPairs.has(`${edge.target}|${edge.source}`)
+    || leafPairs.has(`${edge.source}|${edge.target}`)
+  );
 }
 
 function overviewSecondaryPositions(ids: string[]) {
@@ -1701,7 +1792,12 @@ function directNeighborIds(nodeId: string) {
   return uniq([...outgoing, ...incoming].filter((id) => id !== nodeId));
 }
 
-function buildProductFocusGraph(focusId: string, filterNodeIds: string[] = []): GraphDataset {
+function buildProductFocusGraph(
+  focusId: string,
+  filterNodeIds: string[] = [],
+  page = 0,
+  expandCompatibility = false
+): GraphDataset {
   const product = productById.get(focusId);
   if (!product) {
     return buildOverviewGraph();
@@ -1738,23 +1834,32 @@ function buildProductFocusGraph(focusId: string, filterNodeIds: string[] = []): 
     ["Material", "CraftTechnique", "MaterialOrCraft"].includes(nodeById.get(id)?.nodeType ?? "")
   );
   const instructionIds = directIds.filter((id) =>
-    ["CareInstruction", "UsageInstruction", "SKU"].includes(nodeById.get(id)?.nodeType ?? "")
+    ["CareInstruction", "UsageInstruction", "CompatibilitySpec", "SKU"].includes(nodeById.get(id)?.nodeType ?? "")
   );
 
   const reviewedProductIds = reviewedRecommendationEdges.map((edge) =>
     edge.source === product.id ? edge.target : edge.source
   );
-  const compatibilityProductIds = compatibilityEdges.map((edge) =>
+  const compatibilityProductIds = uniq(compatibilityEdges.map((edge) =>
     edge.source === product.id ? edge.target : edge.source
-  );
+  )).filter((id) => nodeById.get(id)?.nodeType === "Product");
   const recommendationProductIds = recommendationEdges.map((edge) =>
     edge.source === product.id ? edge.target : edge.source
   );
   const siblingIds = uniq([
     ...reviewedProductIds,
-    ...compatibilityProductIds,
     ...recommendationProductIds,
   ]).filter((id) => nodeById.get(id)?.nodeType === "Product");
+  const compatibilityPageSize = 10;
+  const compatibilityPageCount = Math.max(1, Math.ceil(compatibilityProductIds.length / compatibilityPageSize));
+  const compatibilityPage = Math.min(Math.max(0, page), compatibilityPageCount - 1);
+  const visibleCompatibilityProductIds = expandCompatibility
+    ? compatibilityProductIds.slice(
+        compatibilityPage * compatibilityPageSize,
+        (compatibilityPage + 1) * compatibilityPageSize
+      )
+    : [];
+  const compatibilityNodeId = `compatibility-group:${product.id}`;
 
   const positions = new Map<string, { x: number; y: number }>();
   positions.set(product.id, { x: VIEWBOX_CENTER_X, y: VIEWBOX_CENTER_Y });
@@ -1763,7 +1868,13 @@ function buildProductFocusGraph(focusId: string, filterNodeIds: string[] = []): 
   arcPositions(purposeIds, 218, -0.16, 0.82).forEach((value, key) => positions.set(key, value));
   arcPositions(instructionIds, 210, 0.82, 2.14).forEach((value, key) => positions.set(key, value));
   arcPositions(physicalIds, 222, 2.12, 2.88).forEach((value, key) => positions.set(key, value));
-  arcPositions(siblingIds, 278, 0.18, 1.42).forEach((value, key) => positions.set(key, value));
+  arcPositions(siblingIds, 278, 1.72, 2.62).forEach((value, key) => positions.set(key, value));
+  if (compatibilityProductIds.length) {
+    positions.set(compatibilityNodeId, { x: 478, y: 398 });
+    if (expandCompatibility) {
+      arcPositions(visibleCompatibilityProductIds, 286, -0.2, 0.92).forEach((value, key) => positions.set(key, value));
+    }
+  }
 
   const visibleTargetIds = uniq([
     ...catalogIds,
@@ -1772,12 +1883,12 @@ function buildProductFocusGraph(focusId: string, filterNodeIds: string[] = []): 
     ...instructionIds,
     ...physicalIds,
     ...siblingIds,
+    ...visibleCompatibilityProductIds,
   ]).filter((id) => id !== product.id);
   const nodeIds = [product.id, ...visibleTargetIds];
 
   const relationCandidates = [
     ...reviewedRecommendationEdges,
-    ...compatibilityEdges,
     ...recommendationEdges,
     ...(edgesBySource.get(product.id) ?? []),
     ...(edgesByTarget.get(product.id) ?? []),
@@ -1799,7 +1910,9 @@ function buildProductFocusGraph(focusId: string, filterNodeIds: string[] = []): 
     if (nodeType === "CraftTechnique") return "工艺";
     return "关联";
   };
-  const linesSource = visibleTargetIds.map((targetId) => {
+  const compatibilityProductIdSet = new Set(visibleCompatibilityProductIds);
+  const linesSource = visibleTargetIds
+    .filter((targetId) => !compatibilityProductIdSet.has(targetId)).map((targetId) => {
     const evidence = relationCandidates.find((edge) =>
       (edge.source === product.id && edge.target === targetId)
       || (edge.target === product.id && edge.source === targetId)
@@ -1819,12 +1932,71 @@ function buildProductFocusGraph(focusId: string, filterNodeIds: string[] = []): 
     };
   });
 
+  const compatibilityLines: FrontendGraphEdge[] = compatibilityProductIds.length
+    ? [
+        {
+          source: product.id,
+          target: compatibilityNodeId,
+          edgeType: "COMPATIBILITY_GROUP",
+          sourceType: "Product",
+          targetType: "CompatibilityGroup",
+          sourceName: product.name,
+          targetName: `适配配件 ${compatibilityProductIds.length}款`,
+          viaField: "approved_compatibility_specs",
+          relationLayer: "factual_compatibility",
+          evidenceType: "approved_compatibility_specs",
+          evidenceText: "由商品与配件的已审核适配规格聚合，不代表官方搭配推荐。",
+          evidenceUrl: "",
+          confidence: "1.0",
+          reviewStatus: "approved",
+          scenario: "",
+          displayLabel: "适配配件",
+        },
+        ...(expandCompatibility
+          ? visibleCompatibilityProductIds.map((targetId) => {
+              const evidence = compatibilityEdges.find((edge) =>
+                (edge.source === product.id ? edge.target : edge.source) === targetId
+              );
+              const target = nodeById.get(targetId);
+              return {
+                ...(evidence ?? makeContextEdge(product.id, targetId, "适配")),
+                source: compatibilityNodeId,
+                target: targetId,
+                sourceType: "CompatibilityGroup",
+                targetType: "Product",
+                sourceName: `适配配件 ${compatibilityProductIds.length}款`,
+                targetName: target?.name ?? targetId,
+                displayLabel: "适配",
+              };
+            })
+          : []),
+      ]
+    : [];
+
   const nodes = nodeIds
     .map((id) => makeNode(id, positions, product.id))
     .filter((node): node is GraphNode => node !== null);
-  const result = lineDataFromEdges(linesSource, positions);
+  if (compatibilityProductIds.length) {
+    nodes.push({
+      anchor: "start",
+      dx: 16,
+      dy: 4,
+      fill: nodeColorMap.CompatibilitySpec,
+      id: compatibilityNodeId,
+      label: `适配配件 ${compatibilityProductIds.length}款`,
+      nodeType: "CompatibilityGroup",
+      persistent: true,
+      r: 11,
+      x: positions.get(compatibilityNodeId)?.x ?? 478,
+      y: positions.get(compatibilityNodeId)?.y ?? 398,
+    });
+  }
+  const result = lineDataFromEdges([...linesSource, ...compatibilityLines], positions);
 
   return {
+    compatibility: compatibilityProductIds.length
+      ? { expanded: expandCompatibility, nodeId: compatibilityNodeId, total: compatibilityProductIds.length }
+      : undefined,
     edgeLabels: result.edgeLabels,
     focusLabel: product.id,
     lines: result.lines,
@@ -1835,7 +2007,19 @@ function buildProductFocusGraph(focusId: string, filterNodeIds: string[] = []): 
       + " · 香调 " + noteFamilyIds.length
       + " · 香材 " + noteIds.length
       + " · 搭配商品 " + siblingIds.length
+      + (compatibilityProductIds.length
+        ? ` · 适配配件 ${compatibilityProductIds.length}${expandCompatibility ? `（当前展示 ${visibleCompatibilityProductIds.length}）` : "（已收起）"}`
+        : "")
       + (filterNodeIds.length ? " · 当前筛选 " + trailText(filterNodeIds) : ""),
+    pagination: expandCompatibility && compatibilityProductIds.length > compatibilityPageSize
+      ? {
+          page: compatibilityPage,
+          pageCount: compatibilityPageCount,
+          pageSize: compatibilityPageSize,
+          total: compatibilityProductIds.length,
+          type: "compatibility",
+        }
+      : undefined,
     viewBox: "0 0 " + VIEWBOX_WIDTH + " " + VIEWBOX_HEIGHT,
   };
 }
@@ -2031,32 +2215,67 @@ function hierarchyAncestorIdsFor(nodeIds: string[]) {
   return result;
 }
 
-function buildFilteredGraph(filterNodeIds: string[], activeNodeId?: string | null): GraphDataset {
+function buildFilteredGraph(filterNodeIds: string[], activeNodeId?: string | null, page = 0): GraphDataset {
   const trail = getFilterTrail(filterNodeIds);
   const activeFocusId = activeNodeId && filterNodeIds.includes(activeNodeId) ? activeNodeId : filterNodeIds.at(-1) ?? undefined;
   const matchedProducts = productsForFilterIds(filterNodeIds);
-  const productIds = matchedProducts.slice(0, 12).map((product) => product.id);
+  const activeFocusNode = activeFocusId ? nodeById.get(activeFocusId) : undefined;
+  if (filterNodeIds.length === 1 && activeFocusNode?.nodeType === "CoreFamily") {
+    const childIds = uniq(
+      matchedProducts
+        .map((product) => `form:${product.productForm}`)
+        .filter((id) => nodeById.has(id))
+    ).sort((a, b) => (nodeById.get(a)?.name ?? a).localeCompare(nodeById.get(b)?.name ?? b, "zh-CN"));
+    return buildCategoryBranchGraph(
+      activeFocusNode,
+      childIds,
+      page,
+      "品型",
+      new Set(matchedProducts.map((product) => product.id))
+    );
+  }
+  if (filterNodeIds.length === 1 && activeFocusNode?.nodeType === "NoteFamily") {
+    return buildScentCategoryBranchGraph(activeFocusNode, matchedProducts, page);
+  }
+  const pageSize = PRODUCT_PAGE_SIZE;
+  const pageCount = Math.max(1, Math.ceil(matchedProducts.length / pageSize));
+  const currentPage = Math.min(Math.max(0, page), pageCount - 1);
+  const visibleProducts = matchedProducts.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
+  const productIds = visibleProducts.map((product) => product.id);
   const ancestorIds = hierarchyAncestorIdsFor(filterNodeIds);
   const pathIds = uniq([...ancestorIds, ...filterNodeIds]);
   const hasFamilyFilter = pathIds.some((id) => nodeById.get(id)?.nodeType === "CoreFamily");
   const hierarchyIds = hasFamilyFilter
     ? uniq(
-        matchedProducts
+        visibleProducts
           .map((product) => `form:${product.productForm}`)
           .filter((id) => nodeById.has(id) && !pathIds.includes(id))
       ).slice(0, 12)
     : [];
 
-  const positions = mergePositions(
-    linePositions(pathIds, 106, 118),
-    arcPositions(hierarchyIds, 176, Math.PI * 0.76, Math.PI * 1.24),
-    circlePositions(productIds, matchedProducts.length > 5 ? 150 : 124)
+  const branchGroups = hierarchyIds.map((id) => ({
+    id,
+    leafIds: visibleProducts
+      .filter((product) => `form:${product.productForm}` === id)
+      .map((product) => product.id),
+  }));
+  const groupedProductIds = new Set(branchGroups.flatMap((group) => group.leafIds));
+  const positions = branchFanPositions(
+    activeFocusId ?? pathIds.at(-1)!,
+    pathIds.filter((id) => id !== activeFocusId),
+    branchGroups,
+    productIds.filter((id) => !groupedProductIds.has(id))
   );
 
   const nodeIds = uniq([...pathIds, ...hierarchyIds, ...productIds]);
   const nodeSet = new Set(nodeIds);
   const linesSource = graphEdges.filter(
-    (edge) => nodeSet.has(edge.source) && nodeSet.has(edge.target) && !hiddenEdgeTypes.has(edge.edgeType)
+    (edge) => nodeSet.has(edge.source)
+      && nodeSet.has(edge.target)
+      && !hiddenEdgeTypes.has(edge.edgeType)
+      && ((edge.source === activeFocusId || edge.target === activeFocusId)
+        || (hierarchyIds.includes(edge.source) || hierarchyIds.includes(edge.target))
+        || (pathIds.includes(edge.source) && pathIds.includes(edge.target)))
   );
 
   const nodes = nodeIds.map((id) => makeNode(id, positions, activeFocusId)).filter((node): node is GraphNode => node !== null);
@@ -2068,7 +2287,10 @@ function buildFilteredGraph(filterNodeIds: string[], activeNodeId?: string | nul
     lines,
     modeLabel: trail.length > 1 ? "组合筛选" : `${trail[0]?.label ?? "筛选"}`,
     nodes,
-    summaryText: `已选 ${trailText(filterNodeIds)} · 命中 ${matchedProducts.length} 商品${matchedProducts.length > productIds.length ? ` · 当前展示 ${productIds.length}` : ""}`,
+    pagination: matchedProducts.length > pageSize
+      ? { page: currentPage, pageCount, pageSize, total: matchedProducts.length, type: "catalog" }
+      : undefined,
+    summaryText: `已选 ${trailText(filterNodeIds)} · 共 ${matchedProducts.length} 款商品${matchedProducts.length > productIds.length ? ` · 当前展示 ${currentPage * pageSize + 1}-${currentPage * pageSize + productIds.length}` : ""}`,
     viewBox: `0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`,
   };
 }
@@ -2100,7 +2322,138 @@ function makeContextEdge(
     displayLabel,
   };
 }
-function buildNeighborhoodGraph(focusId: string): GraphDataset {
+function buildCategoryBranchGraph(
+  focusNode: FrontendGraphNode,
+  allChildIds: string[],
+  page: number,
+  childLabel: string,
+  allowedProductIds?: Set<string>
+): GraphDataset {
+  const pageCount = Math.max(1, Math.ceil(allChildIds.length / CATEGORY_PAGE_SIZE));
+  const currentPage = Math.min(Math.max(0, page), pageCount - 1);
+  const visibleChildIds = allChildIds
+    .slice(currentPage * CATEGORY_PAGE_SIZE, (currentPage + 1) * CATEGORY_PAGE_SIZE);
+  const representativesPerGroup = visibleChildIds.length <= 4 ? 3 : 2;
+  const branchGroups = representativeBranchGroups(visibleChildIds, representativesPerGroup, allowedProductIds);
+  const leafIds = branchGroups.flatMap((group) => group.leafIds);
+  const positions = branchFanPositions(focusNode.id, [], branchGroups, []);
+  const nodeIds = uniq([focusNode.id, ...visibleChildIds, ...leafIds]);
+  const linesSource = branchEdges(focusNode.id, branchGroups);
+  const nodes = nodeIds
+    .map((id) => makeNode(id, positions, focusNode.id))
+    .filter((node): node is GraphNode => node !== null);
+  const result = lineDataFromEdges(linesSource, positions);
+  const visibleStart = currentPage * CATEGORY_PAGE_SIZE + 1;
+  const visibleEnd = visibleStart + visibleChildIds.length - 1;
+
+  return {
+    edgeLabels: result.edgeLabels,
+    focusLabel: focusNode.id,
+    lines: result.lines,
+    modeLabel: `${focusNode.displayLabel || focusNode.name} 分类`,
+    nodes,
+    pagination: allChildIds.length > CATEGORY_PAGE_SIZE
+      ? {
+          page: currentPage,
+          pageCount,
+          pageSize: CATEGORY_PAGE_SIZE,
+          total: allChildIds.length,
+          type: "category",
+        }
+      : undefined,
+    summaryText: `${focusNode.displayLabel || focusNode.name} · ${childLabel} ${allChildIds.length}`
+      + (allChildIds.length > visibleChildIds.length ? ` · 当前分类 ${visibleStart}-${visibleEnd}` : "")
+      + ` · 代表商品 ${leafIds.length}`,
+    viewBox: `0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`,
+  };
+}
+function buildScentCategoryBranchGraph(
+  focusNode: FrontendGraphNode,
+  matchingProducts: FrontendProduct[],
+  page: number
+): GraphDataset {
+  const productsByCategory = new Map<string, FrontendProduct[]>();
+  matchingProducts.forEach((product) => {
+    const identityId = (product.scentIdentities ?? [])
+      .map((identity) => identity.id)
+      .find((id) => nodeById.get(id)?.nodeType === "ScentIdentity");
+    const categoryId = identityId ?? `form:${product.productForm}`;
+    if (!nodeById.has(categoryId)) return;
+    const bucket = productsByCategory.get(categoryId) ?? [];
+    bucket.push(product);
+    productsByCategory.set(categoryId, bucket);
+  });
+  const allCategoryIds = Array.from(productsByCategory.keys()).sort((a, b) => {
+    const aType = nodeById.get(a)?.nodeType;
+    const bType = nodeById.get(b)?.nodeType;
+    return Number(bType === "ScentIdentity") - Number(aType === "ScentIdentity")
+      || (nodeById.get(a)?.name ?? a).localeCompare(nodeById.get(b)?.name ?? b, "zh-CN");
+  });
+  const pageCount = Math.max(1, Math.ceil(allCategoryIds.length / CATEGORY_PAGE_SIZE));
+  const currentPage = Math.min(Math.max(0, page), pageCount - 1);
+  const categoryIds = allCategoryIds
+    .slice(currentPage * CATEGORY_PAGE_SIZE, (currentPage + 1) * CATEGORY_PAGE_SIZE);
+  const representativesPerGroup = categoryIds.length <= 4 ? 3 : 2;
+  const usedProductIds = new Set<string>();
+  const branchGroups = categoryIds.map((categoryId) => ({
+    id: categoryId,
+    leafIds: pickRepresentativeProducts(
+      productsByCategory.get(categoryId) ?? [],
+      representativesPerGroup,
+      usedProductIds
+    ).map((product) => product.id),
+  }));
+  const leafIds = branchGroups.flatMap((group) => group.leafIds);
+  const parentIds = (edgesByTarget.get(focusNode.id) ?? [])
+    .filter((edge) => edge.sourceType === "OntologyDomain")
+    .map((edge) => edge.source);
+  const positions = branchFanPositions(focusNode.id, parentIds, branchGroups, []);
+  const contextEdges: FrontendGraphEdge[] = [];
+  branchGroups.forEach((group) => {
+    contextEdges.push(makeContextEdge(focusNode.id, group.id, ""));
+    group.leafIds.forEach((productId) => {
+      const evidence = (edgesBySource.get(productId) ?? []).find((edge) => edge.target === focusNode.id);
+      contextEdges.push(makeContextEdge(group.id, productId, "", evidence));
+    });
+  });
+  const pathIds = [...parentIds, focusNode.id];
+  const nodeIds = uniq([...pathIds, ...categoryIds, ...leafIds]);
+  const nodeSet = new Set(nodeIds);
+  const pathEdges = graphEdges.filter((edge) =>
+    nodeSet.has(edge.source)
+      && nodeSet.has(edge.target)
+      && pathIds.includes(edge.source)
+      && pathIds.includes(edge.target)
+  );
+  const nodes = nodeIds
+    .map((id) => makeNode(id, positions, focusNode.id))
+    .filter((node): node is GraphNode => node !== null);
+  const result = lineDataFromEdges([...pathEdges, ...contextEdges], positions);
+  const visibleStart = currentPage * CATEGORY_PAGE_SIZE + 1;
+  const visibleEnd = visibleStart + categoryIds.length - 1;
+
+  return {
+    edgeLabels: result.edgeLabels,
+    focusLabel: focusNode.id,
+    lines: result.lines,
+    modeLabel: `${focusNode.displayLabel || focusNode.name} \u5206\u7c7b`,
+    nodes,
+    pagination: allCategoryIds.length > CATEGORY_PAGE_SIZE
+      ? {
+          page: currentPage,
+          pageCount,
+          pageSize: CATEGORY_PAGE_SIZE,
+          total: allCategoryIds.length,
+          type: "category",
+        }
+      : undefined,
+    summaryText: `${focusNode.displayLabel || focusNode.name} \u00b7 \u5c0f\u7c7b\u522b ${allCategoryIds.length}`
+      + (allCategoryIds.length > categoryIds.length ? ` \u00b7 \u5f53\u524d\u5206\u7c7b ${visibleStart}-${visibleEnd}` : "")
+      + ` \u00b7 \u5339\u914d\u5546\u54c1 ${matchingProducts.length} \u00b7 \u4ee3\u8868\u5546\u54c1 ${leafIds.length}`,
+    viewBox: `0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`,
+  };
+}
+function buildNeighborhoodGraph(focusId: string, page = 0): GraphDataset {
   const focusNode = nodeById.get(focusId);
   if (!focusNode) {
     return buildOverviewGraph();
@@ -2110,36 +2463,8 @@ function buildNeighborhoodGraph(focusId: string): GraphDataset {
   if (focusNode.nodeType === "SemanticDomain") {
     const childIds = (edgesBySource.get(focusId) ?? [])
       .filter((edge) => edge.edgeType === "HAS_SEMANTIC_CONCEPT")
-      .map((edge) => edge.target)
-      .slice(0, 24);
-    const leafIds = uniq(
-      childIds.slice(0, 8).flatMap((childId) =>
-        (edgesByTarget.get(childId) ?? [])
-          .filter((edge) => edge.sourceType === "Product" && edge.reviewStatus === "approved")
-          .slice(0, 1)
-          .map((edge) => edge.source)
-      )
-    );
-    const positions = mergePositions(
-      linePositions([focusId], 78, 118),
-      concentricPositions(childIds),
-      circlePositions(leafIds, 278, -Math.PI / 2)
-    );
-    const nodeIds = uniq([focusId, ...childIds, ...leafIds]);
-    const nodeSet = new Set(nodeIds);
-    const linesSource = graphEdges.filter((edge) => nodeSet.has(edge.source) && nodeSet.has(edge.target));
-    const nodes = nodeIds.map((id) => makeNode(id, positions, focusId)).filter((node): node is GraphNode => node !== null);
-    const { edgeLabels, lines } = lineDataFromEdges(linesSource, positions);
-
-    return {
-      edgeLabels,
-      focusLabel: focusId,
-      lines,
-      modeLabel: `${focusNode.name} 本体`,
-      nodes,
-      summaryText: `${focusNode.name} · 共享概念 ${childIds.length} · 商品叶子示例 ${leafIds.length}`,
-      viewBox: `0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`,
-    };
+      .map((edge) => edge.target);
+    return buildCategoryBranchGraph(focusNode, childIds, page, "\u6982\u5ff5");
   }
   if (focusNode.nodeType === "OntologyDomain") {
     const allChildIds = (edgesBySource.get(focusId) ?? []).map((edge) => edge.target);
@@ -2153,129 +2478,23 @@ function buildNeighborhoodGraph(focusId: string): GraphDataset {
         : conceptChildIds.length
           ? conceptChildIds
           : allChildIds;
-    const leafIds = uniq(
-      childIds.flatMap((childId) => {
-        const child = nodeById.get(childId);
-        return child ? connectedProductsForNode(child).slice(0, 1).map((product) => product.id) : [];
-      })
-    );
-    const positions = mergePositions(
-      linePositions([focusId], 106, 118),
-      arcPositions(childIds, 176, Math.PI * 0.76, Math.PI * 1.24),
-      circlePositions(leafIds, 252, -Math.PI / 2)
-    );
-    const nodeIds = [focusId, ...childIds, ...leafIds];
-    const nodeSet = new Set(nodeIds);
-    const linesSource = graphEdges.filter((edge) => nodeSet.has(edge.source) && nodeSet.has(edge.target));
-    const nodes = nodeIds.map((id) => makeNode(id, positions, focusId)).filter((node): node is GraphNode => node !== null);
-    const result = lineDataFromEdges(linesSource, positions);
-
-    return {
-      edgeLabels: result.edgeLabels,
-      focusLabel: focusId,
-      lines: result.lines,
-      modeLabel: focusNode.name + " 分类",
-      nodes,
-      summaryText: familyChildIds.length
-        ? focusNode.name + " · 香调 " + childIds.length + " · 相关商品示例 " + leafIds.length
-        : focusNode.name + " · 香味系列 " + childIds.length + " · 系列商品示例 " + leafIds.length,
-      viewBox: "0 0 " + VIEWBOX_WIDTH + " " + VIEWBOX_HEIGHT,
-    };
+    const childLabel = familyChildIds.length ? "\u9999\u8c03" : "\u7cfb\u5217";
+    return buildCategoryBranchGraph(focusNode, childIds, page, childLabel);
   }
-
-  if (focusNode.nodeType === "NoteFamily" || focusNode.nodeType === "NoteIngredient") {
-    const matchingProducts = connectedProductsForNode(focusNode);
-    const parentIds = focusNode.nodeType === "NoteFamily"
-      ? (edgesByTarget.get(focusId) ?? [])
-          .filter((edge) => edge.sourceType === "OntologyDomain")
-          .map((edge) => edge.source)
-      : (edgesByTarget.get(focusId) ?? [])
-          .filter((edge) => edge.sourceType === "NoteFamily")
-          .map((edge) => edge.source)
-          .slice(0, 2);
-    const productsBySeries = new Map<string, FrontendProduct[]>();
-    const ungroupedProducts: FrontendProduct[] = [];
-    matchingProducts.forEach((product) => {
-      const identityId = product.scentIdentities?.[0]?.id;
-      const identityNode = identityId ? nodeById.get(identityId) : undefined;
-      if (!identityId || identityNode?.productForm !== "SignatureFragrance") {
-        ungroupedProducts.push(product);
-        return;
-      }
-      const bucket = productsBySeries.get(identityId) ?? [];
-      bucket.push(product);
-      productsBySeries.set(identityId, bucket);
-    });
-    const seriesIds = Array.from(productsBySeries.keys()).slice(0, 18);
-    const groupedProductIds = seriesIds.flatMap((seriesId) =>
-      (productsBySeries.get(seriesId) ?? []).map((product) => product.id)
-    );
-    const productLeafIds = uniq([
-      ...groupedProductIds,
-      ...ungroupedProducts.map((product) => product.id),
-    ]).slice(0, 26);
-    const productLeafSet = new Set(productLeafIds);
-    const contextEdges: FrontendGraphEdge[] = [];
-    seriesIds.forEach((seriesId) => {
-      contextEdges.push(makeContextEdge(focusId, seriesId, "相关系列"));
-      (productsBySeries.get(seriesId) ?? []).forEach((product) => {
-        if (!productLeafSet.has(product.id)) return;
-        const evidence = (edgesBySource.get(product.id) ?? []).find((edge) => edge.target === focusId);
-        contextEdges.push(makeContextEdge(
-          seriesId,
-          product.id,
-          focusNode.nodeType === "NoteFamily" ? "该香调商品" : "含此香材",
-          evidence
-        ));
-      });
-    });
-    ungroupedProducts.forEach((product) => {
-      if (!productLeafSet.has(product.id)) return;
-      const evidence = (edgesBySource.get(product.id) ?? []).find((edge) => edge.target === focusId);
-      contextEdges.push(makeContextEdge(
-        focusId,
-        product.id,
-        focusNode.nodeType === "NoteFamily" ? "该香调商品" : "含此香材",
-        evidence
-      ));
-    });
-    const pathIds = [...parentIds, focusId];
-    const positions = mergePositions(
-      linePositions(pathIds, 72, 118),
-      concentricPositions(seriesIds),
-      circlePositions(productLeafIds, 282, -Math.PI / 2)
-    );
-    const nodeIds = uniq([...pathIds, ...seriesIds, ...productLeafIds]);
-    const nodeSet = new Set(nodeIds);
-    const linesSource = [
-      ...graphEdges.filter((edge) => nodeSet.has(edge.source) && nodeSet.has(edge.target)
-        && (pathIds.includes(edge.source) || pathIds.includes(edge.target))),
-      ...contextEdges,
-    ];
-    const nodes = nodeIds.map((id) => makeNode(id, positions, focusId)).filter((node): node is GraphNode => node !== null);
-    const result = lineDataFromEdges(linesSource, positions);
-    const omittedCount = Math.max(0, matchingProducts.length - productLeafIds.length);
-
-    return {
-      edgeLabels: result.edgeLabels,
-      focusLabel: focusId,
-      lines: result.lines,
-      modeLabel: (focusNode.displayLabel || focusNode.name) + "关联",
-      nodes,
-      summaryText: (focusNode.displayLabel || focusNode.name)
-        + " · 相关系列 " + seriesIds.length
-        + " · 精确匹配商品 " + matchingProducts.length
-        + (omittedCount ? " · 当前展示 " + productLeafIds.length : ""),
-      viewBox: "0 0 " + VIEWBOX_WIDTH + " " + VIEWBOX_HEIGHT,
-    };
+  if (focusNode.nodeType === "NoteFamily") {
+    return buildScentCategoryBranchGraph(focusNode, connectedProductsForNode(focusNode), page);
   }
-
   if (focusNode.nodeType === "ScentIdentity" && focusNode.productForm === "SignatureFragrance") {
     const parentIds = (edgesByTarget.get(focusId) ?? [])
       .filter((edge) => edge.source === "domain:系列")
       .map((edge) => edge.source);
     const allProducts = connectedProductsForNode(focusNode);
-    const productIds = allProducts.slice(0, 24).map((product) => product.id);
+    const pageSize = PRODUCT_PAGE_SIZE;
+    const pageCount = Math.max(1, Math.ceil(allProducts.length / pageSize));
+    const currentPage = Math.min(Math.max(0, page), pageCount - 1);
+    const productIds = allProducts
+      .slice(currentPage * pageSize, (currentPage + 1) * pageSize)
+      .map((product) => product.id);
     const skuIds = uniq(productIds.flatMap((productId) =>
       (edgesBySource.get(productId) ?? [])
         .filter((edge) => edge.edgeType === "HAS_SKU")
@@ -2283,10 +2502,18 @@ function buildNeighborhoodGraph(focusId: string): GraphDataset {
         .map((edge) => edge.target)
     )).slice(0, 12);
     const pathIds = [...parentIds, focusId];
-    const positions = mergePositions(
-      linePositions(pathIds, 72, 118),
-      concentricPositions(productIds),
-      circlePositions(skuIds, 282, -Math.PI / 2)
+    const productGroups = productIds.map((productId) => ({
+      id: productId,
+      leafIds: (edgesBySource.get(productId) ?? [])
+        .filter((edge) => edge.edgeType === "HAS_SKU" && skuIds.includes(edge.target))
+        .map((edge) => edge.target),
+    }));
+    const productsWithSku = new Set(productGroups.filter((group) => group.leafIds.length).map((group) => group.id));
+    const positions = branchFanPositions(
+      focusId,
+      parentIds,
+      productGroups.filter((group) => group.leafIds.length),
+      productIds.filter((id) => !productsWithSku.has(id))
     );
     const nodeIds = uniq([...pathIds, ...productIds, ...skuIds]);
     const nodeSet = new Set(nodeIds);
@@ -2300,17 +2527,26 @@ function buildNeighborhoodGraph(focusId: string): GraphDataset {
       lines: result.lines,
       modeLabel: focusNode.name + "系列",
       nodes,
+      pagination: allProducts.length > pageSize
+        ? { page: currentPage, pageCount, pageSize, total: allProducts.length, type: "relationship" }
+        : undefined,
       summaryText: "系列 > " + focusNode.name + " · 商品 " + allProducts.length
-        + (allProducts.length > productIds.length ? " · 当前展示 " + productIds.length : "")
+        + (allProducts.length > productIds.length
+          ? ` · 当前展示 ${currentPage * pageSize + 1}-${currentPage * pageSize + productIds.length}`
+          : "")
         + " · 商品规格示例 " + skuIds.length,
       viewBox: "0 0 " + VIEWBOX_WIDTH + " " + VIEWBOX_HEIGHT,
     };
   }
-  const linkedProducts = connectedProductsForNode(focusNode).slice(0, 5);
-  const productIds = uniq([
+  const linkedProducts = connectedProductsForNode(focusNode);
+  const allProductIds = uniq([
     ...directIds.filter((id) => nodeById.get(id)?.nodeType === "Product"),
     ...linkedProducts.map((product) => product.id),
-  ]).filter((id) => id !== focusId).slice(0, 5);
+  ]).filter((id) => id !== focusId);
+  const pageSize = PRODUCT_PAGE_SIZE;
+  const pageCount = Math.max(1, Math.ceil(allProductIds.length / pageSize));
+  const currentPage = Math.min(Math.max(0, page), pageCount - 1);
+  const productIds = allProductIds.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
 
   const semanticIds = directIds
     .filter((id) => {
@@ -2359,7 +2595,13 @@ function buildNeighborhoodGraph(focusId: string): GraphDataset {
     lines,
     modeLabel: `${focusNode.displayLabel || focusNode.name} 关联`,
     nodes,
-    summaryText: `${focusNode.nodeType} · 直接邻居 ${directIds.length} · 关联商品 ${linkedProducts.length}`,
+    pagination: allProductIds.length > pageSize
+      ? { page: currentPage, pageCount, pageSize, total: allProductIds.length, type: "relationship" }
+      : undefined,
+    summaryText: `${focusNode.displayLabel || focusNode.name} · 关联商品 ${allProductIds.length}`
+      + (allProductIds.length > productIds.length
+        ? ` · 当前展示 ${currentPage * pageSize + 1}-${currentPage * pageSize + productIds.length}`
+        : ""),
     viewBox: `0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`,
   };
 }
@@ -2499,7 +2741,9 @@ const overviewDataset = buildOverviewGraph();
 export function getGraphDataset(
   focusLabel: string | null,
   filterNodeIds: string[] = [],
-  recommendationProductNames: string[] = []
+  recommendationProductNames: string[] = [],
+  page = 0,
+  expandCompatibility = false
 ): GraphDataset {
   if (recommendationProductNames.length) {
     return buildRecommendationGraph(recommendationProductNames);
@@ -2507,21 +2751,23 @@ export function getGraphDataset(
   if (focusLabel) {
     const node = nodeById.get(focusLabel);
     if (node?.nodeType === "Product") {
-      return buildProductFocusGraph(node.id, filterNodeIds);
+      return buildProductFocusGraph(node.id, filterNodeIds, page, expandCompatibility);
     }
   }
 
   if (filterNodeIds.length) {
-    return buildFilteredGraph(filterNodeIds, focusLabel);
+    return buildFilteredGraph(filterNodeIds, focusLabel, page);
   }
 
   if (focusLabel) {
     const node = nodeById.get(focusLabel);
     if (!node) {
       const product = products.find((candidate) => candidate.name === focusLabel);
-      return product ? buildProductFocusGraph(product.id) : overviewDataset;
+      return product ? buildProductFocusGraph(product.id, [], page, expandCompatibility) : overviewDataset;
     }
-    return node.nodeType === "Product" ? buildProductFocusGraph(node.id) : buildNeighborhoodGraph(node.id);
+    return node.nodeType === "Product"
+      ? buildProductFocusGraph(node.id, [], page, expandCompatibility)
+      : buildNeighborhoodGraph(node.id, page);
   }
 
   return overviewDataset;
