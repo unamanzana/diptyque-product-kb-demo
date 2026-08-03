@@ -15,7 +15,8 @@ export const runtime = "nodejs";
 
 function fallbackConversationFrameUpdate(
   hasPreviousFrame: boolean,
-  queryPlan: DiptyqueQueryPlan
+  queryPlan: DiptyqueQueryPlan,
+  message: string
 ): ConversationFrameUpdate {
   const followsPrevious = hasPreviousFrame && queryPlan.conversationState.isFollowUp;
   const inherited = new Set(queryPlan.inheritedConstraintKeys);
@@ -23,6 +24,11 @@ function fallbackConversationFrameUpdate(
     !followsPrevious && inherited.has(key) ? [] : values;
   const keepValue = <T,>(key: keyof typeof queryPlan.constraints, value: T | undefined) =>
     !followsPrevious && inherited.has(key) ? undefined : value;
+  const explicitExcludedTerms = [
+    /(?:\u4e0d\u559c\u6b22|\u4e0d\u8981|\u6392\u9664|\u522b\u63a8\u8350).*\u6e05\u6d01/.test(message) ? "\u6e05\u6d01\u7528\u54c1" : "",
+    /(?:\u4e0d\u559c\u6b22|\u4e0d\u8981|\u6392\u9664|\u522b\u63a8\u8350).*\u8865\u5145\u88c5/.test(message) ? "\u8865\u5145\u88c5" : "",
+    /(?:\u4e0d\u559c\u6b22|\u4e0d\u8981|\u6392\u9664|\u522b\u63a8\u8350).*\u9999\u6c34/.test(message) ? "\u9999\u6c34" : "",
+  ].filter(Boolean);
   return {
     action: followsPrevious ? "ADD" : "NEW_TOPIC",
     clearFields: followsPrevious ? [] : ["resultSet"],
@@ -37,6 +43,7 @@ function fallbackConversationFrameUpdate(
     excludedTerms: [
       ...keepArray("excludedCollections", queryPlan.constraints.excludedCollections),
       ...keepArray("excludedProductForms", queryPlan.constraints.excludedProductForms),
+      ...explicitExcludedTerms,
     ],
     maxPrice: keepValue("maxPrice", queryPlan.constraints.maxPrice),
     sizes: keepArray("sizes", queryPlan.constraints.sizes),
@@ -90,7 +97,7 @@ export async function POST(request: Request) {
       collectionTerms: queryPlan.constraints.collections,
     });
     if (deterministic.deterministicAnswer) {
-      const frameUpdate = fallbackConversationFrameUpdate(Boolean(previousConversationFrame), queryPlan);
+      const frameUpdate = fallbackConversationFrameUpdate(Boolean(previousConversationFrame), queryPlan, message);
       const conversationFrame = applyConversationFrameUpdate(previousConversationFrame, frameUpdate, {
         matchedProductIds: deterministic.matchedProducts.map((product) => product.id),
         selectedProductIds: [],
@@ -126,7 +133,7 @@ export async function POST(request: Request) {
     const usage = "usage" in result ? result.usage : undefined;
     const matchedProductNames = productNamesByIds(result.matchedProductIds);
     const recommendedProductNames = productNamesByIds(result.selectedProductIds);
-    const fallbackFrameUpdate = fallbackConversationFrameUpdate(Boolean(previousConversationFrame), queryPlan);
+    const fallbackFrameUpdate = fallbackConversationFrameUpdate(Boolean(previousConversationFrame), queryPlan, message);
     const frameUpdate = result.conversationFrameUpdate ?? fallbackFrameUpdate;
     const conversationFrame = applyConversationFrameUpdate(previousConversationFrame, frameUpdate, {
       matchedProductIds: result.matchedProductIds,

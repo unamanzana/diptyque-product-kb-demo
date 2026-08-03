@@ -2,6 +2,7 @@ import frontendData from "@/data/diptyque-frontend-payload";
 import type {
   ConversationAction,
   ConversationField,
+  ConversationFrame,
   ConversationFrameUpdate,
 } from "@/lib/diptyque-conversation-frame";
 import type { DiptyqueQueryPlan } from "@/lib/diptyque-query-plan";
@@ -79,11 +80,12 @@ type ToolDefinition = {
 export type ToolExecution = {
   content: string;
   productIds: string[];
+  displayProductIds?: string[];
   summary: string;
   conversationFrameUpdate?: ConversationFrameUpdate;
   exactSelection?: {
     answer: string;
-    answerMode: "price_search";
+    answerMode: "price_search" | "relation_search";
     productIds: string[];
   };
 };
@@ -108,7 +110,7 @@ const familyAliases: Record<string, string[]> = {
 };
 
 function normalize(value: string) {
-  return value.toLowerCase().replace(/\s+/g, "").replace(/[，。！？、,;；:：·\-—_|/]/g, "");
+  return value.toLowerCase().normalize("NFKC").replace(/[\s\p{P}\p{S}]+/gu, "");
 }
 
 function stringArray(value: unknown) {
@@ -137,6 +139,83 @@ function productMatchesExcludedScent(product: Product, excludedTerms: string[]) 
     const normalizedTerm = normalize(term);
     return normalizedTerm && scentValues.some((value) => value.includes(normalizedTerm));
   });
+}
+
+const exclusionAliases: Record<string, string[]> = {
+  "\u6e05\u6d01": ["\u6e05\u6d01", "\u6e05\u6d17", "\u6d01\u80a4", "\u6d01\u9762"],
+  "\u8865\u5145": ["\u8865\u5145", "\u66ff\u6362", "refill"],
+  "\u62a4\u7406": ["\u62a4\u7406", "\u6da6\u80a4", "\u62a4\u624b", "\u6c90\u6d74"],
+};
+
+function expandedExclusionTerms(terms: string[]) {
+  return Array.from(new Set(terms.flatMap((term) => {
+    const normalized = normalize(term);
+    const aliases = Object.entries(exclusionAliases)
+      .filter(([root]) => normalized.includes(normalize(root)))
+      .flatMap(([, values]) => values);
+    return [term, ...aliases];
+  }).map(normalize).filter(Boolean)));
+}
+
+function productMatchesExcludedTerm(product: Product, excludedTerms: string[]) {
+  const searchable = [
+    product.name,
+    product.identityName,
+    product.coreFamily,
+    product.productForm,
+    ...product.collections,
+    ...product.notes,
+    ...product.scentProfiles,
+    ...product.scentAccords,
+    ...product.scentConcepts,
+    ...product.noteFamilies,
+    ...product.materials,
+    ...product.marketingTags,
+    ...product.variantTags,
+    ...(product.semanticFacts?.functions ?? []),
+    ...(product.semanticFacts?.userNeeds ?? []),
+    ...(product.semanticFacts?.semanticMaterials ?? []),
+  ].map(normalize);
+  return expandedExclusionTerms(excludedTerms).some((term) =>
+    searchable.some((value) => value.includes(term))
+  );
+}
+
+export function filterProductIdsByConversationFrame(ids: string[], frame: ConversationFrame | null) {
+  if (!frame) return Array.from(new Set(ids)).filter((id) => productById.has(id));
+  return Array.from(new Set(ids)).filter((id) => {
+    const product = productById.get(id);
+    if (!product) return false;
+    if (frame.coreFamilies.length && !matchesAny([product.coreFamily], frame.coreFamilies)) return false;
+    if (frame.productForms.length && !matchesAny([product.productForm], frame.productForms)) return false;
+    if (frame.collections.length && !matchesAny(product.collections, frame.collections)) return false;
+    if (frame.sizes.length && !matchesAny(product.sizes, frame.sizes)) return false;
+    const price = productPrice(product);
+    if (frame.maxPrice != null && (price == null || price > frame.maxPrice)) return false;
+    if (frame.excludedTerms.length && productMatchesExcludedTerm(product, frame.excludedTerms)) return false;
+    return true;
+  });
+}
+
+export function buildConstrainedFallback(
+  ids: string[],
+  frame: ConversationFrame | null,
+  answerMode: string,
+  limit = 5
+) {
+  const productIds = filterProductIdsByConversationFrame(ids, frame).slice(0, limit);
+  const selected = productIds.map((id) => productById.get(id)).filter((product): product is Product => Boolean(product));
+  const constraints = [
+    frame?.maxPrice != null ? "\u4ef7\u683c\u4e0d\u9ad8\u4e8e " + frame.maxPrice + " \u5143" : "",
+    frame?.excludedTerms.length ? "\u5df2\u6392\u9664\uff1a" + frame.excludedTerms.join("\u3001") : "",
+  ].filter(Boolean).join("\uff1b");
+  const answer = selected.length
+    ? [
+        constraints ? "\u6309\u5f53\u524d\u6761\u4ef6\uff08" + constraints + "\uff09\uff0c\u53ef\u4ee5\u7ee7\u7eed\u8003\u8651\uff1a" : "\u53ef\u4ee5\u7ee7\u7eed\u8003\u8651\uff1a",
+        ...selected.map((product, index) => (index + 1) + ". " + product.name + (productPrice(product) != null ? "\uff0c\uffe5" + productPrice(product) : "")),
+      ].join("\n")
+    : "\u6309\u5f53\u524d\u7684\u660e\u786e\u6761\u4ef6" + (constraints ? "\uff08" + constraints + "\uff09" : "") + "\uff0c\u6682\u65f6\u6ca1\u6709\u627e\u5230\u7b26\u5408\u7684\u5546\u54c1\u3002";
+  return { answer, answerMode, matchedProductIds: productIds, selectedProductIds: productIds };
 }
 
 function compactProduct(product: Product) {
@@ -446,7 +525,7 @@ export function buildGiftFallbackRecommendation(options: {
 }
 
 function getProductDetails(args: Record<string, unknown>): ToolExecution {
-  const ids = stringArray(args.product_ids).slice(0, 12);
+  const ids = stringArray(args.product_ids).slice(0, 8);
   const selected = ids.map((id) => productById.get(id)).filter((product): product is Product => Boolean(product));
   return {
     content: JSON.stringify({
@@ -454,7 +533,7 @@ function getProductDetails(args: Record<string, unknown>): ToolExecution {
         ...compactProduct(product),
         subtitle: product.subtitle,
         description: product.description,
-        storyText: product.storyText.slice(0, 700),
+        storyText: product.storyText.slice(0, 500),
         image: product.image,
       })),
     }),
@@ -466,6 +545,7 @@ function getProductDetails(args: Record<string, unknown>): ToolExecution {
 function getProductRelations(args: Record<string, unknown>): ToolExecution {
   const ids = new Set(stringArray(args.product_ids).slice(0, 100));
   const relationTypes = new Set(stringArray(args.relation_types));
+  const targetTerms = stringArray(args.target_terms);
   const directRelations = payload.graph.edges
     .filter(
       (edge) =>
@@ -495,6 +575,8 @@ function getProductRelations(args: Record<string, unknown>): ToolExecution {
           && edge.reviewStatus === "approved"
       )
       .forEach((accessorySpec) => {
+        const accessoryProduct = productById.get(accessorySpec.source);
+        if (targetTerms.length && (!accessoryProduct || !matchesAny([accessoryProduct.name, accessoryProduct.productForm], targetTerms))) return;
         const matchingProducts = payload.graph.edges
           .filter(
             (edge) =>
@@ -526,6 +608,7 @@ function getProductRelations(args: Record<string, unknown>): ToolExecution {
   }
 
   const specificationCompatibility = Array.from(specificationGroups.values())
+    .filter((group) => group.accessories.length > 0)
     .sort((a, b) => a.compatibilitySpec.localeCompare(b.compatibilitySpec, "zh-CN"));
   const productIds = Array.from(
     new Set([
@@ -536,6 +619,20 @@ function getProductRelations(args: Record<string, unknown>): ToolExecution {
       ]),
     ].filter((id) => productById.has(id)))
   );
+  const displayProductIds = productIds.filter((id) => !ids.has(id));
+  const compatibleAccessories = Array.from(new Map(
+    specificationCompatibility.flatMap((group) => group.accessories).map((accessory) => [accessory.id, accessory])
+  ).values());
+  const exactSelection = compatibleAccessories.length
+    ? {
+        answer: [
+          ...specificationCompatibility.map((group) => group.compatibilitySpec + "\uff1a" + group.accessories.map((accessory) => accessory.name).join("\u3001")),
+          "\u4ee5\u4e0a\u662f\u6839\u636e\u5df2\u5ba1\u6838\u89c4\u683c\u5f97\u51fa\u7684\u9002\u914d\u5173\u7cfb\uff0c\u4e0d\u662f\u5b98\u7f51\u9010\u6b3e\u642d\u914d\u6216\u5b98\u65b9\u63a8\u8350\u3002",
+        ].join("\n"),
+        answerMode: "relation_search" as const,
+        productIds: compatibleAccessories.map((accessory) => accessory.id).slice(0, 5),
+      }
+    : undefined;
   return {
     content: JSON.stringify({
       relations: directRelations.map((edge) => ({
@@ -562,6 +659,8 @@ function getProductRelations(args: Record<string, unknown>): ToolExecution {
       })),
     }),
     productIds,
+    displayProductIds,
+    exactSelection,
     summary: [
       "get_product_relations",
       "direct=" + directRelations.length,
@@ -897,6 +996,7 @@ export const diptyqueAgentTools: ToolDefinition[] = [
         properties: {
           product_ids: { type: "array", items: { type: "string" }, maxItems: 100 },
           relation_types: { type: "array", items: { type: "string" } },
+          target_terms: { type: "array", items: { type: "string" }, description: "Requested target type, for example candle lids rather than all candle accessories." },
         },
         required: ["product_ids"],
         additionalProperties: false,
@@ -1181,8 +1281,7 @@ export function productNamesByIds(ids: string[]) {
     .filter((name): name is string => Boolean(name));
 }
 
-const negativeRecommendationPattern = /(?:\u4e0d\u63a8\u8350|\u4e0d\u5efa\u8bae|\u4e0d\u9002\u5408|\u6392\u9664|\u4e0d\u9009\u62e9|\u4e0d.{0,3}\u7b26\u5408|\u4e0d\u8981\u9009|\u4e0d\u4f5c\u4e3a\u63a8\u8350|\u4ec5\u4f5c\u5bf9\u6bd4|\u53cd\u4f8b|\u8d85\u51fa.{0,8}\u9884\u7b97|\u7f3a\u8d27)/;
-const positiveRecommendationPattern = /(?:\u63a8\u8350|\u9996\u9009|\u4f18\u5148|\u5019\u9009|\u53ef\u4ee5\u9009\u62e9|\u53ef\u9009|\u9002\u5408|\u5efa\u8bae\u9009\u62e9|\u5efa\u8bae\u8003\u8651)/;
+const negativeRecommendationPattern = /(?:\u4e0d\u63a8\u8350|\u4e0d\u5efa\u8bae|\u4e0d\u9002\u5408|\u5e76\u975e|\u6392\u9664|\u4e0d\u9009\u62e9|\u4e0d.{0,3}\u7b26\u5408|\u4e0d\u8981\u9009|\u4e0d\u4f5c\u4e3a\u63a8\u8350|\u4ec5\u4f5c\u5bf9\u6bd4|\u53cd\u4f8b|\u8d85\u51fa.{0,8}\u9884\u7b97|\u7f3a\u8d27)/;
 
 function answerSegments(answer: string) {
   return answer
@@ -1198,22 +1297,23 @@ export function filterRecommendedProductIds(
 ) {
   const candidateSet = new Set(candidateIds);
   const segments = answerSegments(answer);
-  const answerPresentsRecommendations = positiveRecommendationPattern.test(answer);
+  const refersToSingleProduct = /(?:\u7b2c\u4e00|\u7b2c1|\u8fd9|\u8be5)\u6b3e|\u5b83/.test(answer);
 
   const selectedFromModel = Array.from(new Set(modelProductIds.filter((id) => candidateSet.has(id))))
     .filter((id) => {
       const product = productById.get(id);
       if (!product) return false;
-      const mentions = segments.filter((segment) => segment.includes(product.name));
-      return mentions.some((segment) => !negativeRecommendationPattern.test(segment));
+      const normalizedName = normalize(product.name);
+      const mentions = segments.filter((segment) => normalize(segment).includes(normalizedName));
+      return mentions.some((segment) => !negativeRecommendationPattern.test(segment))
+        || (modelProductIds.length === 1 && refersToSingleProduct && !negativeRecommendationPattern.test(answer));
     });
   const selectedFromPositiveText = Array.from(candidateSet)
     .filter((id) => {
       const product = productById.get(id);
       if (!product || selectedFromModel.includes(id)) return false;
       return segments.some((segment) =>
-        segment.includes(product.name)
-        && (answerPresentsRecommendations || positiveRecommendationPattern.test(segment))
+        normalize(segment).includes(normalize(product.name))
         && !negativeRecommendationPattern.test(segment)
       );
     });
