@@ -206,6 +206,7 @@ function searchProducts(args: Record<string, unknown>): ToolExecution {
   const query = typeof args.query === "string" ? args.query : "";
   const requestedFamilies = expandFamilies(stringArray(args.core_families));
   const requestedForms = stringArray(args.product_forms);
+  const nameTerms = stringArray(args.name_terms);
   const collections = stringArray(args.collections);
   const excludedCollections = stringArray(args.exclude_collections);
   const excludedForms = stringArray(args.exclude_product_forms);
@@ -230,6 +231,7 @@ function searchProducts(args: Record<string, unknown>): ToolExecution {
     .filter(({ product, score }) => {
       if (requestedFamilies.length && !requestedFamilies.includes(product.coreFamily)) return false;
       if (!matchesAny([product.productForm], requestedForms)) return false;
+      if (!matchesAny([product.name], nameTerms)) return false;
       if (requestedSizes.length && !product.sizes.some((size) => requestedSizes.includes(normalize(size)))) return false;
       if (excludedForms.includes(product.productForm)) return false;
       if (excludedProductIds.has(product.id)) return false;
@@ -262,6 +264,7 @@ function searchProducts(args: Record<string, unknown>): ToolExecution {
       const hasStructuredFilter = Boolean(
         requestedFamilies.length
         || requestedForms.length
+        || nameTerms.length
         || requestedSizes.length
         || collections.length
         || scentTerms.length
@@ -562,6 +565,105 @@ function getProductRelations(args: Record<string, unknown>): ToolExecution {
   };
 }
 
+const semanticRelationTypes: Record<string, string[]> = {
+  accessory_for: ["ACCESSORY_FOR"],
+  refill_for: ["REFILL_FOR"],
+  layer_with: ["LAYER_WITH"],
+  pairs_with: ["PAIRS_WITH", "SCENT_RITUAL_WITH", "EXTENDS_TO_HOME"],
+  series_membership: [],
+  has_scent: [],
+  none: [],
+};
+
+function semanticEntity(args: Record<string, unknown>, key: "subject" | "object") {
+  const value = args[key];
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return { entityType: "unknown", text: "" };
+  }
+  const record = value as Record<string, unknown>;
+  return {
+    entityType: typeof record.entity_type === "string" ? record.entity_type : "unknown",
+    text: typeof record.text === "string" ? record.text.trim() : "",
+  };
+}
+
+function ontologyMatches(text: string) {
+  const term = normalize(text);
+  if (!term) return { coreFamilies: [], productForms: [], collections: [], products: [], scents: [], materials: [] };
+  const includesTerm = (value: string) => {
+    const normalizedValue = normalize(value);
+    return normalizedValue.includes(term) || term.includes(normalizedValue);
+  };
+  const allCollections = Array.from(new Set(products.flatMap((product) => product.collections)));
+  const allScents = Array.from(new Set(products.flatMap((product) => [
+    ...product.notes,
+    ...product.scentProfiles,
+    ...product.scentAccords,
+    ...product.scentConcepts,
+    ...product.noteFamilies,
+    ...(product.scentIdentities ?? []).flatMap((identity) => [identity.name, ...(identity.aliases ?? [])]),
+  ])));
+  const allMaterials = Array.from(new Set(products.flatMap((product) => [
+    ...product.materials,
+    ...(product.semanticFacts?.semanticMaterials ?? []),
+  ])));
+  return {
+    coreFamilies: coreFamilies.filter(includesTerm).slice(0, 12),
+    productForms: productForms.filter(includesTerm).slice(0, 12),
+    collections: allCollections.filter(includesTerm).slice(0, 12),
+    products: products.filter((product) => includesTerm(product.name)).slice(0, 12).map((product) => ({ id: product.id, name: product.name })),
+    scents: allScents.filter(includesTerm).slice(0, 12),
+    materials: allMaterials.filter(includesTerm).slice(0, 12),
+  };
+}
+
+function resolveQuerySemantics(args: Record<string, unknown>): ToolExecution {
+  const intent = typeof args.intent === "string" ? args.intent : "fact";
+  const predicate = typeof args.predicate === "string" && args.predicate in semanticRelationTypes
+    ? args.predicate
+    : "none";
+  const subject = semanticEntity(args, "subject");
+  const object = semanticEntity(args, "object");
+  const hard = args.hard_constraints && typeof args.hard_constraints === "object" && !Array.isArray(args.hard_constraints)
+    ? args.hard_constraints as Record<string, unknown>
+    : {};
+  const hardConstraints = {
+    minPrice: numberValue(hard.min_price),
+    maxPrice: numberValue(hard.max_price),
+    sizes: stringArray(hard.sizes),
+    inStock: typeof hard.in_stock === "boolean" ? hard.in_stock : undefined,
+    coreFamilies: stringArray(hard.core_families).filter((family) => coreFamilies.includes(family)),
+    productForms: stringArray(hard.product_forms).filter((form) => productForms.includes(form)),
+    excludedTerms: stringArray(hard.excluded_terms),
+  };
+  const relationTypes = semanticRelationTypes[predicate] ?? [];
+  const warnings: string[] = [];
+  if (intent === "relation" && predicate === "none") warnings.push("relation_intent_without_predicate");
+  if (intent === "relation" && !subject.text) warnings.push("relation_intent_without_subject");
+  if (intent === "relation" && !object.text) warnings.push("relation_intent_without_object");
+  const frame = {
+    intent,
+    subject,
+    predicate,
+    object,
+    hardConstraints,
+    softPreferences: stringArray(args.soft_preferences),
+  };
+  return {
+    content: JSON.stringify({
+      semanticFrame: frame,
+      ontologyValidation: {
+        subject: ontologyMatches(subject.text),
+        object: ontologyMatches(object.text),
+        relationTypes,
+        warnings,
+      },
+      executionRule: "Search only the subject as the relation source. Use the object to choose the target type or interpret relation results; never copy the object noun into source-product filters.",
+    }),
+    productIds: [],
+    summary: "resolve_query_semantics intent=" + intent + " predicate=" + predicate + " subject=" + (subject.text || "empty") + " object=" + (object.text || "empty") + " warnings=" + warnings.length,
+  };
+}
 function listCatalogValues(args: Record<string, unknown>): ToolExecution {
   const dimension = typeof args.dimension === "string" ? args.dimension : "";
   const values =
@@ -606,6 +708,54 @@ export const diptyqueAgentTools: ToolDefinition[] = [
   {
     type: "function",
     function: {
+      name: "resolve_query_semantics",
+      description: "First parse the user's full utterance into semantic roles. Identify who or what is the subject, which predicate is asked, and what is the object. This tool validates those roles against the Diptyque ontology but does not retrieve recommendations.",
+      parameters: {
+        type: "object",
+        properties: {
+          intent: { type: "string", enum: ["catalog", "comparison", "fact", "gifting", "recommendation", "relation", "safety"] },
+          subject: {
+            type: "object",
+            properties: {
+              text: { type: "string" },
+              entity_type: { type: "string", enum: ["product", "product_form", "collection", "scent", "material", "function", "scene", "user_need", "unknown"] },
+            },
+            required: ["text", "entity_type"],
+            additionalProperties: false,
+          },
+          predicate: { type: "string", enum: ["accessory_for", "refill_for", "layer_with", "pairs_with", "series_membership", "has_scent", "none"] },
+          object: {
+            type: "object",
+            properties: {
+              text: { type: "string" },
+              entity_type: { type: "string", enum: ["product", "product_form", "collection", "scent", "material", "function", "scene", "user_need", "unknown"] },
+            },
+            required: ["text", "entity_type"],
+            additionalProperties: false,
+          },
+          hard_constraints: {
+            type: "object",
+            properties: {
+              min_price: { type: "number" },
+              max_price: { type: "number" },
+              sizes: { type: "array", items: { type: "string" } },
+              in_stock: { type: "boolean" },
+              core_families: { type: "array", items: { type: "string", enum: coreFamilies } },
+              product_forms: { type: "array", items: { type: "string" } },
+              excluded_terms: { type: "array", items: { type: "string" } },
+            },
+            additionalProperties: false,
+          },
+          soft_preferences: { type: "array", items: { type: "string" } },
+        },
+        required: ["intent", "subject", "predicate", "object", "hard_constraints", "soft_preferences"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "search_products",
       description:
         "Search the complete Diptyque product catalog using structured filters. Use conversation context to carry forward active category or product-form constraints unless the user changes them.",
@@ -615,6 +765,7 @@ export const diptyqueAgentTools: ToolDefinition[] = [
           query: { type: "string", description: "Short semantic search phrase when structured filters are insufficient." },
           core_families: { type: "array", items: { type: "string", enum: coreFamilies } },
           product_forms: { type: "array", items: { type: "string" } },
+          name_terms: { type: "array", items: { type: "string" } },
           sizes: { type: "array", items: { type: "string" } },
           collections: { type: "array", items: { type: "string" } },
           exclude_collections: { type: "array", items: { type: "string" } },
@@ -880,7 +1031,21 @@ export function executeDiptyqueQueryPlan(plan: DiptyqueQueryPlan): PlannedRetrie
   };
   const executions: Array<{ label: string; result: ToolExecution }> = [];
   const cheapest = /最低|最便宜/.test(plan.currentQuery);
-  const primary = plan.intent === "gifting"
+  const accessoryNameTerm = /烛盖/.test(plan.currentQuery)
+    ? "烛盖"
+    : /烛罩/.test(plan.currentQuery)
+      ? "烛罩"
+      : /烛台/.test(plan.currentQuery)
+        ? "烛台"
+        : "";
+  const primary = plan.relationIntent === "accessory"
+    ? searchProducts({
+        ...commonArgs,
+        name_terms: accessoryNameTerm ? [accessoryNameTerm] : [],
+        query: "",
+        limit: 100,
+      })
+    : plan.intent === "gifting"
     ? searchGiftCandidates({
         core_families: constraints.coreFamilies,
         exclude_collections: constraints.excludedCollections,
@@ -934,6 +1099,7 @@ export function executeDiptyqueTool(name: string, rawArguments: string): ToolExe
     };
   }
 
+  if (name === "resolve_query_semantics") return resolveQuerySemantics(args);
   if (name === "search_products") return searchProducts(args);
   if (name === "search_gift_candidates") return searchGiftCandidates(args);
   if (name === "get_product_details") return getProductDetails(args);

@@ -88,7 +88,6 @@ const vocabulary = { coreFamilies, productForms };
 const COMPARISON_PATTERN = /区别|对比|一样吗|一回事吗|闻起来像吗|完全一样|按[^。！？]*比较/;
 const PREFERENCE_PATTERN = /喜欢|不喜欢|不想|推荐|适合|偏好|柔和|清新|清冷|小众|甜|浓|自然|氛围|入门|撞香|怎么选|闻起来|像.*(?:花园|森林|海边)|有没有.*香味/;
 const CATALOG_PATTERN = /有哪些|有什么|列出|全部|所有|多少款|几款/;
-const ATTRIBUTE_PATTERN = /容量|规格|尺寸|价格|多少钱|多久|使用方法|依据/;
 const REFERENTIAL_PATTERN = /其中|这些|刚才|那款|这款|上述|前面/;
 const PET_PATTERN = /宠物|猫|猫咪|狗|狗狗/;
 const SAFETY_PATTERN = /安全|无害|没有风险|放心|适合.*宠物|宠物.*适合/;
@@ -322,13 +321,20 @@ export function buildDiptyqueQueryPlan(
   currentQuery: string,
   history: QueryHistoryMessage[] = []
 ): DiptyqueQueryPlan {
-  const currentConstraints = extractConstraints(currentQuery);
+  const relation = relationRule(currentQuery);
+  const extractedConstraints = extractConstraints(currentQuery);
+  const currentConstraints = relation?.intent === "accessory"
+    ? {
+        ...extractedConstraints,
+        coreFamilies: [],
+        productForms: productForms.filter((form) => form === "\u70db\u76d6\u548c\u706d\u70db\u7f69"),
+      }
+    : extractedConstraints;
   const merged = mergeWithHistory(currentConstraints, history);
   const previousUserQuery = history
     .filter((message) => message.role === "user")
     .slice(-1)[0]?.content ?? "";
   const isFollowUp = FOLLOW_UP_PATTERN.test(currentQuery) || REFERENTIAL_PATTERN.test(currentQuery);
-  const relation = relationRule(currentQuery);
   const petSafety = PET_PATTERN.test(currentQuery) && SAFETY_PATTERN.test(currentQuery);
   const gifting = isGiftRecommendationQuery(currentQuery) || GIFT_FALLBACK_PATTERN.test(currentQuery);
   const comparison = COMPARISON_PATTERN.test(currentQuery);
@@ -385,12 +391,7 @@ export function buildDiptyqueQueryPlan(
   const contextualQuery = isFollowUp && previousUserQuery
     ? previousUserQuery + "\n" + currentQuery
     : currentQuery;
-  const allowDeterministicCatalog =
-    effectiveIntent === "catalog"
-    && !isFollowUp
-    && finalConstraints.maxPrice == null
-    && !ATTRIBUTE_PATTERN.test(currentQuery)
-    && merged.inheritedConstraintKeys.length === 0;
+  const allowDeterministicCatalog = false;
 
   return {
     allowDeterministicCatalog,

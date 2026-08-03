@@ -2,9 +2,9 @@ import { buildDiptyqueQueryPlan } from "../src/lib/diptyque-query-plan.ts";
 
 const cases = [
   {
-    name: "pure scent catalog can use deterministic list",
+    name: "pure scent catalog still goes through semantic interpretation",
     query: "杜桑系列有哪些产品？请完整列出。",
-    check: (plan) => plan.intent === "catalog" && plan.allowDeterministicCatalog,
+    check: (plan) => plan.intent === "catalog" && !plan.allowDeterministicCatalog,
   },
   {
     name: "preference must not be hijacked by perfume catalog",
@@ -143,6 +143,17 @@ const cases = [
     name: "negative refill wording must not become a positive variant filter",
     query: "预算1500元，帮我搭配一套不含补充装的礼物。",
     check: (plan) => plan.constraints.excludeRefills && plan.constraints.variantTags.length === 0,
+  },
+  {
+    name: "accessory relation keeps the accessory as the fallback source",
+    query: "烛盖适配哪些蜡烛",
+    check: (plan) =>
+      plan.intent === "relation"
+      && plan.relationIntent === "accessory"
+      && plan.constraints.coreFamilies.length === 0
+      && plan.constraints.productForms.length === 1
+      && plan.constraints.productForms[0] === "烛盖和灭烛罩"
+      && !plan.allowDeterministicCatalog,
   },
   {
     name: "contextual alternatives retain sensory preferences",

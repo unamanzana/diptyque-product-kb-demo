@@ -448,6 +448,10 @@ export function DiptyqueKnowledgeBase() {
     const focusedNode = renderNodes.find((node) => node.id === graphDataset.focusLabel);
     if (focusedNode?.nodeType === "Product") {
       result.add(focusedNode.id);
+      renderLines.forEach((line) => {
+        if (line.sourceId === focusedNode.id) result.add(line.targetId);
+        if (line.targetId === focusedNode.id) result.add(line.sourceId);
+      });
       return result;
     }
 
@@ -457,6 +461,19 @@ export function DiptyqueKnowledgeBase() {
 
     if (graphDataset.focusLabel) result.add(graphDataset.focusLabel);
     graphMode.filterNodeIds.forEach((id) => result.add(id));
+    if (focusedNode) {
+      renderLines.forEach((line) => {
+        const adjacentId = line.sourceId === focusedNode.id
+          ? line.targetId
+          : line.targetId === focusedNode.id
+            ? line.sourceId
+            : null;
+        const adjacentNode = adjacentId
+          ? renderNodes.find((candidate) => candidate.id === adjacentId)
+          : null;
+        if (adjacentNode?.nodeType === "Product") result.add(adjacentNode.id);
+      });
+    }
     renderLines
       .filter((line) => focusedEdgeIds.has(line.edgeId))
       .forEach((line) => {
@@ -469,6 +486,9 @@ export function DiptyqueKnowledgeBase() {
   }, [focusedEdgeIds, graphDataset.focusLabel, graphMode.filterNodeIds, graphMode.recommendationProductNames, renderLines, renderNodes]);
 
   structuralCoreIdsRef.current = structuralCoreIds;
+  const focusIsProduct = renderNodes.some(
+    (node) => node.id === graphDataset.focusLabel && node.nodeType === "Product"
+  );
 
   const hoveredHighlightIds = useMemo(() => {
     const result = new Set<string>();
@@ -1111,8 +1131,8 @@ export function DiptyqueKnowledgeBase() {
                     const isBusinessRelation = businessRelationTypes.has(line.edgeType);
                     const isInspectableRelation = inspectableRelationTypes.has(line.edgeType);
                     const isHoveredEdge = hoveredEdgeId === line.edgeId;
-                    const isAnswerEdge = focusedEdgeIds.has(line.edgeId);
-                    const isDimmedEdge = focusedEdgeIds.size > 0 && !isAnswerEdge;
+                    const isAnswerEdge = !focusIsProduct && focusedEdgeIds.has(line.edgeId);
+                    const isDimmedEdge = !focusIsProduct && focusedEdgeIds.size > 0 && !isAnswerEdge;
                     const isSelectedEdge = selectedEdge?.edgeId === line.edgeId;
                     const showLineLabel = isInspectableRelation && (isSelectedEdge || isHoveredEdge || isAnswerEdge || isHoverLine);
                     return (
@@ -1155,7 +1175,6 @@ export function DiptyqueKnowledgeBase() {
                   {renderNodes.map((node) => {
                     const isSelectedFilter = graphMode.filterNodeIds.includes(node.id);
                     const isFocusedNode = graphDataset.focusLabel === node.id;
-                    const focusIsProduct = renderNodes.some((candidate) => candidate.id === graphDataset.focusLabel && candidate.nodeType === "Product");
                     const isCoreNode = structuralCoreIds.has(node.id) || (isSelectedFilter && !focusIsProduct) || isFocusedNode;
                     const isDraggingThisNode = draggedNodeId === node.id;
                     const isHoverHighlight = hoveredHighlightIds.has(node.id);
