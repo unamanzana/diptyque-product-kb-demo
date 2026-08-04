@@ -919,16 +919,38 @@ export function DiptyqueKnowledgeBase() {
       let response = localResponse;
       let responseNote: string | undefined;
       try {
-        const apiResponse = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            conversationFrame: requestConversationFrame,
-            history,
-            message: question,
-          }),
-          signal: controller.signal,
+        const requestBody = JSON.stringify({
+          conversationFrame: requestConversationFrame,
+          history,
+          message: question,
         });
+        let apiResponse: Response | undefined;
+        let requestError: unknown;
+
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          try {
+            const candidate = await fetch("/api/chat", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: requestBody,
+              signal: controller.signal,
+            });
+            if (candidate.ok || candidate.status < 500) {
+              apiResponse = candidate;
+              break;
+            }
+            requestError = new Error(`chat_http_${candidate.status}`);
+          } catch (error) {
+            if (error instanceof Error && error.name === "AbortError") throw error;
+            requestError = error;
+          }
+
+          if (attempt === 0) {
+            await new Promise((resolve) => window.setTimeout(resolve, 900));
+          }
+        }
+
+        if (!apiResponse) throw requestError ?? new Error("chat_request_failed");
         if (!apiResponse.ok) throw new Error(`chat_http_${apiResponse.status}`);
         const data = (await apiResponse.json()) as {
           answer?: string;
@@ -982,6 +1004,14 @@ export function DiptyqueKnowledgeBase() {
         }
       } catch (error) {
         if (error instanceof Error && error.name === "AbortError") return;
+        responseNote = "\u5728\u7ebf\u987e\u95ee\u6682\u65f6\u672a\u54cd\u5e94 \u00b7 \u672c\u5730\u56fe\u8c31\u515c\u5e95";
+        if (localResponse.genericFallback) {
+          response = {
+            ...localResponse,
+            answer: "\u5728\u7ebf\u987e\u95ee\u521a\u521a\u6ca1\u6709\u54cd\u5e94\uff0c\u6682\u65f6\u65e0\u6cd5\u53ef\u9760\u56de\u7b54\u8fd9\u4e2a\u95ee\u9898\u3002\u53ef\u80fd\u6b63\u503c\u670d\u52a1\u66f4\u65b0\uff0c\u8bf7\u7a0d\u540e\u91cd\u65b0\u53d1\u9001\uff1b\u6211\u4e0d\u4f1a\u7528\u65e0\u5173\u7684\u9879\u76ee\u4ecb\u7ecd\u4ee3\u66ff\u56de\u7b54\u3002",
+            confidence: undefined,
+          };
+        }
       }
       if (!cancelled) streamResponse(response, responseNote);
     }

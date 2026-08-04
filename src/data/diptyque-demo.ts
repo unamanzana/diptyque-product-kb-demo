@@ -88,6 +88,7 @@ export type ResponseEntry = {
   filterNodeIds?: string[];
   focusEdgeIds?: string[];
   focusNodeLabel?: string;
+  genericFallback?: boolean;
   keywords: string[];
   suggestions?: string[];
 };
@@ -1186,6 +1187,7 @@ function genericFallback(): ResponseEntry {
   return {
     answer: "这版 Diptyque 图谱区分事实关系、兼容关系和推荐关系。商品分类、香味系列、香材与商品规格来自原始数据；叠香和搭配仅在存在商品文案或已审核关系时展示。",
     confidence: "74% · 🟡 medium",
+    genericFallback: true,
     keywords: [],
     suggestions: defaultSuggestions,
   };
