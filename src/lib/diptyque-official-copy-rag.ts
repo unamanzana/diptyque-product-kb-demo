@@ -69,6 +69,7 @@ const QUERY_EXPANSIONS: Array<[RegExp, string[]]> = [
   [/柔和|不浓|不太浓|没有攻击性/, ["柔和", "轻盈", "细腻", "淡雅", "温和"]],
   [/清冷|冷感/, ["清新", "水汽", "矿物", "青绿", "冷冽"]],
   [/木质/, ["雪松", "檀香", "广藿香", "香根草", "木质"]],
+  [/奶香|乳香/, ["奶香", "乳香", "牛奶", "奶油", "柔滑", "乳白"]],
   [/不甜/, ["青绿", "木质", "草本", "柑橘", "清新"]],
   [/夏天|夏日/, ["清新", "柑橘", "水汽", "青绿", "轻盈"]],
   [/秋冬/, ["木质", "辛香", "琥珀", "温暖", "香脂"]],
@@ -110,6 +111,7 @@ function ngrams(value: string) {
 function queryTerms(query: string, plan: DiptyqueQueryPlan) {
   const expanded = QUERY_EXPANSIONS.flatMap(([pattern, terms]) => pattern.test(query) ? terms : []);
   const semanticQuery = query
+    .replace(/(?:\u4e0d\u60f3|\u4e0d\u8981|\u4e0d\u559c\u6b22)[^\u3002\uff01\uff1f]{0,12}(?:\u751c\u70b9|\u751c\u98df|\u751c\u5473)[^\u3002\uff01\uff1f]*/g, "\u4e0d\u751c")
     .replace(/\u4e0d[^\u3002\uff01\uff1f]{0,5}\u6d3b\u6cfc/g, "\u514b\u5236")
     .replace(
       /diptyque|\u6211|\u5e73\u65f6|\u559c\u6b22|\u4e0d\u559c\u6b22|\u60f3\u8981|\u60f3\u627e|\u6709\u6ca1\u6709|\u95fb\u8d77\u6765|\u6bd4\u8f83|\u54ea\u4e9b|\u54ea\u51e0\u6b3e|\u51e0\u6b3e|\u63a8\u8350|\u9002\u5408|\u9009\u62e9|\u4e0d\u8981|\u53ea\u7ed9|\u4ea7\u54c1|\u9999\u5473|\u6c14\u5473|\u6216\u8005/gi,

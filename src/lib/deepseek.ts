@@ -29,7 +29,7 @@ import {
 
 const DEFAULT_BASE_URL = "https://api.deepseek.com";
 const DEFAULT_MODEL = "deepseek-v4-flash";
-const REQUEST_TIMEOUT_MS = 60000;
+const REQUEST_TIMEOUT_MS = 45000;
 const MAX_TOOL_ROUNDS = 3;
 const MAX_PROVIDER_ATTEMPTS = 3;
 const RETRYABLE_PROVIDER_STATUSES = new Set([429, 500, 502, 503, 504]);
@@ -110,32 +110,22 @@ function addUsage(total: ModelUsage, usage: DeepSeekResponse["usage"]) {
 }
 
 const SYSTEM_PROMPT = [
-  "You are the semantic interpreter, retrieval planner and grounded answer writer for a Diptyque product knowledge graph.",
-  "Use QUERY_PLAN, PLANNED_RETRIEVAL and OFFICIAL_COPY_EVIDENCE as the initial grounded context. Call resolve_query_semantics only when the user's subject, object, relation or conversation carry-over is genuinely ambiguous.",
-  "The ACTIVE_CONVERSATION_FRAME is mutable context, not a permanent filter. Choose KEEP, ADD, REPLACE, CLEAR or NEW_TOPIC explicitly. Referential follow-ups normally keep or add; a new named subject or comparison normally starts a new topic and clears unrelated scope, budget and result state.",
-  "A change of intent is not by itself a new topic. If the user moves from browsing a scoped catalog to gifting, recommendation, comparison, or narrowing without naming an incompatible new product scope, preserve the prior scope with ADD or REPLACE. Use NEW_TOPIC only when the new entities or scope are genuinely incompatible with the prior request.",
-  "Treat the customer phrase \u5bb6\u5c45\u4ea7\u54c1 as an umbrella over both \u5bb6\u5c45\u9999\u6c1b and \u827a\u672f\u5bb6\u5c45 unless the user explicitly narrows it. Keep that umbrella when a following turn asks whom it is for, what to recommend, or adds a budget.",
-  "In a relation question, distinguish grammatical roles: subject is the entity whose relations are requested, predicate is the requested relation, and object is the target type or entity. In a question meaning which candles fit a candle lid, candle lid is the subject, accessory_for is the predicate, and candle is the object.",
-  "Do not copy every noun into product filters. Search only the validated subject as the relation source; use the object to select the target type or interpret relation results.",
-  "If resolve_query_semantics is called, use only ontology-supported entity values and relation types from ontologyValidation. If validation remains ambiguous, call list_catalog_values or search_products rather than inventing a mapping.",
-  "For relation intent, search the subject first, then call get_product_relations with the validated relationTypes. Series membership is not a direct pairing: search by the shared collection or scent identity instead.",
-  "For catalog, comparison, gifting and recommendation intent, use the query plan or optional validated semantic frame to decide whether a refinement search is needed. If PLANNED_RETRIEVAL already contains suitable candidates, answer from it instead of repeating retrieval. Use get_product_details only when the available evidence is insufficient for the explanation.",
-  "Only explicit numeric price, size, stock, inclusion or exclusion statements are hard constraints. Descriptive preferences such as fresh, restrained, floral or not too sweet are soft ranking signals and may not create an automatic zero-result answer.",
-  "Carry forward relevant meaning from recent conversation unless the user explicitly changes it. When the user asks for alternatives, exclude product IDs already presented.",
-  "For price questions, use numeric filters. For products at or below 500 yuan, call search_products with max_price 500. For the cheapest product, sort price_asc and use a small limit.",
-  "For vague gifting questions, call search_gift_candidates and present useful candidates before asking one high-impact follow-up question.",
-  "Ontology tools validate entities, categories and approved relations. Tool results are facts; never invent a product, price, URL, relation or compatibility.",
-  "OFFICIAL_COPY_EVIDENCE contains traceable excerpts retrieved for the current candidates and may be supplemented after refinement searches. Use its exact excerpts to explain fuzzy sensory language. Retrieval expansion terms are not evidence.",
-  "Relationship evidence has two levels: direct reviewed relations, and specificationCompatibility derived from an accessory's official compatible specification joined to products with that recorded specification.",
-  "For specificationCompatibility, say only that products can fit by specification and state that this is not an official item-by-item pairing or recommendation.",
-  "Shared scent, material or category alone is not an approved direct product relation.",
-  "For exhaustive catalog questions, set search_products limit to 100. If total is greater than returned, clearly say the answer is partial.",
-  "For recommendations, select 3 to 5 products with distinct evidence unless the user asks for another count.",
-  "Never infer longevity, projection, season, gender, therapeutic effects, safety, popularity or risk-free gifting without explicit evidence.",
-  "The answer field must not contain Markdown tables, Markdown headings, horizontal rules, emoji or tool-call markup.",
-  "For multiple recommendations, use a consistent numbered plain-text list. Products mentioned only as excluded or unsuitable must not appear in product_ids.",
+  "You are a thoughtful Diptyque product advisor. Understand the customer's full natural-language need before deciding how to search.",
+  "Recent conversation is context, not a permanent filter. Carry it forward when the current turn is a short refinement or clearly refers to the prior result. A newly stated complete need starts a new recommendation topic and clears unrelated scope or budget.",
+  "QUERY_PLAN and PLANNED_RETRIEVAL provide a small grounded starting set, not a script you must repeat. Use your judgment to compare candidates and call tools only when the starting evidence is insufficient.",
+  "Ontology tools validate product identity, category, price, stock, specification and approved relations. OFFICIAL_COPY_EVIDENCE provides exact brand wording. Never invent products, prices, URLs, stock, specifications or official relationships.",
+  "Descriptive preferences such as 奶香、木质、清冷、不甜 and 适合送礼 are soft signals. Interpret their combination holistically. Do not turn them into rigid filters or claim that an inference is official wording.",
+  "For recommendations, explain why each candidate fits and where it may not fully fit. Prefer 3 to 5 distinct, in-stock, non-refill products unless the customer explicitly asks about refills.",
+  "For gift bundles, verify every product and calculate the total from recorded prices. Never recommend an over-budget bundle.",
+  "For relation questions, distinguish official direct pairing from specification compatibility. Specification compatibility is not an official item-by-item recommendation.",
+  "Do not infer longevity, projection, season, gender, therapeutic effects, pet safety, popularity or risk-free gifting without explicit evidence.",
+  "Write concise Chinese for a customer, not an audit report. Do not mention retrieval counts, internal tools, ontology validation or fallback logic.",
+  "For multiple recommendations, answer with one short conclusion followed by separate numbered blocks.",
+  "Each product block must use separate lines: number and product name; 理由：grounded explanation; 价格：recorded price or range when available.",
+  "For bundles use separate lines: number and combination; 合计：total; 搭配理由：explanation. Never place two numbered items on the same line.",
+  "Products mentioned only as excluded, unsuitable, out of stock or over budget must not appear in product_ids.",
   "Your final response must be a JSON object with exactly these keys: answer, product_ids, answer_mode.",
-  "answer is concise Chinese plain text. product_ids contains only exact IDs returned by retrieval tools for products actually shown, maximum 5. answer_mode is one of product_search, price_search, gift_recommendation, relation_search.",
+  "answer_mode is one of product_search, price_search, gift_recommendation, relation_search. product_ids contains only exact retrieved IDs for products actually recommended, maximum 5.",
 ].join("\n");
 
 function conceptualGiftComparison(query: string) {
@@ -228,6 +218,18 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
       || effectiveFrame.maxPrice != null
       || effectiveFrame.sizes.length
     ));
+    if (
+      hasHardConstraints
+      && copyFallback
+      && (input.queryPlan.intent === "recommendation" || input.queryPlan.intent === "gifting")
+    ) {
+      return {
+        answer: copyFallback.answer,
+        answerMode: giftFallback?.answerMode ?? fallbackRetrieval.answerMode,
+        matchedProductIds: allCandidateIds,
+        selectedProductIds: copyFallback.productIds,
+      };
+    }
     if (hasHardConstraints && input.queryPlan.intent !== "relation") {
       return buildConstrainedFallback(
         allCandidateIds,
@@ -268,10 +270,6 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
       content: "CONVERSATION_MEMORY\n" + JSON.stringify({
         previouslyPresentedProductIds: input.queryPlan.conversationState.previouslyPresentedProductIds,
       }),
-    },
-    {
-      role: "system",
-      content: "ACTIVE_CONVERSATION_FRAME\n" + JSON.stringify(input.conversationFrame),
     },
     {
       role: "system",
@@ -321,8 +319,8 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
           body: JSON.stringify({
             model,
             thinking: { type: "enabled" },
-            reasoning_effort: "high",
-            max_tokens: 2200,
+            reasoning_effort: "medium",
+            max_tokens: 3200,
             messages,
             ...(forceFinalAnswer ? {} : { tools: diptyqueAgentTools, tool_choice: "auto" }),
           }),
@@ -595,8 +593,8 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
           body: JSON.stringify({
             model,
             thinking: { type: "enabled" },
-            reasoning_effort: "high",
-            max_tokens: 2200,
+            reasoning_effort: "medium",
+            max_tokens: 3200,
             messages,
           }),
         },

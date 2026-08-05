@@ -173,6 +173,17 @@ const cases = [
       && plan.conversationState.hardConstraintKeys.length === 0,
   },
   {
+    name: "complete new recommendation clears unrelated previous budget",
+    query: "我喜欢奶香和木质感，但不想要像甜点一样的味道，有什么推荐",
+    history: [{ role: "user", content: "预算1500元以内，帮我准备生日礼物。" }],
+    check: (plan) =>
+      plan.intent === "recommendation"
+      && plan.constraints.maxPrice == null
+      && plan.softPreferences.includes("奶香")
+      && plan.softPreferences.includes("木质")
+      && plan.softPreferences.includes("不甜")
+      && !plan.conversationState.isFollowUp,
+  },  {
     name: "automatic refill exclusion is not an explicit hard constraint",
     query: "\u60f3\u627e\u4e00\u6b3e\u6e05\u723d\u81ea\u7136\u7684\u9999\u5473\u3002",
     check: (plan) =>

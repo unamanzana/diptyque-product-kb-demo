@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { productNamesByIds } from "@/lib/diptyque-agent-tools";
+import { executeDiptyqueQueryPlan, productNamesByIds } from "@/lib/diptyque-agent-tools";
 import { logModelRequest, logZeroHit } from "@/lib/chat-observability";
 import { generateDiptyqueAnswer, type ChatHistoryMessage } from "@/lib/deepseek";
 import {
@@ -117,6 +117,38 @@ export async function POST(request: Request) {
           conversationAction: conversationFrame.lastAction,
           conversationActionReason: frameUpdate.reason,
           queryPlan,
+        },
+      });
+    }
+
+    const factPattern = /价格|多少钱|最低|最便宜|容量|规格|尺寸|库存|补充装|补充瓶|适配|兼容/;
+    const useOntologyFactChannel =
+      queryPlan.intent === "catalog"
+      || queryPlan.intent === "relation"
+      || (queryPlan.intent === "fact" && factPattern.test(message));
+    if (useOntologyFactChannel) {
+      const ontologyQuery = executeDiptyqueQueryPlan(queryPlan);
+      const frameUpdate = fallbackConversationFrameUpdate(Boolean(previousConversationFrame), queryPlan, message);
+      const conversationFrame = applyConversationFrameUpdate(previousConversationFrame, frameUpdate, {
+        matchedProductIds: ontologyQuery.productIds,
+        selectedProductIds: ontologyQuery.selectedProductIds,
+        question: message,
+      });
+      return NextResponse.json({
+        answer: ontologyQuery.fallbackAnswer,
+        answerMode: ontologyQuery.answerMode,
+        answerSource: "ontology_query",
+        fallback: false,
+        matchedProductNames: productNamesByIds(ontologyQuery.productIds),
+        recommendedProductNames: productNamesByIds(ontologyQuery.selectedProductIds),
+        model: "ontology",
+        reasoningUsed: false,
+        conversationFrame,
+        diagnostics: {
+          conversationAction: conversationFrame.lastAction,
+          conversationActionReason: frameUpdate.reason,
+          queryPlan,
+          toolTrace: ontologyQuery.toolTrace,
         },
       });
     }

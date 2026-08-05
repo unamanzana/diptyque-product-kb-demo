@@ -282,7 +282,7 @@ function extractRecommendationLimit(query: string) {
 
 function extractSoftPreferences(query: string) {
   const preferences = [
-    ...["\u6728\u8d28", "\u767d\u82b1", "\u6e05\u65b0", "\u6e05\u51b7", "\u67d4\u548c", "\u81ea\u7136", "\u4e0d\u751c", "\u5fae\u751c", "\u5c0f\u4f17", "\u4e0d\u5bb9\u6613\u649e\u9999", "\u6c34\u6c7d", "\u901a\u900f", "\u8f7b\u76c8"]
+    ...["\u6728\u8d28", "\u5976\u9999", "\u767d\u82b1", "\u6e05\u65b0", "\u6e05\u51b7", "\u67d4\u548c", "\u81ea\u7136", "\u4e0d\u751c", "\u5fae\u751c", "\u5c0f\u4f17", "\u4e0d\u5bb9\u6613\u649e\u9999", "\u6c34\u6c7d", "\u901a\u900f", "\u8f7b\u76c8"]
       .filter((term) => query.includes(term)),
     ...["\u590f\u5929", "\u79cb\u51ac", "\u901a\u52e4", "\u5367\u5ba4", "\u7761\u524d", "\u7ea6\u4f1a", "\u9ad8\u7ea7\u9152\u5e97", "\u96e8\u540e\u82b1\u56ed", "\u68ee\u6797", "\u6d77\u8fb9"]
       .filter((term) => query.includes(term)),
@@ -291,6 +291,7 @@ function extractSoftPreferences(query: string) {
   if (/\u67d1\u6a58\u76ae|\u6a58\u76ae|\u67d1\u6a58/.test(query)) preferences.push("\u67d1\u6a58");
   if (/\u4e0d[^\u3002\uff01\uff1f]{0,5}\u6d3b\u6cfc|\u514b\u5236|\u6c89\u9759/.test(query)) preferences.push("\u514b\u5236");
   if (/\u4e0d[^\u3002\uff01\uff1f]{0,4}\u751c/.test(query)) preferences.push("\u4e0d\u751c");
+  if (/(?:\u4e0d\u60f3|\u4e0d\u8981|\u4e0d\u559c\u6b22)[^\u3002\uff01\uff1f]{0,12}(?:\u751c\u70b9|\u751c\u98df|\u751c\u5473)/.test(query)) preferences.push("\u4e0d\u751c");
   return unique(preferences);
 }
 
@@ -330,11 +331,18 @@ export function buildDiptyqueQueryPlan(
         productForms: productForms.filter((form) => form === "\u70db\u76d6\u548c\u706d\u70db\u7f69"),
       }
     : extractedConstraints;
-  const merged = mergeWithHistory(currentConstraints, history);
   const previousUserQuery = history
     .filter((message) => message.role === "user")
     .slice(-1)[0]?.content ?? "";
-  const isFollowUp = FOLLOW_UP_PATTERN.test(currentQuery) || REFERENTIAL_PATTERN.test(currentQuery);
+  const isShortContextualFollowUp = Boolean(
+    previousUserQuery
+    && currentQuery.length <= 18
+    && /推荐|适合|送|预算|便宜|贵|哪款|怎么选/.test(currentQuery)
+  );
+  const isFollowUp = FOLLOW_UP_PATTERN.test(currentQuery)
+    || REFERENTIAL_PATTERN.test(currentQuery)
+    || isShortContextualFollowUp;
+  const merged = mergeWithHistory(currentConstraints, isFollowUp ? history : []);
   const petSafety = PET_PATTERN.test(currentQuery) && SAFETY_PATTERN.test(currentQuery);
   const gifting = isGiftRecommendationQuery(currentQuery) || GIFT_FALLBACK_PATTERN.test(currentQuery);
   const comparison = COMPARISON_PATTERN.test(currentQuery);

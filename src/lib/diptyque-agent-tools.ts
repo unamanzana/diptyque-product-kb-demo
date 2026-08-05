@@ -1075,7 +1075,7 @@ function groupedCatalogSummary(productsToGroup: Product[]) {
     .sort((left, right) => left[0].localeCompare(right[0], "zh-CN"));
   return {
     text: entries.map(([form, groupedProducts]) =>
-      form + "（" + groupedProducts.length + "款）\n- " + groupedProducts.map((product) => product.name).join("、")
+      form + "（" + groupedProducts.length + "款）\n- " + groupedProducts.map((product) => product.name).join("\n- ")
     ).join("\n\n"),
     representativeIds: entries
       .map(([, groupedProducts]) => groupedProducts.find((product) => product.stockTotal > 0) ?? groupedProducts[0])
@@ -1156,23 +1156,22 @@ function plannedFallback(
         : plan.relationIntent === "refill_compatibility"
           ? "补充装适配"
           : "搭配";
+    const directRelationshipText = relations.length
+      ? "官方明确或已经审核的直接" + relationLabel + "关系：\n- " + relations.map((relation) =>
+          relation.sourceName + "与" + relation.targetName + (relation.evidence ? "（依据：" + relation.evidence + "）" : "")
+        ).join("\n- ")
+      : "";
+    const specificationText = relevantSpecificationCompatibility.length
+      ? "规格适配（不是官网逐款搭配）：\n\n" + relevantSpecificationCompatibility.map((item) => {
+          const accessories = item.accessories.map((accessory) => accessory.name).join("、");
+          const products = item.matchingProducts.slice(0, 12).map((product) => "- " + product.name).join("\n");
+          const remainder = item.matchingProductCount > 12 ? "\n- 其余同规格商品，共" + item.matchingProductCount + "款" : "";
+          return item.compatibilitySpec + "\n适配配件：" + accessories + "\n可适配商品：\n" + products + remainder;
+        }).join("\n\n")
+      : "";
     return {
-      answer: [
-        relations.length
-          ? `\u5b98\u7f51\u660e\u786e\u6216\u5df2\u7ecf\u5ba1\u6838\u7684\u76f4\u63a5${relationLabel}\u5173\u7cfb\uff1a${relations.map((relation) =>
-              `${relation.sourceName}\u4e0e${relation.targetName}${relation.evidence ? `\uff08\u4f9d\u636e\uff1a${relation.evidence}\uff09` : ""}`
-            ).join("\uff1b")}\u3002`
-          : "",
-        relevantSpecificationCompatibility.length
-          ? `\u89c4\u683c\u9002\u914d\uff08\u4e0d\u662f\u5b98\u7f51\u9010\u6b3e\u642d\u914d\uff09\uff1a${relevantSpecificationCompatibility.map((item) => {
-              const accessories = item.accessories.map((accessory) => accessory.name).join("\u3001");
-              const names = item.matchingProducts.slice(0, 12).map((product) => product.name).join("\u3001");
-              const remainder = item.matchingProductCount > 12 ? `\u7b49${item.matchingProductCount}\u6b3e` : "";
-              return `${accessories}\u7684\u5b98\u65b9\u8d44\u6599\u6807\u6ce8\u9002\u914d${item.compatibilitySpec}\uff1b\u6309\u5df2\u8bb0\u5f55\u5546\u54c1\u89c4\u683c\uff0c\u53ef\u9002\u914d${names}${remainder}`;
-            }).join("\uff1b")}\u3002`
-          : "",
-      ].filter(Boolean).join("\n") || `\u5f53\u524d\u5df2\u5ba1\u6838\u5546\u54c1\u5173\u7cfb\u548c\u89c4\u683c\u9002\u914d\u8bb0\u5f55\u4e2d\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684${relationLabel}\u5173\u7cfb\uff0c\u56e0\u6b64\u4e0d\u80fd\u6839\u636e\u540c\u7cfb\u5217\u3001\u540c\u9999\u6750\u6216\u540d\u79f0\u76f8\u4f3c\u81ea\u884c\u63a8\u65ad\u3002`,
-      answerMode: "relation_search" as const,
+      answer: [directRelationshipText, specificationText].filter(Boolean).join("\n\n")
+        || "当前已审核商品关系和规格适配记录中没有找到符合条件的" + relationLabel + "关系，因此不能根据同系列、同香材或名称相似自行推断。",      answerMode: "relation_search" as const,
       selectedProductIds: (relationExecution?.productIds ?? primary.productIds).slice(0, 5),
     };
   }
@@ -1197,12 +1196,13 @@ function plannedFallback(
     };
   }
   if (plan.intent === "catalog") {
+    const grouped = groupedCatalogSummary(primaryProducts);
     return {
       answer: primaryProducts.length
-        ? `符合当前条件的产品共${primaryProducts.length}款：${primaryProducts.map((product) => product.name).join("、")}。`
+        ? "符合当前条件的产品共" + primaryProducts.length + "款，按品型整理如下：\n\n" + grouped.text
         : "当前商品资料中没有找到符合全部条件的产品。",
       answerMode: "product_search" as const,
-      selectedProductIds: [],
+      selectedProductIds: primaryProducts.length <= 5 ? primary.productIds : grouped.representativeIds,
     };
   }
   if (/含有|包含|真的含/.test(plan.currentQuery) && primaryProducts.length === 1) {
@@ -1275,8 +1275,18 @@ export function executeDiptyqueQueryPlan(plan: DiptyqueQueryPlan): PlannedRetrie
       })
     : searchProducts({
         ...commonArgs,
-        query: cheapest || plan.softPreferences.length || plan.conversationState.isFollowUp ? "" : plan.currentQuery,
-        limit: cheapest ? 3 : plan.intent === "catalog" || plan.intent === "relation" || plan.softPreferences.length ? 100 : 30,
+        query: cheapest
+          ? ""
+          : plan.softPreferences.length
+            ? plan.softPreferences.join(" ")
+            : plan.conversationState.isFollowUp ? "" : plan.currentQuery,
+        limit: cheapest
+          ? 3
+          : plan.intent === "catalog" || plan.intent === "relation"
+            ? 100
+            : plan.intent === "recommendation"
+              ? 18
+              : 30,
         sort: cheapest ? "price_asc" : "relevance",
       });
   executions.push({ label: "PLANNED_PRODUCT_SEARCH", result: primary });

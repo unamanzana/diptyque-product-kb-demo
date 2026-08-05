@@ -38,7 +38,9 @@ export function cleanAnswer(value: string) {
   }
 
   return lines.join("\n")
-    .replace(/([^\n])\s+(?=\d{1,2}[.、.)）]\s*)/g, "$1\n\n")
+    .replace(/([^\n])\s+(?=\d{1,2}[.、．.)）]\s*)/g, "$1\n\n")
+    .replace(/[ \t]+(?=(?:理由|价格|合计|搭配理由|规格)：)/g, "\n")
+    .replace(/\n(?=\d{1,2}[.、．.)）]\s*)/g, "\n\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }

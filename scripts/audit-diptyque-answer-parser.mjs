@@ -31,6 +31,17 @@ const cases = [
     check: (result) => result.answer === "\u76f4\u63a5\u56de\u7b54" && result.productIds.length === 0,
   },
   {
+    name: "dense recommendation details become separate lines",
+    input: JSON.stringify({
+      answer: "1. 杜桑淡香水 理由：白花与海洋气息。 价格：1050元。 2．檀道淡香水 理由：木质但不甜。 价格：1050元。",
+      product_ids: ["p1", "p2"],
+      answer_mode: "product_search",
+    }),
+    check: (result) =>
+      result.answer.includes("1. 杜桑淡香水\n理由：")
+      && result.answer.includes("\n价格：1050元")
+      && result.answer.includes("\n\n2．檀道淡香水\n理由："),
+  },  {
     name: "protocol field tail is removed",
     input: "\u6b63\u5e38\u56de\u7b54\nproduct_ids: [\"p1\"]\nanswer_m",
     check: (result) => result.answer === "\u6b63\u5e38\u56de\u7b54",

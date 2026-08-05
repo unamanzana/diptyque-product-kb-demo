@@ -975,6 +975,7 @@ export function DiptyqueKnowledgeBase() {
             };
           } else if (
             data.answerSource === "deepseek_tools"
+            || data.answerSource === "ontology_query"
             || (data.answerSource === "local_fallback" && (data.recommendedProductNames?.length ?? 0) > 0)
           ) {
             const recommendationProductNames = data.recommendedProductNames ?? [];
@@ -984,7 +985,7 @@ export function DiptyqueKnowledgeBase() {
               card: undefined,
               cards: getProductCardsByNames(
                 recommendationProductNames,
-                data.answerMode === "gift_recommendation" ? "送礼推荐" : "工具检索"
+                data.answerSource === "ontology_query" ? "事实查询" : data.answerMode === "gift_recommendation" ? "送礼推荐" : "顾问推荐"
               ),
               filterNodeIds: [],
               focusEdgeIds: [],
@@ -996,9 +997,11 @@ export function DiptyqueKnowledgeBase() {
           }
           responseNote = data.answerSource === "ontology_full_list"
             ? "本体全量检索 · " + (data.matchedProductNames?.length ?? 0) + "款"
-            : data.answerSource === "deepseek_tools"
-              ? (data.model ?? "DeepSeek") + " · 思考并检索 " + (data.matchedProductNames?.length ?? 0) + " 款"
-              : data.answerSource === "local_fallback" && (data.recommendedProductNames?.length ?? 0) > 0
+            : data.answerSource === "ontology_query"
+              ? "本体事实检索 · " + (data.matchedProductNames?.length ?? 0) + " 款"
+              : data.answerSource === "deepseek_tools"
+                ? (data.model ?? "DeepSeek") + " · 思考并检索 " + (data.matchedProductNames?.length ?? 0) + " 款"
+                : data.answerSource === "local_fallback" && (data.recommendedProductNames?.length ?? 0) > 0
                 ? "本地图谱兜底 · " + (data.matchedProductNames?.length ?? 0) + " 款"
                 : data.model;
         }
