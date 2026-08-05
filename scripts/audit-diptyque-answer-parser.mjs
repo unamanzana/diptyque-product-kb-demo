@@ -35,6 +35,18 @@ const cases = [
     input: "\u6b63\u5e38\u56de\u7b54\nproduct_ids: [\"p1\"]\nanswer_m",
     check: (result) => result.answer === "\u6b63\u5e38\u56de\u7b54",
   },
+  {
+    name: "inline numbered recommendations become readable blocks",
+    input: JSON.stringify({
+      answer: "候选如下： 1. 杜桑淡香水：水汽感。 2. 东京淡香水：柑橘感。 3. 玫瑰蜡烛：清新。",
+      product_ids: [],
+      answer_mode: "product_search",
+    }),
+    check: (result) =>
+      result.answer.includes("候选如下：\n\n1. 杜桑淡香水")
+      && result.answer.includes("\n\n2. 东京淡香水")
+      && result.answer.includes("\n\n3. 玫瑰蜡烛"),
+  },
 ];
 
 const failures = cases.flatMap((testCase) => {

@@ -37,7 +37,10 @@ export function cleanAnswer(value: string) {
     if (normalizedLine) lines.push(normalizedLine);
   }
 
-  return lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  return lines.join("\n")
+    .replace(/([^\n])\s+(?=\d{1,2}[.、.)）]\s*)/g, "$1\n\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 type ParsedAnswer = {

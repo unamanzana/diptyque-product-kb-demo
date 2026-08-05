@@ -30,7 +30,7 @@ import {
 const DEFAULT_BASE_URL = "https://api.deepseek.com";
 const DEFAULT_MODEL = "deepseek-v4-flash";
 const REQUEST_TIMEOUT_MS = 60000;
-const MAX_TOOL_ROUNDS = 5;
+const MAX_TOOL_ROUNDS = 3;
 const MAX_PROVIDER_ATTEMPTS = 3;
 const RETRYABLE_PROVIDER_STATUSES = new Set([429, 500, 502, 503, 504]);
 
@@ -111,21 +111,21 @@ function addUsage(total: ModelUsage, usage: DeepSeekResponse["usage"]) {
 
 const SYSTEM_PROMPT = [
   "You are the semantic interpreter, retrieval planner and grounded answer writer for a Diptyque product knowledge graph.",
-  "Your first action for every non-safety user request must be resolve_query_semantics. Parse the full utterance and recent conversation before calling any retrieval tool.",
+  "Use QUERY_PLAN, PLANNED_RETRIEVAL and OFFICIAL_COPY_EVIDENCE as the initial grounded context. Call resolve_query_semantics only when the user's subject, object, relation or conversation carry-over is genuinely ambiguous.",
   "The ACTIVE_CONVERSATION_FRAME is mutable context, not a permanent filter. Choose KEEP, ADD, REPLACE, CLEAR or NEW_TOPIC explicitly. Referential follow-ups normally keep or add; a new named subject or comparison normally starts a new topic and clears unrelated scope, budget and result state.",
   "A change of intent is not by itself a new topic. If the user moves from browsing a scoped catalog to gifting, recommendation, comparison, or narrowing without naming an incompatible new product scope, preserve the prior scope with ADD or REPLACE. Use NEW_TOPIC only when the new entities or scope are genuinely incompatible with the prior request.",
   "Treat the customer phrase \u5bb6\u5c45\u4ea7\u54c1 as an umbrella over both \u5bb6\u5c45\u9999\u6c1b and \u827a\u672f\u5bb6\u5c45 unless the user explicitly narrows it. Keep that umbrella when a following turn asks whom it is for, what to recommend, or adds a budget.",
   "In a relation question, distinguish grammatical roles: subject is the entity whose relations are requested, predicate is the requested relation, and object is the target type or entity. In a question meaning which candles fit a candle lid, candle lid is the subject, accessory_for is the predicate, and candle is the object.",
   "Do not copy every noun into product filters. Search only the validated subject as the relation source; use the object to select the target type or interpret relation results.",
-  "After resolve_query_semantics returns ontologyValidation, use only ontology-supported entity values and relation types. If validation is ambiguous, call list_catalog_values or search_products rather than inventing a mapping.",
+  "If resolve_query_semantics is called, use only ontology-supported entity values and relation types from ontologyValidation. If validation remains ambiguous, call list_catalog_values or search_products rather than inventing a mapping.",
   "For relation intent, search the subject first, then call get_product_relations with the validated relationTypes. Series membership is not a direct pairing: search by the shared collection or scent identity instead.",
-  "For catalog, comparison, gifting and recommendation intent, use the validated semantic frame to choose search_products or search_gift_candidates. Use get_product_details before explaining subjective recommendations. Once product details are returned, stop retrieving and produce the final answer.",
+  "For catalog, comparison, gifting and recommendation intent, use the query plan or optional validated semantic frame to decide whether a refinement search is needed. If PLANNED_RETRIEVAL already contains suitable candidates, answer from it instead of repeating retrieval. Use get_product_details only when the available evidence is insufficient for the explanation.",
   "Only explicit numeric price, size, stock, inclusion or exclusion statements are hard constraints. Descriptive preferences such as fresh, restrained, floral or not too sweet are soft ranking signals and may not create an automatic zero-result answer.",
   "Carry forward relevant meaning from recent conversation unless the user explicitly changes it. When the user asks for alternatives, exclude product IDs already presented.",
   "For price questions, use numeric filters. For products at or below 500 yuan, call search_products with max_price 500. For the cheapest product, sort price_asc and use a small limit.",
   "For vague gifting questions, call search_gift_candidates and present useful candidates before asking one high-impact follow-up question.",
   "Ontology tools validate entities, categories and approved relations. Tool results are facts; never invent a product, price, URL, relation or compatibility.",
-  "OFFICIAL_COPY_EVIDENCE is added only after product retrieval. Use its exact official excerpts to explain fuzzy sensory language. Retrieval expansion terms are not evidence.",
+  "OFFICIAL_COPY_EVIDENCE contains traceable excerpts retrieved for the current candidates and may be supplemented after refinement searches. Use its exact excerpts to explain fuzzy sensory language. Retrieval expansion terms are not evidence.",
   "Relationship evidence has two levels: direct reviewed relations, and specificationCompatibility derived from an accessory's official compatible specification joined to products with that recorded specification.",
   "For specificationCompatibility, say only that products can fit by specification and state that this is not an official item-by-item pairing or recommendation.",
   "Shared scent, material or category alone is not an approved direct product relation.",
@@ -273,20 +273,36 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
       role: "system",
       content: "ACTIVE_CONVERSATION_FRAME\n" + JSON.stringify(input.conversationFrame),
     },
+    {
+      role: "system",
+      content: "QUERY_PLAN\n" + JSON.stringify(input.queryPlan),
+    },
+    {
+      role: "system",
+      content: "PLANNED_RETRIEVAL\n" + fallbackRetrieval.content,
+    },
+    {
+      role: "system",
+      content: "OFFICIAL_COPY_EVIDENCE\n" + formatOfficialCopyContext(fallbackOfficialCopyHits),
+    },
     ...input.history.slice(-8).map((message) => ({
       role: message.role,
       content: message.content.slice(0, 1800),
     })),
     { role: "user", content: input.message },
   ];
-  const matchedProductIds: string[] = [];
+  const matchedProductIds: string[] = [...fallbackMatchedProductIds];
   const displayCandidateIds: string[] = [];
-  const toolTrace: string[] = [];
-  const groundingContext: string[] = [];
+  const toolTrace: string[] = [...fallbackRetrieval.toolTrace];
+  const groundingContext: string[] = [
+    fallbackRetrieval.content,
+    "OFFICIAL_COPY_EVIDENCE\n" + formatOfficialCopyContext(fallbackOfficialCopyHits),
+  ];
   const usage: ModelUsage = {};
   let reasoningUsed = false;
   let semanticFrameResolved = false;
-  let exactSelection: ToolExecution["exactSelection"];
+  let exactSelection: ToolExecution["exactSelection"] = fallbackRetrieval.exactSelection;
+  officialCopyHits = [...fallbackOfficialCopyHits];
   let searchCallCount = 0;
   const toolCallCache = new Set<string>();
   let forceFinalAnswer = false;
@@ -354,15 +370,7 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
         });
         const pendingSystemMessages: Array<Record<string, unknown>> = [];
         for (const toolCall of toolCalls) {
-          if (!semanticFrameResolved && toolCall.function.name !== "resolve_query_semantics") {
-            const content = JSON.stringify({
-              error: "semantic_frame_required",
-              instruction: "Call resolve_query_semantics before any retrieval tool.",
-            });
-            toolTrace.push("blocked_pre_semantic_tool name=" + toolCall.function.name);
-            messages.push({ role: "tool", tool_call_id: toolCall.id, content });
-            continue;
-          }
+
           if (semanticFrameResolved && toolCall.function.name === "resolve_query_semantics") {
             const content = JSON.stringify({
               error: "semantic_frame_already_resolved",
@@ -383,6 +391,16 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
             const requestedLimit = typeof parsedArguments.limit === "number" ? parsedArguments.limit : 40;
             const maxLimit = input.queryPlan.intent === "catalog" ? 100 : 12;
             parsedArguments.limit = Math.min(maxLimit, Math.max(1, Math.floor(requestedLimit)));
+            const explicitRefillRequest = /补充装|补充瓶/.test(input.message);
+            if ((input.queryPlan.intent === "recommendation" || input.queryPlan.intent === "gifting") && !explicitRefillRequest) {
+              parsedArguments.exclude_refills = true;
+              parsedArguments.in_stock = true;
+            }
+            const broadScentRecommendation =
+              input.queryPlan.intent === "recommendation"
+              && !input.queryPlan.constraints.productForms.length
+              && /香味|气味|闻起来|水汽|通透|轻盈|清新|木质|花香/.test(input.message);
+            if (broadScentRecommendation) parsedArguments.representative_only = true;
             toolArguments = JSON.stringify(parsedArguments);
           }
           if (toolCall.function.name === "get_product_relations") {
@@ -459,14 +477,6 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
         continue;
       }
 
-      if (!semanticFrameResolved && round < MAX_TOOL_ROUNDS - 1) {
-        messages.push({ role: "assistant", content: message?.content ?? "" });
-        messages.push({
-          role: "user",
-          content: "Call resolve_query_semantics now. Do not retrieve products or answer before the semantic frame is validated.",
-        });
-        continue;
-      }
 
       if (!matchedProductIds.length && round < MAX_TOOL_ROUNDS - 1) {
         messages.push({

@@ -86,7 +86,7 @@ const collections = unique(payload.products.flatMap((product) => product.collect
 const vocabulary = { coreFamilies, productForms };
 
 const COMPARISON_PATTERN = /区别|对比|一样吗|一回事吗|闻起来像吗|完全一样|按[^。！？]*比较/;
-const PREFERENCE_PATTERN = /喜欢|不喜欢|不想|推荐|适合|偏好|柔和|清新|清冷|小众|甜|浓|自然|氛围|入门|撞香|怎么选|闻起来|像.*(?:花园|森林|海边)|有没有.*香味/;
+const PREFERENCE_PATTERN = /喜欢|不喜欢|不想|推荐|适合|偏好|柔和|清新|清冷|小众|甜|浓|自然|氛围|入门|撞香|怎么选|闻起来|水汽|通透|轻盈|像.*(?:花园|森林|海边)|有没有.*(?:香味|气味)/;
 const CATALOG_PATTERN = /有哪些|有什么|列出|全部|所有|多少款|几款/;
 const REFERENTIAL_PATTERN = /其中|这些|刚才|那款|这款|上述|前面/;
 const PET_PATTERN = /宠物|猫|猫咪|狗|狗狗/;
@@ -190,7 +190,7 @@ function extractConstraints(query: string): DiptyqueQueryConstraints {
   const personalFragranceFamilies = !excludesPerfume && !/蜡烛|护手霜|家居/.test(normalized) && /香水|白花香|撞香|通勤.*香/.test(normalized)
     ? coreFamilies.filter((family) => family === "个人香氛")
     : [];
-  const scentExperienceFamilies = /香味|闻起来/.test(normalized)
+  const scentExperienceFamilies = /香味|气味|闻起来/.test(normalized)
     && !personalFragranceFamilies.length
     && !homeFragranceFamilies.length
     ? coreFamilies.filter((family) => family === "个人香氛" || family === "家居香氛")
@@ -282,7 +282,7 @@ function extractRecommendationLimit(query: string) {
 
 function extractSoftPreferences(query: string) {
   const preferences = [
-    ...["\u6728\u8d28", "\u767d\u82b1", "\u6e05\u65b0", "\u6e05\u51b7", "\u67d4\u548c", "\u81ea\u7136", "\u4e0d\u751c", "\u5fae\u751c", "\u5c0f\u4f17", "\u4e0d\u5bb9\u6613\u649e\u9999"]
+    ...["\u6728\u8d28", "\u767d\u82b1", "\u6e05\u65b0", "\u6e05\u51b7", "\u67d4\u548c", "\u81ea\u7136", "\u4e0d\u751c", "\u5fae\u751c", "\u5c0f\u4f17", "\u4e0d\u5bb9\u6613\u649e\u9999", "\u6c34\u6c7d", "\u901a\u900f", "\u8f7b\u76c8"]
       .filter((term) => query.includes(term)),
     ...["\u590f\u5929", "\u79cb\u51ac", "\u901a\u52e4", "\u5367\u5ba4", "\u7761\u524d", "\u7ea6\u4f1a", "\u9ad8\u7ea7\u9152\u5e97", "\u96e8\u540e\u82b1\u56ed", "\u68ee\u6797", "\u6d77\u8fb9"]
       .filter((term) => query.includes(term)),

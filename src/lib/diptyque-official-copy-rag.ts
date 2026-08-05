@@ -17,6 +17,7 @@ type Product = {
   scentAccords: string[];
   materials: string[];
   variantTags: string[];
+  stockTotal: number;
   subtitle: string;
   description: string;
   storyText: string;
@@ -41,6 +42,14 @@ type Payload = { products: Product[] };
 
 const products = (frontendData as Payload).products;
 const productById = new Map(products.map((product) => [product.id, product]));
+const REPRESENTATIVE_PRODUCT_FORMS = new Set([
+  "淡香水",
+  "淡香精",
+  "经典香氛蜡烛",
+  "室内喷雾",
+  "室内扩香摆件",
+  "室内香氛",
+]);
 
 const FIELD_LABELS: Record<CopyField, string> = {
   description: "官网商品描述",
@@ -54,6 +63,7 @@ const QUERY_EXPANSIONS: Array<[RegExp, string[]]> = [
   [/雨后|花园/, ["绿叶", "青草", "玫瑰", "水汽", "露珠", "湿润", "花园"]],
   [/森林|林间/, ["雪松", "檀香", "木质", "苔藓", "松针", "树脂"]],
   [/海边|海洋|海风/, ["海洋", "海盐", "水汽", "清新", "海岸", "浪花"]],
+  [/水汽|通透|水润/, ["水汽", "水润", "露珠", "湿润", "海洋", "清新", "轻盈", "通透"]],
   [/干净|洁净/, ["白麝香", "皂感", "清新", "轻盈", "纯净"]],
   [/自然/, ["绿叶", "木质", "花香", "草本", "植物"]],
   [/柔和|不浓|不太浓|没有攻击性/, ["柔和", "轻盈", "细腻", "淡雅", "温和"]],
@@ -102,7 +112,7 @@ function queryTerms(query: string, plan: DiptyqueQueryPlan) {
   const semanticQuery = query
     .replace(/\u4e0d[^\u3002\uff01\uff1f]{0,5}\u6d3b\u6cfc/g, "\u514b\u5236")
     .replace(
-      /diptyque|\u6211|\u5e73\u65f6|\u559c\u6b22|\u4e0d\u559c\u6b22|\u60f3\u8981|\u60f3\u627e|\u6709\u6ca1\u6709|\u95fb\u8d77\u6765|\u6bd4\u8f83|\u54ea\u4e9b|\u54ea\u51e0\u6b3e|\u51e0\u6b3e|\u63a8\u8350|\u9002\u5408|\u9009\u62e9|\u4e0d\u8981|\u53ea\u7ed9|\u4ea7\u54c1|\u9999\u5473|\u6216\u8005/gi,
+      /diptyque|\u6211|\u5e73\u65f6|\u559c\u6b22|\u4e0d\u559c\u6b22|\u60f3\u8981|\u60f3\u627e|\u6709\u6ca1\u6709|\u95fb\u8d77\u6765|\u6bd4\u8f83|\u54ea\u4e9b|\u54ea\u51e0\u6b3e|\u51e0\u6b3e|\u63a8\u8350|\u9002\u5408|\u9009\u62e9|\u4e0d\u8981|\u53ea\u7ed9|\u4ea7\u54c1|\u9999\u5473|\u6c14\u5473|\u6216\u8005/gi,
       ""
     );
   const ontologyTerms = [
@@ -141,6 +151,10 @@ export function retrieveOfficialCopy(
 ) {
   const terms = queryTerms(query, plan);
   const candidateSet = new Set(candidateProductIds);
+  const broadScentRecommendation =
+    plan.intent === "recommendation"
+    && !plan.constraints.productForms.length
+    && /香味|气味|闻起来|水汽|通透|轻盈|清新|木质|花香/.test(plan.currentQuery);
   const excludedProductSet = new Set(excludedProductIds);
   const useCandidateGate = strictCandidateGate || candidateSet.size > 0;
   const scored = chunks.flatMap((chunk) => {
@@ -149,6 +163,8 @@ export function retrieveOfficialCopy(
     const product = productById.get(chunk.productId);
     if (!product) return [];
     if (plan.constraints.excludeRefills && product.variantTags.includes("\u8865\u5145\u88c5")) return [];
+    if ((plan.intent === "recommendation" || plan.intent === "gifting") && product.stockTotal <= 0) return [];
+    if (broadScentRecommendation && !REPRESENTATIVE_PRODUCT_FORMS.has(product.productForm)) return [];
     const matchedTerms = unique(terms.filter((term) => chunk.normalizedExcerpt.includes(term)));
     const exactQuery = normalize(query);
     const exactBonus = exactQuery.length >= 4 && chunk.normalizedExcerpt.includes(exactQuery) ? 12 : 0;
@@ -225,7 +241,7 @@ export function officialCopyFallback(hits: OfficialCopyHit[], plan: DiptyqueQuer
     return true;
   }).slice(0, limit);
   if (!selectedHits.length || (plan.intent === "gifting" && selectedHits.length < 3)) return null;
-  const reasons = selectedHits.map((hit) => `${hit.productName}：官网文案提到“${hit.excerpt.slice(0, 70)}${hit.excerpt.length > 70 ? "…" : ""}”`);
+  const reasons = selectedHits.map((hit, index) => (index + 1) + ". " + hit.productName + "：官网文案提到“" + hit.excerpt.slice(0, 70) + (hit.excerpt.length > 70 ? "…" : "") + "”");
   const figComparison = plan.intent === "comparison"
     && plan.constraints.collections.includes("无花果")
     && plan.constraints.collections.includes("希腊无花果")
@@ -235,7 +251,7 @@ export function officialCopyFallback(hits: OfficialCopyHit[], plan: DiptyqueQuer
     ? `本次分别核对了${plan.constraints.collections.join("、")}。`
     : "";
   return {
-    answer: `\u6839\u636e\u5f53\u524d\u9700\u6c42\u548c\u5b98\u7f51\u6587\u6848\uff0c\u4f18\u5148\u5019\u9009\u5982\u4e0b\uff1a\n${reasons.join("\n")}\n${figComparison}${comparisonScope}\u8fd9\u4e9b\u63cf\u8ff0\u53ea\u80fd\u652f\u6301\u6587\u6848\u4e2d\u660e\u786e\u5199\u51fa\u7684\u6c14\u5473\u6216\u4f53\u9a8c\uff1b\u751c\u5ea6\u3001\u7559\u9999\u3001\u70ed\u95e8\u7a0b\u5ea6\u7b49\u672a\u88ab\u5b98\u65b9\u8d44\u6599\u660e\u786e\u91cf\u5316\u7684\u7ef4\u5ea6\uff0c\u6211\u4e0d\u4f1a\u5f53\u4f5c\u786e\u5b9a\u4e8b\u5b9e\u3002`,
+    answer: "根据当前需求和官网文案，优先候选如下：\n\n" + reasons.join("\n\n") + "\n\n" + figComparison + comparisonScope + "这些描述只能支持文案中明确写出的气味或体验；甜度、留香、热门程度等未被官方资料明确量化的维度，我不会当作确定事实。",
     productIds: selectedHits.map((hit) => hit.productId),
   };
 }

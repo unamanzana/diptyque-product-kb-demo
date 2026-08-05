@@ -109,6 +109,21 @@ const familyAliases: Record<string, string[]> = {
   家居装饰: ["艺术家居"],
 };
 
+const REPRESENTATIVE_FORM_PRIORITY = new Map([
+  ["淡香水", 0],
+  ["淡香精", 1],
+  ["经典香氛蜡烛", 2],
+  ["室内喷雾", 3],
+  ["室内扩香摆件", 4],
+  ["室内香氛", 5],
+]);
+
+function representativeGroup(product: Product) {
+  return product.scentIdentities?.[0]?.id
+    || product.collections[0]
+    || product.id;
+}
+
 function normalize(value: string) {
   return value.toLowerCase().normalize("NFKC").replace(/[\s\p{P}\p{S}]+/gu, "");
 }
@@ -308,6 +323,8 @@ function searchProducts(args: Record<string, unknown>): ToolExecution {
   const minPrice = numberValue(args.min_price);
   const maxPrice = numberValue(args.max_price);
   const excludeRefills = args.exclude_refills === true;
+  const inStock = args.in_stock === true;
+  const representativeOnly = args.representative_only === true;
   const sort = typeof args.sort === "string" ? args.sort : "relevance";
   const limit = Math.min(100, Math.max(1, Math.floor(numberValue(args.limit) ?? 40)));
 
@@ -343,6 +360,8 @@ function searchProducts(args: Record<string, unknown>): ToolExecution {
       if (!matchesAny(product.marketingTags, marketingTags)) return false;
       if (!matchesAny(product.variantTags, variantTags)) return false;
       if (excludeRefills && product.variantTags.includes("补充装")) return false;
+      if (inStock && product.stockTotal <= 0) return false;
+      if (representativeOnly && !REPRESENTATIVE_FORM_PRIORITY.has(product.productForm)) return false;
       const price = productPrice(product);
       if (minPrice != null && (price == null || price < minPrice)) return false;
       if (maxPrice != null && (price == null || price > maxPrice)) return false;
@@ -370,10 +389,20 @@ function searchProducts(args: Record<string, unknown>): ToolExecution {
       const priceB = productPrice(b.product) ?? Number.MAX_SAFE_INTEGER;
       if (sort === "price_asc") return priceA - priceB || a.product.name.localeCompare(b.product.name, "zh-CN");
       if (sort === "price_desc") return priceB - priceA || a.product.name.localeCompare(b.product.name, "zh-CN");
-      return b.score - a.score || priceA - priceB || a.product.name.localeCompare(b.product.name, "zh-CN");
+      const representativePriorityA = REPRESENTATIVE_FORM_PRIORITY.get(a.product.productForm) ?? 99;
+      const representativePriorityB = REPRESENTATIVE_FORM_PRIORITY.get(b.product.productForm) ?? 99;
+      return b.score - a.score
+        || (representativeOnly ? representativePriorityA - representativePriorityB : 0)
+        || priceA - priceB
+        || a.product.name.localeCompare(b.product.name, "zh-CN");
     });
 
-  const selected = ranked.slice(0, limit).map(({ product }) => product);
+  const selectionPool = representativeOnly
+    ? ranked.filter(({ product }, index, all) =>
+        all.findIndex(({ product: candidate }) => representativeGroup(candidate) === representativeGroup(product)) === index
+      )
+    : ranked;
+  const selected = selectionPool.slice(0, limit).map(({ product }) => product);
   const exactPriceProduct = (sort === "price_asc" || sort === "price_desc") && limit <= 3
     ? selected[0]
     : undefined;
@@ -387,9 +416,9 @@ function searchProducts(args: Record<string, unknown>): ToolExecution {
     : undefined;
   return {
     content: JSON.stringify({
-      total: ranked.length,
+      total: selectionPool.length,
       returned: selected.length,
-      truncated: ranked.length > selected.length,
+      truncated: selectionPool.length > selected.length,
       products: selected.map(compactProduct),
     }),
     productIds: selected.map((product) => product.id),
@@ -944,6 +973,8 @@ export const diptyqueAgentTools: ToolDefinition[] = [
           min_price: { type: "number" },
           max_price: { type: "number" },
           exclude_refills: { type: "boolean" },
+          in_stock: { type: "boolean", description: "Only return products with positive recorded stock." },
+          representative_only: { type: "boolean", description: "For broad scent recommendations, return one in-stock full-size representative per scent identity instead of refills or every derivative form." },
           sort: { type: "string", enum: ["relevance", "price_asc", "price_desc"] },
           limit: { type: "integer", minimum: 1, maximum: 100 },
         },
@@ -1033,6 +1064,26 @@ export type PlannedRetrieval = {
   toolTrace: string[];
 };
 
+function groupedCatalogSummary(productsToGroup: Product[]) {
+  const groups = new Map<string, Product[]>();
+  productsToGroup.forEach((product) => {
+    const current = groups.get(product.productForm) ?? [];
+    current.push(product);
+    groups.set(product.productForm, current);
+  });
+  const entries = Array.from(groups.entries())
+    .sort((left, right) => left[0].localeCompare(right[0], "zh-CN"));
+  return {
+    text: entries.map(([form, groupedProducts]) =>
+      form + "（" + groupedProducts.length + "款）\n- " + groupedProducts.map((product) => product.name).join("、")
+    ).join("\n\n"),
+    representativeIds: entries
+      .map(([, groupedProducts]) => groupedProducts.find((product) => product.stockTotal > 0) ?? groupedProducts[0])
+      .filter((product): product is Product => Boolean(product))
+      .slice(0, 5)
+      .map((product) => product.id),
+  };
+}
 function plannedFallback(
   plan: DiptyqueQueryPlan,
   primary: ToolExecution,
@@ -1136,12 +1187,13 @@ function plannedFallback(
     };
   }
   if (plan.constraints.variantTags.includes("补充装")) {
+    const grouped = groupedCatalogSummary(primaryProducts);
     return {
       answer: primaryProducts.length
-        ? `当前商品记录中找到${primaryProducts.length}款真正的补充装：${primaryProducts.map((product) => product.name).join("、")}。`
+        ? "当前商品记录中找到" + primaryProducts.length + "款真正的补充装，按品型整理如下：\n\n" + grouped.text
         : "当前商品记录中没有找到符合条件的真正补充装。",
       answerMode: "product_search" as const,
-      selectedProductIds: primary.productIds.slice(0, 5),
+      selectedProductIds: grouped.representativeIds,
     };
   }
   if (plan.intent === "catalog") {
@@ -1190,6 +1242,11 @@ export function executeDiptyqueQueryPlan(plan: DiptyqueQueryPlan): PlannedRetrie
     sizes: constraints.sizes,
     variant_tags: constraints.variantTags,
     exclude_refills: constraints.excludeRefills,
+    in_stock: plan.intent === "recommendation" || plan.intent === "gifting",
+    representative_only:
+      plan.intent === "recommendation"
+      && !constraints.productForms.length
+      && /香味|气味|闻起来|水汽|通透|轻盈|清新|木质|花香/.test(plan.currentQuery),
     max_price: constraints.maxPrice,
   };
   const executions: Array<{ label: string; result: ToolExecution }> = [];
