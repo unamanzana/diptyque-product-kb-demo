@@ -88,6 +88,14 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
+function formatAnswerText(value: string) {
+  return value
+    .replace(/(^|[：。！？])\s*(\d+[.、])\s*/g, "$1\n\n$2 ")
+    .replace(/\s+(?=(?:价格|理由|搭配理由|选择建议)：)/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 function lineMidpoint(x1: number, y1: number, x2: number, y2: number, offset = 0) {
   return {
     x: (x1 + x2) / 2 + offset,
@@ -1381,7 +1389,7 @@ export function DiptyqueKnowledgeBase() {
             {messages.map((message) => (
               <div key={message.id} className={`chat-msg ${message.role === "user" ? "user" : "bot"}`}>
                 <div className="chat-bubble">
-                  <div className="answer-text">{message.text}</div>
+                  <div className="answer-text">{formatAnswerText(message.text)}</div>
                   {message.note ? <div className="message-note">{message.note}</div> : null}
                 </div>
                 {message.role === "bot" && message.card ? <ProductAnswerCard card={message.card} confidence={message.confidence} onFocusGraph={focusGraph} /> : null}
