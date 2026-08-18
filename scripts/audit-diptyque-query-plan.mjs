@@ -12,6 +12,11 @@ const cases = [
     check: (plan) => plan.intent === "recommendation" && !plan.allowDeterministicCatalog,
   },
   {
+    name: "natural want-to-buy wording stays a recommendation",
+    query: "我想要木制香水",
+    check: (plan) => plan.intent === "recommendation" && plan.constraints.productForms.some((form) => form === "淡香水" || form === "淡香精"),
+  },
+  {
     name: "price constrained catalog goes through structured retrieval",
     query: "500元以内有哪些香氛蜡烛？",
     check: (plan) => plan.constraints.maxPrice === 500 && !plan.allowDeterministicCatalog,

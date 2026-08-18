@@ -86,7 +86,7 @@ const collections = unique(payload.products.flatMap((product) => product.collect
 const vocabulary = { coreFamilies, productForms };
 
 const COMPARISON_PATTERN = /区别|对比|一样吗|一回事吗|闻起来像吗|完全一样|按[^。！？]*比较/;
-const PREFERENCE_PATTERN = /喜欢|不喜欢|不想|推荐|适合|偏好|柔和|清新|清冷|小众|甜|浓|自然|氛围|入门|撞香|怎么选|闻起来|水汽|通透|轻盈|像.*(?:花园|森林|海边)|有没有.*(?:香味|气味)/;
+const PREFERENCE_PATTERN = /喜欢|不喜欢|不想|推荐|适合|偏好|柔和|清新|清冷|小众|甜|浓|自然|氛围|入门|撞香|怎么选|闻起来|水汽|通透|轻盈|像.*(?:花园|森林|海边)|有没有.*(?:香味|气味)|(?:想要|想找|想买|想选).{0,20}(?:香水|香氛|香味|气味|味道)/;
 const CATALOG_PATTERN = /有哪些|有什么|列出|全部|所有|多少款|几款/;
 const REFERENTIAL_PATTERN = /其中|这些|刚才|那款|这款|上述|前面/;
 const PET_PATTERN = /宠物|猫|猫咪|狗|狗狗/;
