@@ -963,6 +963,8 @@ body {
   color: #2a2926;
   font-size: 14px;
   line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .chat-msg.user .answer-text {
