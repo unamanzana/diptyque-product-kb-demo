@@ -144,10 +144,6 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
   const model = process.env.DEEPSEEK_MODEL || DEFAULT_MODEL;
   let conversationFrameUpdate: ConversationFrameUpdate | undefined;
   const fallbackRetrieval = executeDiptyqueQueryPlan(input.queryPlan);
-  const oneShotRecommendation = input.queryPlan.intent === "recommendation"
-    && !input.queryPlan.relationIntent
-    && !input.queryPlan.conversationState.isFollowUp
-    && fallbackRetrieval.productIds.length > 0;
   const gateFallbackCopyToStructuredCandidates = input.queryPlan.intent === "gifting"
     || input.queryPlan.conversationState.hardConstraintKeys.length > 0;
   const fallbackOfficialCopyHits = retrieveOfficialCopy(
@@ -326,9 +322,7 @@ export async function generateDiptyqueAnswer(input: DeepSeekChatInput) {
             reasoning_effort: "medium",
             max_tokens: 3200,
             messages,
-            ...(!forceFinalAnswer && !oneShotRecommendation
-              ? { tools: diptyqueAgentTools, tool_choice: "auto" }
-              : {}),
+            ...(forceFinalAnswer ? {} : { tools: diptyqueAgentTools, tool_choice: "auto" }),
           }),
         },
         toolTrace
